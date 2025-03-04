@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook
+.ipynb_checkpoints
+历史问题查询_R2.1.ipynb
+
+# 数据文件
+*.csv
+*.xlsx
+*.xls
+*.json
+*.parquet
+/data/
+/dataset/
+/app/data/
+app/data/*
+
+# 环境文件
+.env
+venv/
+env/
+
+# IDE 配置
+.vscode/
+.idea/
+
+# 系统文件
+.DS_Store
+Thumbs.db 
