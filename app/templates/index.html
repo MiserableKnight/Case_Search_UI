@@ -15,7 +15,7 @@
         .container {
             max-width: 100%;
             margin: 0;
-            padding: 20px;
+            padding: 0 20px 20px 20px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -35,6 +35,15 @@
             border: 1px solid #EBEEF5;
             border-radius: 4px;
             padding: 15px;
+        }
+        .search-block.default-settings {
+            flex: 0.67;  /* 将默认搜索设置区域的宽度从0.5增加到0.67 */
+        }
+        .search-block.keyword-search {
+            flex: 1.83;    /* 将关键字搜索区域的宽度从2减少到1.83 */
+        }
+        .search-block.similarity-search {
+            flex: 1;    /* 相似度搜索区域宽度保持不变 */
         }
         .block-title {
             font-size: 16px;
@@ -93,22 +102,72 @@
             gap: 10px;
         }
         .search-card {
-            position: relative;
-            border: 1px solid #EBEEF5;
-            border-radius: 4px;
+            position: relative;   /* 恢复相对定位，这样卡片操作按钮可以相对它定位 */
+            display: flex;        /* 保持水平排列 */
+            align-items: center;  /* 保持垂直居中对齐 */
+            gap: 10px;           /* 保持元素间距 */
             padding: 10px;
             background: white;
+            border: 1px solid #EBEEF5;  /* 恢复边框样式 */
+            border-radius: 4px;         /* 恢复圆角 */
         }
         .search-content {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 20px;  /* 增加内部元素之间的间距 */
         }
-        .search-content .el-input {
-            width: 200px;
+        .search-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;  /* 让输入区域占满剩余空间 */
+        }
+        .search-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-right: 40px;
+        }
+        .switch-with-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .switch-label {
+            font-size: 13px;
+            color: #606266;
+        }
+        .el-radio-group {
+            display: flex;
+            flex-direction: column;  /* 让单选按钮组垂直排列 */
+            gap: 5px;               /* 控制按钮之间的间距 */
+        }
+        .search-content .el-radio {
+            height: 24px;           /* 控制单选按钮的高度 */
+            line-height: 24px;      /* 确保文字垂直居中 */
+            margin-right: 0;        /* 移除右边距 */
         }
         .search-content .el-select {
             width: 120px;
+            order: -1;  /* 让下拉框显示在最前面 */
+        }
+        .search-content .el-input {
+            width: 300px;  /* 缩小输入框的固定宽度 */
+        }
+        .search-logic {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+        .negative-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .negative-text {
+            font-size: 13px;
+            color: #606266;
         }
         .card-actions {
             position: absolute;
@@ -119,16 +178,23 @@
             gap: 5px;
         }
         .action-btn {
-            padding: 4px;
+            padding: 4px 8px;  /* 增加内边距 */
             cursor: pointer;
             color: #909399;
-            transition: color 0.3s;
+            transition: all 0.3s;
+            border: 1px solid #DCDFE6;  /* 添加边框 */
+            border-radius: 4px;         /* 添加圆角 */
+            background-color: #fff;     /* 添加背景色 */
         }
         .action-btn:hover {
             color: #409EFF;
+            border-color: #409EFF;  /* 悬停时改变边框颜色 */
+            background-color: #ecf5ff;  /* 悬停时添加背景色 */
         }
         .action-btn.delete:hover {
             color: #F56C6C;
+            border-color: #F56C6C;
+            background-color: #fef0f0;
         }
         .buttons-section {
             margin-top: 15px;
@@ -186,6 +252,46 @@
             align-items: center;
             margin-bottom: 15px;
         }
+        .statistics-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .axis-select {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .axis-label {
+            font-size: 14px;
+            color: #606266;
+            width: 40px;
+        }
+        .axis-select .el-select {
+            flex: 1;
+        }
+        .statistics-btn {
+            width: 100%;
+        }
+        .default-search-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-label {
+            font-size: 14px;
+            color: #606266;
+            width: 80px;
+        }
+        .control-item .el-select {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -196,26 +302,33 @@
             <!-- 搜索区域 -->
             <div class="search-section">
                 <!-- 关键字搜索 -->
-                <div class="search-block">
+                <div class="search-block keyword-search">
                     <div class="block-title">关键字搜索</div>
                     <div class="search-cards">
                         <div v-for="(level, idx) in searchLevels" :key="idx" class="search-card">
                             <div class="search-content">
-                                <el-input v-model="level.keywords" placeholder="请输入关键字"></el-input>
-                                <el-select v-model="level.column_name" placeholder="搜索列">
-                                    <el-option label="全部列" :value="['all']"></el-option>
-                                    <el-option
-                                        v-for="col in columns"
-                                        :key="col"
-                                        :label="col"
-                                        :value="col">
-                                    </el-option>
-                                </el-select>
-                                <el-radio-group v-model="level.logic">
-                                    <el-radio label="and">与</el-radio>
-                                    <el-radio label="or">或</el-radio>
-                                </el-radio-group>
-                                <el-switch v-model="level.negative_filtering"></el-switch>
+                                <div class="search-inputs">
+                                    <el-input v-model="level.keywords" placeholder="请输入关键字"></el-input>
+                                    <el-select v-model="level.column_name" placeholder="搜索列">
+                                        <el-option label="全部列" :value="['all']"></el-option>
+                                        <el-option
+                                            v-for="col in columns"
+                                            :key="col"
+                                            :label="col"
+                                            :value="col">
+                                        </el-option>
+                                    </el-select>
+                                </div>
+                                <div class="search-controls">
+                                    <el-radio-group v-model="level.logic">
+                                        <el-radio label="and">与</el-radio>
+                                        <el-radio label="or">或</el-radio>
+                                    </el-radio-group>
+                                    <div class="switch-with-label">
+                                        <el-switch v-model="level.negative_filtering"></el-switch>
+                                        <span class="switch-label">反向过滤</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="card-actions">
                                 <span v-if="idx === 0" class="action-btn" @click="addLevel" title="添加搜索条件">
@@ -234,7 +347,7 @@
                 </div>
 
                 <!-- 按内容搜索 -->
-                <div class="search-block">
+                <div class="search-block similarity-search">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <div class="block-title" style="margin-bottom: 0;">按相似度搜索</div>
                         <el-button type="primary" size="small" @click="showSearchColumnsDialog">
@@ -256,23 +369,42 @@
                     </div>
                 </div>
 
-                <!-- AI总结 -->
-                <div class="search-block">
-                    <div class="block-title">AI总结</div>
+                <!-- 数据统计 -->
+                <div class="search-block default-settings">
+                    <div class="block-title">默认搜索设置</div>
                     <div class="content-search">
-                        <el-input
-                            type="textarea"
-                            :rows="6"
-                            placeholder="请输入您的分析需求（例如：总结这些案例的共同特点和解决方案）"
-                            v-model="aiInput">
-                        </el-input>
-                        <el-button 
-                            type="primary" 
-                            class="similarity-btn" 
-                            @click="handleAiAnalysis"
-                            :disabled="!searchResults.length || !aiInput.trim()">
-                            开始分析
-                        </el-button>
+                        <div class="default-search-controls">
+                            <div class="control-item">
+                                <span class="control-label">数据源：</span>
+                                <el-button 
+                                    type="primary" 
+                                    size="small" 
+                                    @click="showDataSourceDialog"
+                                    style="width: 120px">
+                                    [[ dataSourceOptions[defaultSearch.dataSource] ]]
+                                </el-button>
+                            </div>
+                            <div class="control-item">
+                                <span class="control-label">数据类型：</span>
+                                <el-button 
+                                    type="primary" 
+                                    size="small" 
+                                    @click="showDataTypesDialog"
+                                    style="width: 120px">
+                                    [[ defaultSearch.dataTypes.length ? `已选${defaultSearch.dataTypes.length}项` : '请选择' ]]
+                                </el-button>
+                            </div>
+                            <div class="control-item">
+                                <span class="control-label">机型：</span>
+                                <el-button 
+                                    type="primary" 
+                                    size="small" 
+                                    @click="showAircraftTypesDialog"
+                                    style="width: 120px">
+                                    [[ defaultSearch.aircraftTypes.length ? `已选${defaultSearch.aircraftTypes.length}项` : '请选择' ]]
+                                </el-button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -294,36 +426,6 @@
                     </el-button>
                 </div>
 
-                <!-- 列显示控制对话框 -->
-                <el-dialog title="列显示控制" :visible.sync="columnDialogVisible" width="300px">
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <el-checkbox-group v-model="selectedColumns">
-                            <div v-for="col in columns" :key="col" style="margin-bottom: 10px;">
-                                <el-checkbox :label="col">[[ col ]]</el-checkbox>
-                            </div>
-                        </el-checkbox-group>
-                    </div>
-                    <span slot="footer" class="dialog-footer">
-                        <el-button @click="columnDialogVisible = false">取消</el-button>
-                        <el-button type="primary" @click="applyColumnSettings">确定</el-button>
-                    </span>
-                </el-dialog>
-
-                <!-- 搜索范围设置对话框 -->
-                <el-dialog title="搜索范围设置" :visible.sync="searchColumnsDialogVisible" width="300px">
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <el-checkbox-group v-model="contentSearch.selectedColumns">
-                            <div v-for="col in searchableColumns" :key="col" style="margin-bottom: 10px;">
-                                <el-checkbox :label="col">[[ col ]]</el-checkbox>
-                            </div>
-                        </el-checkbox-group>
-                    </div>
-                    <span slot="footer" class="dialog-footer">
-                        <el-button @click="searchColumnsDialogVisible = false">取消</el-button>
-                        <el-button type="primary" @click="applySearchColumnSettings">确定</el-button>
-                    </span>
-                </el-dialog>
-
                 <el-table
                     v-loading="loading"
                     :data="searchResults"
@@ -334,12 +436,109 @@
                         :key="col"
                         :prop="col"
                         :label="col"
-                        :min-width="getColumnWidth(col)"
+                        :min-width="getColumnMinWidth(col)"
                         :width="getColumnFixedWidth(col)"
                         resizable>
                     </el-table-column>
                 </el-table>
             </div>
+
+            <!-- 所有对话框移到这里 -->
+            <!-- 列显示控制对话框 -->
+            <el-dialog title="列显示控制" :visible.sync="columnDialogVisible" width="300px">
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
+                        <el-checkbox 
+                            v-model="selectAll" 
+                            @change="handleSelectAllChange">
+                            全选
+                        </el-checkbox>
+                    </div>
+                    <el-checkbox-group v-model="selectedColumns" @change="handleSelectedChanged">
+                        <div v-for="col in columns" :key="col" style="margin-bottom: 10px;">
+                            <el-checkbox :label="col">[[ col ]]</el-checkbox>
+                        </div>
+                    </el-checkbox-group>
+                </div>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="columnDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applyColumnSettings">确定</el-button>
+                </span>
+            </el-dialog>
+
+            <!-- 搜索范围设置对话框 -->
+            <el-dialog title="搜索范围设置" :visible.sync="searchColumnsDialogVisible" width="300px">
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <el-checkbox-group v-model="contentSearch.selectedColumns">
+                        <div v-for="col in searchableColumns" :key="col" style="margin-bottom: 10px;">
+                            <el-checkbox :label="col">[[ col ]]</el-checkbox>
+                        </div>
+                    </el-checkbox-group>
+                </div>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="searchColumnsDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applySearchColumnSettings">确定</el-button>
+                </span>
+            </el-dialog>
+
+            <!-- 数据源选择对话框 -->
+            <el-dialog title="选择数据源" :visible.sync="dataSourceDialogVisible" width="300px">
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <el-radio-group v-model="defaultSearch.dataSource">
+                        <div v-for="(label, value) in dataSourceOptions" :key="value" style="margin-bottom: 10px;">
+                            <el-radio :label="value">[[ label ]]</el-radio>
+                        </div>
+                    </el-radio-group>
+                </div>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="dataSourceDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applyDataSourceSettings">确定</el-button>
+                </span>
+            </el-dialog>
+
+            <!-- 数据类型选择对话框 -->
+            <el-dialog title="选择数据类型" :visible.sync="dataTypesDialogVisible" width="300px">
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
+                        <el-checkbox 
+                            v-model="selectAllDataTypes" 
+                            @change="handleSelectAllDataTypes">
+                            全选
+                        </el-checkbox>
+                    </div>
+                    <el-checkbox-group v-model="defaultSearch.dataTypes">
+                        <div v-for="type in availableDataTypes" :key="type" style="margin-bottom: 10px;">
+                            <el-checkbox :label="type">[[ type ]]</el-checkbox>
+                        </div>
+                    </el-checkbox-group>
+                </div>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="dataTypesDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applyDataTypesSettings">确定</el-button>
+                </span>
+            </el-dialog>
+
+            <!-- 机型选择对话框 -->
+            <el-dialog title="选择机型" :visible.sync="aircraftTypesDialogVisible" width="300px">
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
+                        <el-checkbox 
+                            v-model="selectAllAircraftTypes" 
+                            @change="handleSelectAllAircraftTypes">
+                            全选
+                        </el-checkbox>
+                    </div>
+                    <el-checkbox-group v-model="defaultSearch.aircraftTypes">
+                        <div v-for="type in aircraftTypeOptions" :key="type" style="margin-bottom: 10px;">
+                            <el-checkbox :label="type">[[ type ]]</el-checkbox>
+                        </div>
+                    </el-checkbox-group>
+                </div>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="aircraftTypesDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applyAircraftTypesSettings">确定</el-button>
+                </span>
+            </el-dialog>
 
             <!-- AI分析结果弹窗 -->
             <el-dialog
@@ -371,11 +570,6 @@
             data() {
                 return {
                     searchLevels: [{
-                        keywords: '21,无',
-                        column_name: '机型',
-                        logic: 'or',
-                        negative_filtering: false
-                    }, {
                         keywords: '',
                         column_name: '问题描述',
                         logic: 'and',
@@ -383,8 +577,9 @@
                     }],
                     contentSearch: {
                         text: '',
-                        selectedColumns: ['问题描述'] // 默认选中"问题描述"
+                        selectedColumns: ['问题描述']
                     },
+                    selectAll: false,  // 添加全选状态
                     aiInput: '',
                     loading: false,
                     searchResults: [],
@@ -397,9 +592,36 @@
                     aiResult: '',  // 存储AI分析结果
                     defaultVisibleColumns: ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],  // 新增：默认显示的列
                     importantColumns: ['问题描述', '答复详情'],
-                    compactColumns: ['ATA', '版本号'],
+                    compactColumns: ['ATA', '版本号', '机型', '数据类型'],  // 添加机型和数据类型到紧凑列
                     searchColumnsDialogVisible: false,  // 控制搜索范围设置对话框显示
-                    searchableColumns: ['标题', '问题描述', '答复详情', '客户期望']
+                    searchableColumns: ['标题', '问题描述', '答复详情', '客户期望'],
+                    statistics: {
+                        xAxis: '',
+                        yAxis: ''
+                    },
+                    statisticsColumns: ['机型', 'ATA', '数据类型', '申请时间'],
+                    defaultSearch: {
+                        dataSource: 'case',  // 默认选择快响信息
+                        dataTypes: [],       // 数据类型多选
+                        aircraftTypes: ['ARJ21']    // 默认选择ARJ21
+                    },
+                    availableDataTypes: [],  // 可选的数据类型列表
+                    dataSourceColumns: {     // 各数据源对应的列
+                        case: [],
+                        engineering: [],
+                        manual: []
+                    },
+                    dataSourceDialogVisible: false,  // 控制数据源选择对话框显示
+                    selectAllDataTypes: false,  // 控制全选数据类型
+                    dataTypesDialogVisible: false,  // 控制数据类型选择对话框显示
+                    aircraftTypesDialogVisible: false,  // 控制机型选择对话框显示
+                    selectAllAircraftTypes: false,  // 控制全选机型
+                    dataSourceOptions: {
+                        'case': '快响信息',
+                        'engineering': '工程文件',
+                        'manual': '手册'
+                    },
+                    aircraftTypeOptions: ['ARJ21', 'C919']
                 }
             },
             computed: {
@@ -408,21 +630,91 @@
                 }
             },
             created() {
-                this.getColumns();
+                this.initializeData();
                 console.log('应用已初始化');
             },
             methods: {
-                getColumnWidth(column) {
-                    if (this.importantColumns.includes(column)) {
-                        return '300';
+                async initializeData() {
+                    // 初始化数据源相关信息
+                    await this.loadDataSourceColumns();
+                    await this.loadDataTypes();
+                },
+                async loadDataSourceColumns() {
+                    try {
+                        const response = await fetch('/api/data_source_columns');
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            // 过滤每个数据源的列，移除"机型"和"数据类型"
+                            const excludeColumns = ['机型', '数据类型'];
+                            for (let source in data.columns) {
+                                data.columns[source] = data.columns[source].filter(col => !excludeColumns.includes(col));
+                            }
+                            this.dataSourceColumns = data.columns;
+                            // 初始化当前数据源的列
+                            this.columns = this.dataSourceColumns[this.defaultSearch.dataSource];
+                            // 初始化列的可见性
+                            this.columns.forEach(col => {
+                                this.$set(this.columnVisible, col, this.defaultVisibleColumns.includes(col));
+                            });
+                        }
+                    } catch (error) {
+                        console.error('获取数据源列名失败:', error);
+                        this.$message.error('获取数据源列名失败：' + error);
+                    }
+                },
+                async loadDataTypes() {
+                    try {
+                        const response = await fetch(`/api/data_types/${this.defaultSearch.dataSource}`);
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            this.availableDataTypes = data.types;
+                            // 默认全选数据类型
+                            this.defaultSearch.dataTypes = [...this.availableDataTypes];
+                        }
+                    } catch (error) {
+                        console.error('获取数据类型失败:', error);
+                        this.$message.error('获取数据类型失败：' + error);
+                    }
+                },
+                async handleDataSourceChange(value) {
+                    try {
+                        // 切换数据源时重新加载数据类型
+                        await this.loadDataTypes();
+                        // 清空之前的数据类型选择
+                        this.defaultSearch.dataTypes = [];
+                        // 更新列显示
+                        await this.loadDataSourceColumns();
+                        // 清空搜索结果
+                        this.searchResults = [];
+                        this.total = 0;
+                    } catch (error) {
+                        console.error('切换数据源失败:', error);
+                        this.$message.error('切换数据源失败：' + error);
+                    }
+                },
+                handleAircraftTypeChange(values) {
+                    // 不再影响关键字搜索的内容
+                    console.log('机型选择已更新:', values);
+                },
+                getColumnMinWidth(column) {
+                    if (column === '相似度') {
+                        return '80';
+                    } else if (column === '申请时间') {
+                        return '90';
+                    } else if (column === '问题描述' || column === '答复详情') {
+                        return '300';  // 最小宽度设置为300
+                    } else if (this.importantColumns.includes(column)) {
+                        return '200';
                     }
                     return '100';
                 },
                 getColumnFixedWidth(column) {
                     if (this.compactColumns.includes(column)) {
                         return '60';
+                    } else if (column === '相似度' || column === '申请时间') {
+                        return this.getColumnMinWidth(column);  // 这些列使用固定宽度
                     }
-                    return null;
+                    return null;  // 其他列使用自适应宽度
                 },
                 getColumns() {
                     console.log('开始获取列名');
@@ -578,50 +870,22 @@
                         this.loading = false;
                     }
                 },
-                handleAiAnalysis() {
+                handleStatistics() {
                     if (!this.searchResults.length) {
                         this.$message.warning('请先执行搜索获取结果');
                         return;
                     }
-                    if (!this.aiInput.trim()) {
-                        this.$message.warning('请输入分析需求');
+                    if (!this.statistics.xAxis || !this.statistics.yAxis) {
+                        this.$message.warning('请选择统计维度');
                         return;
                     }
                     
-                    this.loading = true;
-                    fetch('/api/analyze', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            query: this.aiInput,
-                            results: this.searchResults
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            this.aiResult = data.summary;
-                            this.aiDialogVisible = true;
-                        } else {
-                            this.$message.error(data.message);
-                        }
-                    })
-                    .catch(error => {
-                        this.$message.error('AI分析失败：' + error);
-                    })
-                    .finally(() => {
-                        this.loading = false;
-                    });
+                    // TODO: 这里添加统计逻辑
+                    console.log('开始统计', this.statistics);
+                    this.$message.info('统计功能开发中...');
                 },
                 resetForm() {
                     this.searchLevels = [{
-                        keywords: '21,无',
-                        column_name: '机型',
-                        logic: 'or',
-                        negative_filtering: false
-                    }, {
                         keywords: '',
                         column_name: '问题描述',
                         logic: 'and',
@@ -677,7 +941,61 @@
                 },
                 applySearchColumnSettings() {
                     this.searchColumnsDialogVisible = false;
-                }
+                },
+                handleSelectAllChange(val) {
+                    // 处理全选/取消全选
+                    this.selectedColumns = val ? [...this.columns] : [];
+                },
+                handleSelectedChange(value) {
+                    // 根据选中的列更新全选状态
+                    this.selectAll = value.length === this.columns.length;
+                },
+                showDataSourceDialog() {
+                    this.dataSourceDialogVisible = true;
+                },
+                applyDataSourceSettings() {
+                    const oldDataSource = this.defaultSearch.dataSource;
+                    this.dataSourceDialogVisible = false;
+                    if (oldDataSource !== this.defaultSearch.dataSource) {
+                        this.handleDataSourceChange(this.defaultSearch.dataSource);
+                    }
+                },
+                showDataTypesDialog() {
+                    this.selectAllDataTypes = this.defaultSearch.dataTypes.length === this.availableDataTypes.length;
+                    this.dataTypesDialogVisible = true;
+                },
+                applyDataTypesSettings() {
+                    // 保存之前的选择
+                    const oldTypes = [...this.defaultSearch.dataTypes];
+                    this.dataTypesDialogVisible = false;
+                    
+                    // 如果选择发生变化，可以在这里添加处理逻辑
+                    if (JSON.stringify(oldTypes) !== JSON.stringify(this.defaultSearch.dataTypes)) {
+                        // 可以触发搜索或其他操作
+                        console.log('数据类型选择已更新:', this.defaultSearch.dataTypes);
+                    }
+                },
+                showAircraftTypesDialog() {
+                    this.selectAllAircraftTypes = this.defaultSearch.aircraftTypes.length === this.aircraftTypeOptions.length;
+                    this.aircraftTypesDialogVisible = true;
+                },
+                applyAircraftTypesSettings() {
+                    // 保存之前的选择
+                    const oldTypes = [...this.defaultSearch.aircraftTypes];
+                    this.aircraftTypesDialogVisible = false;
+                    
+                    // 如果选择发生变化，可以在这里添加处理逻辑
+                    if (JSON.stringify(oldTypes) !== JSON.stringify(this.defaultSearch.aircraftTypes)) {
+                        // 可以触发搜索或其他操作
+                        console.log('机型选择已更新:', this.defaultSearch.aircraftTypes);
+                    }
+                },
+                handleSelectAllDataTypes(val) {
+                    this.defaultSearch.dataTypes = val ? [...this.availableDataTypes] : [];
+                },
+                handleSelectAllAircraftTypes(val) {
+                    this.defaultSearch.aircraftTypes = val ? [...this.aircraftTypeOptions] : [];
+                },
             }
         })
     </script>
