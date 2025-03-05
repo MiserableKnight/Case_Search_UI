@@ -310,9 +310,9 @@
                                 <div class="search-inputs">
                                     <el-input v-model="level.keywords" placeholder="请输入关键字"></el-input>
                                     <el-select v-model="level.column_name" placeholder="搜索列">
-                                        <el-option label="全部列" :value="['all']"></el-option>
+                                        <el-option label="全部列" value="all"></el-option>
                                         <el-option
-                                            v-for="col in columns"
+                                            v-for="col in dataSourceColumns[defaultSearch.dataSource]"
                                             :key="col"
                                             :label="col"
                                             :value="col">
@@ -454,7 +454,7 @@
                             全选
                         </el-checkbox>
                     </div>
-                    <el-checkbox-group v-model="selectedColumns" @change="handleSelectedChanged">
+                    <el-checkbox-group v-model="selectedColumns" @change="handleSelectedChange">
                         <div v-for="col in columns" :key="col" style="margin-bottom: 10px;">
                             <el-checkbox :label="col">[[ col ]]</el-checkbox>
                         </div>
@@ -470,7 +470,7 @@
             <el-dialog title="搜索范围设置" :visible.sync="searchColumnsDialogVisible" width="300px">
                 <div style="max-height: 400px; overflow-y: auto;">
                     <el-checkbox-group v-model="contentSearch.selectedColumns">
-                        <div v-for="col in searchableColumns" :key="col" style="margin-bottom: 10px;">
+                        <div v-for="col in searchableColumns[defaultSearch.dataSource]" :key="col" style="margin-bottom: 10px;">
                             <el-checkbox :label="col">[[ col ]]</el-checkbox>
                         </div>
                     </el-checkbox-group>
@@ -486,7 +486,9 @@
                 <div style="max-height: 400px; overflow-y: auto;">
                     <el-radio-group v-model="defaultSearch.dataSource">
                         <div v-for="(label, value) in dataSourceOptions" :key="value" style="margin-bottom: 10px;">
-                            <el-radio :label="value">[[ label ]]</el-radio>
+                            <el-radio :label="value">
+                                [[ label ]]
+                            </el-radio>
                         </div>
                     </el-radio-group>
                 </div>
@@ -571,7 +573,7 @@
                 return {
                     searchLevels: [{
                         keywords: '',
-                        column_name: '问题描述',
+                        column_name: 'all',
                         logic: 'and',
                         negative_filtering: false
                     }],
@@ -590,20 +592,40 @@
                     columnDialogVisible: false,  // 控制对话框显示
                     aiDialogVisible: false,  // 控制AI结果弹窗显示
                     aiResult: '',  // 存储AI分析结果
-                    defaultVisibleColumns: ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],  // 新增：默认显示的列
+                    defaultVisibleColumns: {
+                        'case': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],
+                        'engineering': ['发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性'],  // 添加 MSN有效性
+                        'manual': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人']
+                    },
                     importantColumns: ['问题描述', '答复详情'],
                     compactColumns: ['ATA', '版本号', '机型', '数据类型'],  // 添加机型和数据类型到紧凑列
                     searchColumnsDialogVisible: false,  // 控制搜索范围设置对话框显示
-                    searchableColumns: ['标题', '问题描述', '答复详情', '客户期望'],
+                    searchableColumns: {
+                        'case': ['标题', '问题描述', '答复详情', '客户期望'],
+                        'engineering': ['文件名称', '原因和说明', '原文文本'],  // 添加工程文件的可搜索列
+                        'manual': ['标题', '问题描述', '答复详情', '客户期望']
+                    },
                     statistics: {
                         xAxis: '',
                         yAxis: ''
                     },
                     statisticsColumns: ['机型', 'ATA', '数据类型', '申请时间'],
                     defaultSearch: {
-                        dataSource: 'case',  // 默认选择快响信息
-                        dataTypes: [],       // 数据类型多选
-                        aircraftTypes: ['ARJ21']    // 默认选择ARJ21
+                        dataSource: 'case',
+                        dataTypes: [],
+                        aircraftTypes: ['ARJ21']
+                    },
+                    // 修改默认搜索列配置，使用正确的列名
+                    defaultSearchColumn: {
+                        'case': '问题描述',
+                        'engineering': '原因和说明',  // 改回正确的列名
+                        'manual': '问题描述'
+                    },
+                    // 修改 dataSourceTypes 对象
+                    dataSourceTypes: {
+                        'case': ['服务请求', '252问题', '客户请求'],
+                        'engineering': ['SB', 'SL', 'FTAR', 'OIC', 'FIQS', 'OB', 'FOT'],
+                        'manual': ['AMM', 'IPC', 'SRM']
                     },
                     availableDataTypes: [],  // 可选的数据类型列表
                     dataSourceColumns: {     // 各数据源对应的列
@@ -621,7 +643,8 @@
                         'engineering': '工程文件',
                         'manual': '手册'
                     },
-                    aircraftTypeOptions: ['ARJ21', 'C919']
+                    aircraftTypeOptions: ['ARJ21', 'C919'],
+                    tempDataSource: 'case',  // 添加这个属性用于临时存储旧的数据源
                 }
             },
             computed: {
@@ -631,35 +654,63 @@
             },
             created() {
                 this.initializeData();
-                console.log('应用已初始化');
             },
             methods: {
                 async initializeData() {
-                    // 初始化数据源相关信息
-                    await this.loadDataSourceColumns();
-                    await this.loadDataTypes();
+                    try {
+                        // 初始化数据源相关信息
+                        await this.loadDataSourceColumns();
+                        // 加载初始数据源的数据类型，但不显示提示
+                        await this.loadInitialDataTypes();
+                    } catch (error) {
+                        console.error('初始化失败:', error);
+                        this.$message.error('初始化失败：' + error);
+                    }
                 },
                 async loadDataSourceColumns() {
                     try {
                         const response = await fetch('/api/data_source_columns');
                         const data = await response.json();
                         if (data.status === 'success') {
-                            // 过滤每个数据源的列，移除"机型"和"数据类型"
+                            // 保存完整的列信息
+                            this.dataSourceColumns = data.columns;
+                            
+                            // 对显示列进行过滤
+                            const displayColumns = {};
                             const excludeColumns = ['机型', '数据类型'];
                             for (let source in data.columns) {
-                                data.columns[source] = data.columns[source].filter(col => !excludeColumns.includes(col));
+                                displayColumns[source] = data.columns[source].filter(col => !excludeColumns.includes(col));
                             }
-                            this.dataSourceColumns = data.columns;
-                            // 初始化当前数据源的列
-                            this.columns = this.dataSourceColumns[this.defaultSearch.dataSource];
+                            
+                            // 使用过滤后的列进行显示
+                            this.columns = displayColumns[this.defaultSearch.dataSource];
+                            
                             // 初始化列的可见性
                             this.columns.forEach(col => {
-                                this.$set(this.columnVisible, col, this.defaultVisibleColumns.includes(col));
+                                this.$set(this.columnVisible, col, this.defaultVisibleColumns[this.defaultSearch.dataSource].includes(col));
                             });
                         }
                     } catch (error) {
                         console.error('获取数据源列名失败:', error);
                         this.$message.error('获取数据源列名失败：' + error);
+                    }
+                },
+                async loadInitialDataTypes() {
+                    try {
+                        const response = await fetch(`/api/data_types/${this.defaultSearch.dataSource}`);
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            this.availableDataTypes = data.types;
+                            this.defaultSearch.dataTypes = [...data.types];
+                        } else {
+                            // 如果API失败，使用备用数据
+                            this.availableDataTypes = this.dataSourceTypes[this.defaultSearch.dataSource] || [];
+                            this.defaultSearch.dataTypes = [...this.availableDataTypes];
+                        }
+                    } catch (error) {
+                        console.error('初始化数据类型失败，使用备用数据:', error);
+                        this.availableDataTypes = this.dataSourceTypes[this.defaultSearch.dataSource] || [];
+                        this.defaultSearch.dataTypes = [...this.availableDataTypes];
                     }
                 },
                 async loadDataTypes() {
@@ -678,18 +729,71 @@
                 },
                 async handleDataSourceChange(value) {
                     try {
-                        // 切换数据源时重新加载数据类型
-                        await this.loadDataTypes();
-                        // 清空之前的数据类型选择
-                        this.defaultSearch.dataTypes = [];
-                        // 更新列显示
-                        await this.loadDataSourceColumns();
-                        // 清空搜索结果
-                        this.searchResults = [];
-                        this.total = 0;
+                        console.log('切换数据源到:', value);
+                        
+                        // 更新默认搜索列
+                        const defaultColumn = this.defaultSearchColumn[value];
+                        this.searchLevels.forEach(level => {
+                            level.column_name = defaultColumn;
+                        });
+
+                        // 更新相似度搜索的默认选中列
+                        if (value === 'engineering') {
+                            this.contentSearch.selectedColumns = ['原因和说明'];  // 工程文件默认选中"原因和说明"
+                        } else {
+                            this.contentSearch.selectedColumns = ['问题描述'];    // 其他数据源默认选中"问题描述"
+                        }
+
+                        // 获取新数据源的数据类型
+                        try {
+                            const response = await fetch(`/api/data_types/${value}`);
+                            const data = await response.json();
+                            if (data.status === 'success') {
+                                console.log('获取到的数据类型:', data.types);
+                                this.availableDataTypes = data.types;
+                                this.defaultSearch.dataTypes = [...data.types];
+                                
+                                // 更新列显示
+                                await this.loadDataSourceColumns();
+                                
+                                // 清空搜索结果
+                                this.searchResults = [];
+                                this.total = 0;
+
+                                // 使用 Element UI 的 Notification 组件显示更醒目的提示
+                                this.$notify({
+                                    title: '成功',
+                                    message: `数据源已切换至${this.dataSourceOptions[value]}`,
+                                    type: 'success',
+                                    duration: 2000,
+                                    position: 'top-right'
+                                });
+                            } else {
+                                throw new Error('获取数据类型失败');
+                            }
+                        } catch (error) {
+                            console.error('获取数据类型失败，使用备用数据:', error);
+                            this.availableDataTypes = this.dataSourceTypes[value] || [];
+                            this.defaultSearch.dataTypes = [...this.availableDataTypes];
+                            
+                            // 显示警告提示
+                            this.$notify({
+                                title: '警告',
+                                message: '使用备用数据类型配置',
+                                type: 'warning',
+                                duration: 3000,
+                                position: 'top-right'
+                            });
+                        }
                     } catch (error) {
                         console.error('切换数据源失败:', error);
-                        this.$message.error('切换数据源失败：' + error);
+                        // 显示错误提示
+                        this.$notify.error({
+                            title: '错误',
+                            message: '切换数据源失败：' + error.message,
+                            duration: 4000,
+                            position: 'top-right'
+                        });
                     }
                 },
                 handleAircraftTypeChange(values) {
@@ -697,24 +801,54 @@
                     console.log('机型选择已更新:', values);
                 },
                 getColumnMinWidth(column) {
+                    // 工程文件的特殊处理
+                    if (this.defaultSearch.dataSource === 'engineering') {
+                        if (column === '原因和说明' || column === '原文文本') {
+                            return '300';  // 这两列保持较宽
+                        } else if (column === '相似度') {
+                            return '80';  // 相似度列保持不变
+                        } else if (column === 'MSN有效性') {
+                            return '90';  // MSN有效性固定宽度，确保标题不换行
+                        } else if (column === '文件名称') {
+                            return '90';  // 文件名称至少和MSN有效性一样宽
+                        } else if (column === '发布时间') {
+                            return '90';  // 发布时间固定宽度，确保日期不换行
+                        } else {
+                            return '60';  // 其他列都设置最小宽度
+                        }
+                    }
+                    
+                    // 其他数据源的原有逻辑保持不变
                     if (column === '相似度') {
                         return '80';
                     } else if (column === '申请时间') {
                         return '90';
                     } else if (column === '问题描述' || column === '答复详情') {
-                        return '300';  // 最小宽度设置为300
+                        return '300';
                     } else if (this.importantColumns.includes(column)) {
                         return '200';
                     }
                     return '100';
                 },
                 getColumnFixedWidth(column) {
+                    // 工程文件的特殊处理
+                    if (this.defaultSearch.dataSource === 'engineering') {
+                        if (column === '原因和说明' || column === '原文文本') {
+                            return null;  // 这两列使用自适应宽度
+                        } else if (column === 'MSN有效性' || column === '发布时间' || column === '文件名称') {
+                            return this.getColumnMinWidth(column);  // 这些列使用固定宽度
+                        } else {
+                            return '60';  // 其他列都使用最小固定宽度
+                        }
+                    }
+                    
+                    // 其他数据源的原有逻辑保持不变
                     if (this.compactColumns.includes(column)) {
                         return '60';
                     } else if (column === '相似度' || column === '申请时间') {
-                        return this.getColumnMinWidth(column);  // 这些列使用固定宽度
+                        return this.getColumnMinWidth(column);
                     }
-                    return null;  // 其他列使用自适应宽度
+                    return null;
                 },
                 getColumns() {
                     console.log('开始获取列名');
@@ -726,7 +860,7 @@
                                 this.columns = data.columns;
                                 // 初始化列的可见性
                                 this.columns.forEach(col => {
-                                    this.$set(this.columnVisible, col, this.defaultVisibleColumns.includes(col));
+                                    this.$set(this.columnVisible, col, this.defaultVisibleColumns[this.defaultSearch.dataSource].includes(col));
                                 });
                             }
                         })
@@ -750,7 +884,7 @@
                 addLevel() {
                     this.searchLevels.push({
                         keywords: '',
-                        column_name: ['all'],
+                        column_name: 'all',
                         logic: 'and',
                         negative_filtering: false
                     });
@@ -765,9 +899,14 @@
                     }
                     this.loading = true;
                     
+                    // 构建搜索请求数据
                     const searchData = {
-                        search_levels: this.searchLevels
+                        search_levels: this.searchLevels,
+                        data_source: this.defaultSearch.dataSource,
+                        data_types: this.defaultSearch.dataTypes,
+                        aircraft_types: this.defaultSearch.aircraftTypes
                     };
+                    
                     console.log('发送的搜索数据:', searchData);
                     
                     fetch('/api/search', {
@@ -777,23 +916,43 @@
                         },
                         body: JSON.stringify(searchData)
                     })
-                    .then(response => {
-                        console.log('收到响应:', response);
-                        return response.json();
-                    })
+                    .then(response => response.json())
                     .then(data => {
                         console.log('搜索结果:', data);
                         if (data.status === 'success') {
                             this.searchResults = data.data;
                             this.total = data.total;
-                            this.$message.success(`找到 ${this.total} 条匹配记录`);
+                            if (this.total > 0) {
+                                this.$message.success(`找到 ${this.total} 条匹配记录`);
+                            } else {
+                                this.$notify({
+                                    title: '提示',
+                                    message: '未找到匹配记录',
+                                    type: 'warning'
+                                });
+                            }
                         } else {
-                            this.$message.error(data.message);
+                            // 显示错误提示
+                            this.$notify.error({
+                                title: '搜索失败',
+                                message: data.message,
+                                duration: 4000
+                            });
+                            // 清空搜索结果
+                            this.searchResults = [];
+                            this.total = 0;
                         }
                     })
                     .catch(error => {
                         console.error('搜索错误:', error);
-                        this.$message.error('搜索失败：' + error);
+                        this.$notify.error({
+                            title: '搜索失败',
+                            message: error.message || '搜索过程中发生错误',
+                            duration: 4000
+                        });
+                        // 清空搜索结果
+                        this.searchResults = [];
+                        this.total = 0;
                     })
                     .finally(() => {
                         this.loading = false;
@@ -887,7 +1046,7 @@
                 resetForm() {
                     this.searchLevels = [{
                         keywords: '',
-                        column_name: '问题描述',
+                        column_name: 'all',
                         logic: 'and',
                         negative_filtering: false
                     }];
@@ -947,17 +1106,76 @@
                     this.selectedColumns = val ? [...this.columns] : [];
                 },
                 handleSelectedChange(value) {
-                    // 根据选中的列更新全选状态
+                    // 处理选中列变化
                     this.selectAll = value.length === this.columns.length;
                 },
                 showDataSourceDialog() {
+                    // 记录打开对话框时的数据源，用于后续比较
+                    this.tempDataSource = this.defaultSearch.dataSource;
                     this.dataSourceDialogVisible = true;
                 },
-                applyDataSourceSettings() {
-                    const oldDataSource = this.defaultSearch.dataSource;
+                async applyDataSourceSettings() {
+                    const oldDataSource = this.tempDataSource;  // 使用临时存储的旧数据源
+                    const newDataSource = this.defaultSearch.dataSource;
                     this.dataSourceDialogVisible = false;
-                    if (oldDataSource !== this.defaultSearch.dataSource) {
-                        this.handleDataSourceChange(this.defaultSearch.dataSource);
+                    
+                    if (oldDataSource !== newDataSource) {
+                        try {
+                            // 1. 先更新数据源相关数据
+                            await this.updateDataSource(newDataSource);
+                            
+                            // 2. 如果更新成功，显示切换成功提示
+                            this.$notify({
+                                title: '成功',
+                                message: `数据源已切换至${this.dataSourceOptions[newDataSource]}`,
+                                type: 'success',
+                                duration: 2000,
+                                position: 'top-right'
+                            });
+                        } catch (error) {
+                            // 如果更新失败，回退到原来的数据源
+                            this.defaultSearch.dataSource = oldDataSource;
+                            this.$notify.error({
+                                title: '错误',
+                                message: '切换数据源失败，已恢复原数据源',
+                                duration: 3000,
+                                position: 'top-right'
+                            });
+                        }
+                    }
+                },
+                async updateDataSource(value) {
+                    try {
+                        // 1. 更新默认搜索列
+                        const defaultColumn = this.defaultSearchColumn[value];
+                        this.searchLevels.forEach(level => {
+                            level.column_name = defaultColumn;
+                        });
+
+                        // 2. 更新相似度搜索的默认选中列
+                        if (value === 'engineering') {
+                            this.contentSearch.selectedColumns = ['原因和说明'];  // 工程文件默认选中"原因和说明"
+                        } else {
+                            this.contentSearch.selectedColumns = ['问题描述'];    // 其他数据源默认选中"问题描述"
+                        }
+
+                        // 3. 获取新数据源的数据类型
+                        const response = await fetch(`/api/data_types/${value}`);
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            this.availableDataTypes = data.types;
+                            this.defaultSearch.dataTypes = [...data.types];
+                        }
+
+                        // 4. 更新列显示
+                        await this.loadDataSourceColumns();
+                        
+                        // 5. 清空搜索结果
+                        this.searchResults = [];
+                        this.total = 0;
+                    } catch (error) {
+                        console.error('更新数据源失败:', error);
+                        throw error;
                     }
                 },
                 showDataTypesDialog() {
