@@ -10,6 +10,9 @@ from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import jieba
+import re
+import json
+from app.utils.word_manager import SensitiveWordManager
 
 # 加载环境变量
 load_dotenv()
@@ -27,6 +30,8 @@ DATA_SOURCES = {
 
 # 数据缓存
 data_frames = {}
+
+word_manager = SensitiveWordManager()
 
 def load_data_source(source):
     """加载指定数据源的数据"""
@@ -375,4 +380,150 @@ def calculate_similarity(df, query_text, columns):
         
     except Exception as e:
         print(f"计算相似度时出错: {str(e)}")
-        raise e 
+        raise e
+
+@app.route('/api/anonymize', methods=['POST'])
+def anonymize_results():
+    """对搜索结果进行脱敏处理"""
+    try:
+        data = request.get_json()
+        results = data.get('results', [])
+        fields = data.get('fields', ["问题描述", "答复详情"])  # 获取需要脱敏的字段
+        
+        # 获取所有敏感词
+        all_words = word_manager.get_all_words()
+        sensitive_words = []
+        for category_words in all_words.values():
+            sensitive_words.extend([item['word'] for item in category_words])
+        
+        print(f"准备进行脱敏的敏感词: {sensitive_words}")  # 调试信息
+        
+        # 转换为DataFrame进行处理
+        df = pd.DataFrame(results)
+        
+        # 对指定列进行脱敏
+        for col in fields:
+            if col in df.columns:
+                df[col] = df[col].apply(lambda x: anonymize_text(x, sensitive_words))
+        
+        return jsonify({
+            'status': 'success',
+            'data': df.to_dict('records')
+        })
+    except Exception as e:
+        print(f"脱敏处理出错: {str(e)}")  # 添加错误日志
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+def anonymize_text(text, sensitive_words):
+    """文本脱敏处理"""
+    if not isinstance(text, str):
+        return text
+    
+    # 替换特定模式
+    patterns = [
+        r'\s*ARJ21\s*',
+        r'\bCF34-10A\b',
+        r'(909|ARJ)/B-?[A-Z0-9]{4}',# 修改为更精确的注册号格式
+        r'B-?33[A-Z0-9]{2}',
+        r'B-?10[A-Z0-9]{2}',
+        r'B-?60[A-Z0-9]{2}',
+        r'B-?62[A-Z0-9]{2}',
+        r'B-?65[A-Z0-9]{2}',
+        r'B-?91[A-Z0-9]{2}',
+        # r'10\d{3}',
+        r'执行.{1,15}?航班',
+        r'[A-Z]{2}\d{4}'
+    ]
+    
+    for pattern in patterns:
+        text = re.sub(pattern, "", text)
+
+    # 按长度降序排序敏感词
+    sensitive_words.sort(key=len, reverse=True)
+    
+    # 替换敏感词
+    for word in sensitive_words:
+        if word and word.strip():  # 确保敏感词不为空
+            text = text.replace(word, "")
+    
+    return text
+
+@app.route('/api/sensitive_words', methods=['GET'])
+def get_sensitive_words():
+    try:
+        words = word_manager.get_all_words()
+        return jsonify({
+            'status': 'success',
+            'words': words
+        })
+    except Exception as e:
+        print(f"获取敏感词失败: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/sensitive_words', methods=['POST'])
+def add_sensitive_word():
+    try:
+        data = request.get_json()
+        word = data.get('word')
+        category = data.get('category')
+        
+        if not word or not category:
+            return jsonify({
+                'status': 'error',
+                'message': '缺少必要参数'
+            }), 400
+        
+        success, message = word_manager.add_word(word, category)
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': message
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 400
+    except Exception as e:
+        print(f"添加敏感词失败: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/sensitive_words', methods=['DELETE'])
+def delete_sensitive_word():
+    try:
+        data = request.get_json()
+        word = data.get('word')
+        category = data.get('category')
+        
+        if not word or not category:
+            return jsonify({
+                'status': 'error',
+                'message': '缺少必要参数'
+            }), 400
+        
+        success, message = word_manager.remove_word(word, category)
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': message
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            }), 400
+    except Exception as e:
+        print(f"删除敏感词失败: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500

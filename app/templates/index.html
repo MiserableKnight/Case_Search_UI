@@ -404,6 +404,16 @@
                                     [[ defaultSearch.aircraftTypes.length ? `已选${defaultSearch.aircraftTypes.length}项` : '请选择' ]]
                                 </el-button>
                             </div>
+                            <div class="control-item">
+                                <span class="control-label">敏感词：</span>
+                                <el-button 
+                                    type="primary" 
+                                    size="small" 
+                                    @click="showSensitiveWordDialog"
+                                    style="width: 120px">
+                                    管理敏感词<i class="el-icon-edit el-icon--right"></i>
+                                </el-button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -421,7 +431,10 @@
                     <el-button type="primary" size="small" @click="showColumnDialog">
                         列显示控制<i class="el-icon-setting el-icon--right"></i>
                     </el-button>
-                    <el-button type="success" size="small" @click="exportToCSV" :disabled="!searchResults.length">
+                    <el-button type="warning" size="small" @click="anonymizeResults">
+                        脱敏显示
+                    </el-button>
+                    <el-button type="success" size="small" @click="exportToCsv" :disabled="!searchResults.length">
                         导出CSV
                     </el-button>
                 </div>
@@ -556,6 +569,64 @@
                     <el-button type="primary" @click="aiDialogVisible = false">关闭</el-button>
                 </span>
             </el-dialog>
+
+            <!-- 敏感词管理对话框 -->
+            <el-dialog title="敏感词管理" 
+                       :visible.sync="sensitiveWordDialogVisible" 
+                       width="525px"
+                       style="margin-top: 5vh">
+                <div class="sensitive-word-manager">
+                    <!-- 添加新词区域 -->
+                    <div class="add-word-section">
+                        <el-form :inline="true">
+                            <el-form-item label="新增敏感词">
+                                <el-input v-model="newWord" placeholder="输入敏感词" style="width: 160px"></el-input>
+                            </el-form-item>
+                            <el-form-item label="类别">
+                                <el-select v-model="selectedCategory" style="width: 160px">
+                                    <el-option v-for="cat in categories"
+                                             :key="cat"
+                                             :label="categoryLabels[cat]"
+                                             :value="cat">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="addSensitiveWord">添加</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                    
+                    <!-- 敏感词列表 -->
+                    <div class="sensitive-word-list">
+                        <el-tabs v-model="activeCategory">
+                            <el-tab-pane v-for="cat in categories"
+                                        :key="cat"
+                                        :label="categoryLabels[cat]"
+                                        :name="cat">
+                                <el-table :data="sensitiveWords[cat]" 
+                                         size="mini"
+                                        max-height="200px"
+                                        :cell-style="{ padding: '0px' }"
+                                        :header-cell-style="{ padding: '2px' }"
+                                        style="margin-bottom: 10px; font-size: 12px;">
+                                    <el-table-column prop="word" label="敏感词"></el-table-column>
+                                    <el-table-column width="60" align="center">
+                                        <template slot-scope="scope">
+                                            <el-button type="danger" 
+                                                     size="mini" 
+                                                     style="padding: 3px 6px; font-size: 11px;"
+                                                     @click="removeSensitiveWord(scope.row.word, cat)">
+                                                删除
+                                            </el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </div>
+                </div>
+            </el-dialog>
         </div>
     </div>
 
@@ -573,7 +644,7 @@
                 return {
                     searchLevels: [{
                         keywords: '',
-                        column_name: 'all',
+                        column_name: '问题描述',
                         logic: 'and',
                         negative_filtering: false
                     }],
@@ -581,28 +652,28 @@
                         text: '',
                         selectedColumns: ['问题描述']
                     },
-                    selectAll: false,  // 添加全选状态
+                    selectAll: false,
                     aiInput: '',
                     loading: false,
                     searchResults: [],
                     total: 0,
                     columns: [],
                     columnVisible: {},
-                    selectedColumns: [],  // 临时存储选中的列
-                    columnDialogVisible: false,  // 控制对话框显示
-                    aiDialogVisible: false,  // 控制AI结果弹窗显示
-                    aiResult: '',  // 存储AI分析结果
+                    selectedColumns: [],
+                    columnDialogVisible: false,
+                    aiDialogVisible: false,
+                    aiResult: '',
                     defaultVisibleColumns: {
                         'case': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],
-                        'engineering': ['发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性'],  // 添加 MSN有效性
+                        'engineering': ['发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性'],
                         'manual': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人']
                     },
                     importantColumns: ['问题描述', '答复详情'],
-                    compactColumns: ['ATA', '版本号', '机型', '数据类型'],  // 添加机型和数据类型到紧凑列
-                    searchColumnsDialogVisible: false,  // 控制搜索范围设置对话框显示
+                    compactColumns: ['ATA', '版本号', '机型', '数据类型'],
+                    searchColumnsDialogVisible: false,
                     searchableColumns: {
                         'case': ['标题', '问题描述', '答复详情', '客户期望'],
-                        'engineering': ['文件名称', '原因和说明', '原文文本'],  // 添加工程文件的可搜索列
+                        'engineering': ['文件名称', '原因和说明', '原文文本'],
                         'manual': ['标题', '问题描述', '答复详情', '客户期望']
                     },
                     statistics: {
@@ -615,36 +686,51 @@
                         dataTypes: [],
                         aircraftTypes: ['ARJ21']
                     },
-                    // 修改默认搜索列配置，使用正确的列名
                     defaultSearchColumn: {
                         'case': '问题描述',
-                        'engineering': '原因和说明',  // 改回正确的列名
+                        'engineering': '原因和说明',
                         'manual': '问题描述'
                     },
-                    // 修改 dataSourceTypes 对象
                     dataSourceTypes: {
                         'case': ['服务请求', '252问题', '客户请求'],
                         'engineering': ['SB', 'SL', 'FTAR', 'OIC', 'FIQS', 'OB', 'FOT'],
                         'manual': ['AMM', 'IPC', 'SRM']
                     },
-                    availableDataTypes: [],  // 可选的数据类型列表
-                    dataSourceColumns: {     // 各数据源对应的列
+                    availableDataTypes: [],
+                    dataSourceColumns: {
                         case: [],
                         engineering: [],
                         manual: []
                     },
-                    dataSourceDialogVisible: false,  // 控制数据源选择对话框显示
-                    selectAllDataTypes: false,  // 控制全选数据类型
-                    dataTypesDialogVisible: false,  // 控制数据类型选择对话框显示
-                    aircraftTypesDialogVisible: false,  // 控制机型选择对话框显示
-                    selectAllAircraftTypes: false,  // 控制全选机型
+                    dataSourceDialogVisible: false,
+                    selectAllDataTypes: false,
+                    dataTypesDialogVisible: false,
+                    aircraftTypesDialogVisible: false,
+                    selectAllAircraftTypes: false,
                     dataSourceOptions: {
                         'case': '快响信息',
                         'engineering': '工程文件',
                         'manual': '手册'
                     },
                     aircraftTypeOptions: ['ARJ21', 'C919'],
-                    tempDataSource: 'case',  // 添加这个属性用于临时存储旧的数据源
+                    tempDataSource: 'case',
+                    sensitiveWordDialogVisible: false,
+                    newWord: '',
+                    selectedCategory: 'organizations',
+                    categories: ['organizations', 'aircraft', 'locations', 'other'],
+                    categoryLabels: {
+                        organizations: '组织机构',
+                        aircraft: '设备型号',
+                        locations: '地点',
+                        other: '其他'
+                    },
+                    activeCategory: 'organizations',
+                    sensitiveWords: {
+                        organizations: [],
+                        aircraft: [],
+                        locations: [],
+                        other: []
+                    },
                 }
             },
             computed: {
@@ -660,7 +746,15 @@
                     try {
                         // 初始化数据源相关信息
                         await this.loadDataSourceColumns();
-                        // 加载初始数据源的数据类型，但不显示提示
+                        
+                        // 确保初始搜索列为"问题描述"
+                        if (this.defaultSearch.dataSource === 'case') {
+                            this.searchLevels.forEach(level => {
+                                level.column_name = '问题描述';
+                            });
+                        }
+                        
+                        // 加载初始数据源的数据类型
                         await this.loadInitialDataTypes();
                     } catch (error) {
                         console.error('初始化失败:', error);
@@ -841,14 +935,6 @@
                             return '60';  // 其他列都使用最小固定宽度
                         }
                     }
-                    
-                    // 其他数据源的原有逻辑保持不变
-                    if (this.compactColumns.includes(column)) {
-                        return '60';
-                    } else if (column === '相似度' || column === '申请时间') {
-                        return this.getColumnMinWidth(column);
-                    }
-                    return null;
                 },
                 getColumns() {
                     console.log('开始获取列名');
@@ -898,6 +984,13 @@
                         return;
                     }
                     this.loading = true;
+                    
+                    // 移除相似度列
+                    const similarityIndex = this.columns.indexOf('相似度');
+                    if (similarityIndex > -1) {
+                        this.columns.splice(similarityIndex, 1);
+                        delete this.columnVisible['相似度'];
+                    }
                     
                     // 构建搜索请求数据
                     const searchData = {
@@ -1064,7 +1157,7 @@
                         delete this.columnVisible['相似度'];
                     }
                 },
-                exportToCSV() {
+                exportToCsv() {
                     const visibleCols = this.visibleColumns;
                     
                     let csvContent = '\uFEFF';
@@ -1147,19 +1240,26 @@
                 async updateDataSource(value) {
                     try {
                         // 1. 更新默认搜索列
-                        const defaultColumn = this.defaultSearchColumn[value];
+                        const defaultColumn = value === 'case' ? '问题描述' : this.defaultSearchColumn[value];
                         this.searchLevels.forEach(level => {
                             level.column_name = defaultColumn;
                         });
 
                         // 2. 更新相似度搜索的默认选中列
                         if (value === 'engineering') {
-                            this.contentSearch.selectedColumns = ['原因和说明'];  // 工程文件默认选中"原因和说明"
+                            this.contentSearch.selectedColumns = ['原因和说明'];
                         } else {
-                            this.contentSearch.selectedColumns = ['问题描述'];    // 其他数据源默认选中"问题描述"
+                            this.contentSearch.selectedColumns = ['问题描述'];
                         }
 
-                        // 3. 获取新数据源的数据类型
+                        // 3. 移除相似度列
+                        const similarityIndex = this.columns.indexOf('相似度');
+                        if (similarityIndex > -1) {
+                            this.columns.splice(similarityIndex, 1);
+                            delete this.columnVisible['相似度'];
+                        }
+
+                        // 4. 获取新数据源的数据类型
                         const response = await fetch(`/api/data_types/${value}`);
                         const data = await response.json();
                         if (data.status === 'success') {
@@ -1167,10 +1267,10 @@
                             this.defaultSearch.dataTypes = [...data.types];
                         }
 
-                        // 4. 更新列显示
+                        // 5. 更新列显示
                         await this.loadDataSourceColumns();
                         
-                        // 5. 清空搜索结果
+                        // 6. 清空搜索结果
                         this.searchResults = [];
                         this.total = 0;
                     } catch (error) {
@@ -1214,6 +1314,155 @@
                 handleSelectAllAircraftTypes(val) {
                     this.defaultSearch.aircraftTypes = val ? [...this.aircraftTypeOptions] : [];
                 },
+                async anonymizeResults() {
+                    try {
+                        if (!this.searchResults.length) {
+                            this.$message.warning('没有可脱敏的搜索结果');
+                            return;
+                        }
+                        
+                        // 根据数据源确定需要脱敏的字段
+                        const fieldsToAnonymize = this.defaultSearch.dataSource === 'engineering' 
+                            ? ['原因和说明', '原文文本']
+                            : ['问题描述', '答复详情'];
+                        
+                        const response = await fetch('/api/anonymize', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                results: this.searchResults,
+                                fields: fieldsToAnonymize,  // 传递需要脱敏的字段
+                                dataSource: this.defaultSearch.dataSource  // 传递当前数据源
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            this.searchResults = data.data;
+                            this.$message.success('脱敏处理完成');
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    } catch (error) {
+                        this.$message.error('脱敏处理失败：' + error.message);
+                    }
+                },
+                showSensitiveWordDialog() {
+                    this.loadSensitiveWords();
+                    this.sensitiveWordDialogVisible = true;
+                },
+                loadSensitiveWords() {
+                    console.log('开始加载敏感词列表');
+                    fetch('/api/sensitive_words')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            console.log('API响应状态:', response.status); // 添加状态码日志
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('API返回的完整数据:', data); // 添加完整响应数据日志
+                            if (data.status === 'success') {
+                                this.sensitiveWords = data.words;
+                                console.log('成功加载敏感词列表:', this.sensitiveWords);
+                                
+                                // 检查数据结构
+                                if (Object.keys(this.sensitiveWords).length === 0) {
+                                    console.warn('警告：敏感词列表为空对象');
+                                }
+                            } else {
+                                throw new Error(data.message || '加载失败');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('加载敏感词失败:', error);
+                            this.$message.error('加载敏感词失败：' + error.message);
+                        });
+                },
+                addSensitiveWord() {
+                    if (!this.newWord.trim()) {
+                        this.$message.warning('请输入敏感词');
+                        return;
+                    }
+                    
+                    const word = this.newWord.trim();
+                    
+                    // 检查所有类别中是否已存在该敏感词
+                    const isWordExists = Object.values(this.sensitiveWords).some(
+                        categoryWords => categoryWords.some(item => item.word === word)
+                    );
+                    
+                    if (isWordExists) {
+                        this.$message.error('该敏感词已存在于词库中');
+                        return;
+                    }
+                    
+                    console.log('正在添加敏感词:', {
+                        word: word,
+                        category: this.selectedCategory
+                    });
+                    
+                    fetch('/api/sensitive_words', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            word: word,
+                            category: this.selectedCategory
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            this.$message.success('敏感词添加成功');
+                            this.newWord = '';  // 清空输入
+                            this.loadSensitiveWords();  // 重新加载敏感词列表
+                        } else {
+                            throw new Error(data.message || '添加失败');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('添加敏感词失败:', error);
+                        this.$message.error('添加敏感词失败：' + error.message);
+                    });
+                },
+                removeSensitiveWord(word, category) {
+                    this.$confirm('确定要删除这个敏感词吗？', '提示', {
+                        type: 'warning'
+                    }).then(() => {
+                        fetch('/api/sensitive_words', {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                word: word,
+                                category: category
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                this.$message.success('删除成功');
+                                this.loadSensitiveWords();
+                            } else {
+                                throw new Error(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error('删除失败：' + error.message);
+                        });
+                    }).catch(() => {});
+                }
             }
         })
     </script>
