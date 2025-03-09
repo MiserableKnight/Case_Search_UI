@@ -42,9 +42,19 @@ def load_data_source(source):
             if os.path.exists(data_path):
                 print(f"加载数据源 {source} 从: {data_path}")
                 data_frames[source] = pd.read_parquet(data_path)
-                # 添加调试信息，打印列名
-                if source == 'faults':
-                    print(f"故障报告数据源的实际列名: {data_frames[source].columns.tolist()}")
+                
+                # 添加机型检查
+                if '机型' in data_frames[source].columns:
+                    unique_types = data_frames[source]['机型'].unique()
+                    print(f"数据源 {source} 中的所有机型类别: {unique_types.tolist()}")
+                    
+                    # 检查是否存在未知机型
+                    valid_types = {'ARJ21', 'C919', '无', None, '', np.nan}
+                    unknown_types = set(unique_types) - valid_types
+                    if unknown_types:
+                        print(f"警告：发现未知机型: {unknown_types}")
+                        raise ValueError(f"数据源 {source} 中存在未知机型: {unknown_types}")
+                
                 print(f"数据源 {source} 加载成功，形状: {data_frames[source].shape}")
             else:
                 print(f"数据文件不存在: {data_path}")
@@ -69,25 +79,16 @@ def search_column(df, keywords, column_name, logic='and', negative_filtering=Fal
     if column_name == 'all' or column_name == ['all']:
         columns_to_search = df.columns.tolist()
     elif isinstance(column_name, str):
-        # 检查列是否存在
-        if column_name not in df.columns:
-            raise ValueError(f"列 '{column_name}' 不存在于当前数据源中")
         columns_to_search = [column_name]
     elif isinstance(column_name, list):
-        # 过滤掉不存在的列
         columns_to_search = [col for col in column_name if col in df.columns]
-        if not columns_to_search:
-            raise ValueError("所选列在当前数据源中均不存在")
-    else:
-        raise TypeError("column_name格式不正确")
     
-    # 创建一个空的布尔序列，用于存储最终的过滤结果
+    # 使用相同的搜索逻辑
     if logic == 'and':
         final_mask = pd.Series(True, index=df.index)
         for keyword in keywords:
             keyword_mask = pd.Series(False, index=df.index)
             for col in columns_to_search:
-                # 确保列值为字符串并进行小写转换
                 col_values = df[col].fillna('').astype(str).str.lower()
                 keyword_mask |= col_values.str.contains(keyword, na=False, regex=False)
             final_mask &= keyword_mask
@@ -95,7 +96,6 @@ def search_column(df, keywords, column_name, logic='and', negative_filtering=Fal
         final_mask = pd.Series(False, index=df.index)
         for keyword in keywords:
             for col in columns_to_search:
-                # 确保列值为字符串并进行小写转换
                 col_values = df[col].fillna('').astype(str).str.lower()
                 final_mask |= col_values.str.contains(keyword, na=False, regex=False)
     
@@ -174,7 +174,7 @@ def search():
     """搜索数据"""
     try:
         data = request.get_json()
-        data_source = data.get('data_source', 'case')
+        data_source = data.get('data_source', 'case')  # 获取数据源，默认为'case'
         search_levels = data.get('search_levels', [])
         data_types = data.get('data_types', [])
         aircraft_types = data.get('aircraft_types', [])
@@ -198,7 +198,7 @@ def search():
         if aircraft_types:
             result_df = result_df[result_df['机型'].isin(aircraft_types)]
         
-        # 处理每个搜索层级
+        # 处理每个搜索层级，使用相同的search_column函数
         for level in search_levels:
             keywords = level.get('keywords', '').strip()
             column_name = level.get('column_name')
@@ -412,7 +412,7 @@ def anonymize_results():
         if data_source == 'engineering':
             fields = ["原因和说明", "原文文本", "文件名称"]
         elif data_source == 'faults':
-            fields = ["问题描述", "排故措施", "运营人", "飞机序列号", "机号"]  # 更新故障报告的脱敏字段
+            fields = ["问题描述", "排故措施"]  # 故障报告只脱敏这两列
         else:
             fields = ["问题描述", "答复详情"]
         

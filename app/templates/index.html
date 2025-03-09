@@ -315,6 +315,10 @@
             background-color: #f0f0f0;
             border-radius: 12px;
         }
+        .el-table .narrow-column {
+            width: auto !important;  // 移除固定宽度限制
+            min-width: 50px !important;  // 为"机型"设置最小宽度
+        }
     </style>
 </head>
 <body>
@@ -481,6 +485,7 @@
                         :label="col"
                         :min-width="getColumnMinWidth(col)"
                         :width="getColumnFixedWidth(col)"
+                        :class="{'narrow-column': col === '机型' || col === '数据类型'}"
                         resizable>
                     </el-table-column>
                 </el-table>
@@ -716,7 +721,7 @@
                     defaultSearch: {
                         dataSource: 'case',
                         dataTypes: [],
-                        aircraftTypes: ['ARJ21']
+                        aircraftTypes: ['ARJ21', '无']
                     },
                     defaultSearchColumn: {
                         'case': '问题描述',
@@ -748,7 +753,7 @@
                         'manual': '手册',
                         'faults': '故障报告'
                     },
-                    aircraftTypeOptions: ['ARJ21', 'C919'],
+                    aircraftTypeOptions: ['ARJ21', 'C919', '无'],
                     tempDataSource: 'case',
                     sensitiveWordDialogVisible: false,
                     newWord: '',
@@ -817,15 +822,8 @@
                             // 保存完整的列信息
                             this.dataSourceColumns = data.columns;
                             
-                            // 对显示列进行过滤
-                            const displayColumns = {};
-                            const excludeColumns = ['机型', '数据类型'];
-                            for (let source in data.columns) {
-                                displayColumns[source] = data.columns[source].filter(col => !excludeColumns.includes(col));
-                            }
-                            
-                            // 使用过滤后的列进行显示
-                            this.columns = displayColumns[this.defaultSearch.dataSource];
+                            // 不再过滤掉"机型"和"数据类型"列
+                            this.columns = data.columns[this.defaultSearch.dataSource];
                             
                             // 初始化列的可见性
                             this.columns.forEach(col => {
@@ -943,18 +941,20 @@
                     console.log('机型选择已更新:', values);
                 },
                 getColumnMinWidth(column) {
-                    // 故障报告的特殊处理
-                    if (this.defaultSearch.dataSource === 'faults') {
-                        if (column === '问题描述' || column === '排故措施') {
-                            return '300';  // 这些列保持较宽
+                    // 快响信息(case)的特殊处理
+                    if (this.defaultSearch.dataSource === 'case') {
+                        if (column === '申请时间') {
+                            return '60';
+                        } else if (column === '问题描述' || column === '答复详情') {
+                            return '300';
                         } else if (column === '相似度') {
                             return '80';
-                        } else if (column === '拆卸部件件号' || column === '装上部件件号') {
-                            return '120';  // 部件件号列稍宽一些
-                        } else if (column === '拆卸部件序列号' || column === '装上部件序列号') {
-                            return '120';  // 部件序列号列稍宽一些
+                        } else if (column === '机型') {
+                            return '70';  // 调整为70px
+                        } else if (column === '数据类型') {
+                            return '80';  // 调整为80px
                         } else {
-                            return '60';  // 所有其他列（包括日期、飞机序列号、机号等）都设置为最窄
+                            return '60';
                         }
                     }
                     
@@ -975,11 +975,9 @@
                         }
                     }
                     
-                    // 其他数据源的原有逻辑保持不变
+                    // 其他数据源的默认处理
                     if (column === '相似度') {
                         return '80';
-                    } else if (column === '申请时间') {
-                        return '90';
                     } else if (column === '问题描述' || column === '答复详情') {
                         return '300';
                     } else if (this.importantColumns.includes(column)) {
@@ -988,16 +986,24 @@
                     return '100';
                 },
                 getColumnFixedWidth(column) {
+                    // 快响信息(case)的特殊处理
+                    if (this.defaultSearch.dataSource === 'case') {
+                        if (column === '机型') {
+                            return '70';  // 改为70px，与 getColumnMinWidth 保持一致
+                        } else if (column === '数据类型') {
+                            return '80';  // 保持不变
+                        }
+                    }
+                    
                     // 工程文件的特殊处理
                     if (this.defaultSearch.dataSource === 'engineering') {
                         if (column === '原因和说明' || column === '原文文本') {
                             return null;  // 这两列使用自适应宽度
                         } else if (column === 'MSN有效性' || column === '发布时间' || column === '文件名称') {
                             return this.getColumnMinWidth(column);  // 这些列使用固定宽度
-                        } else {
-                            return '60';  // 其他列都使用最小固定宽度
                         }
                     }
+                    return null;  // 其他列使用自适应宽度
                 },
                 getColumns() {
                     console.log('开始获取列名');
