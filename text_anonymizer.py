@@ -27,8 +27,6 @@ current_sensitive_words = load_sensitive_words(file_path)
 
 # 初始正则模式
 current_patterns = [
-    r'\s*ARJ21\s*',
-    r'\bCF34-10A\b',
     r'(909|ARJ)/B-?[A-Z0-9]{4}',
     r'B-?[A-Z0-9]{4}',
     r'10\d{3}',

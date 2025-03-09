@@ -388,15 +388,18 @@ def anonymize_results():
     try:
         data = request.get_json()
         results = data.get('results', [])
-        fields = data.get('fields', ["问题描述", "答复详情"])  # 获取需要脱敏的字段
+        data_source = data.get('dataSource', 'case')  # 获取当前数据源
         
-        # 获取所有敏感词
-        all_words = word_manager.get_all_words()
-        sensitive_words = []
-        for category_words in all_words.values():
-            sensitive_words.extend([item['word'] for item in category_words])
+        # 根据数据源确定需要脱敏的字段
+        if data_source == 'engineering':
+            fields = ["原因和说明", "原文文本", "文件名称"]  # 为工程文件添加"文件名称"字段
+        else:
+            fields = ["问题描述", "答复详情"]
         
-        print(f"准备进行脱敏的敏感词: {sensitive_words}")  # 调试信息
+        # 直接获取已排序的敏感词列表
+        sensitive_words = word_manager.get_sorted_words()
+        
+        print(f"准备进行脱敏的敏感词数量: {len(sensitive_words)}")  # 调试信息
         
         # 转换为DataFrame进行处理
         df = pd.DataFrame(results)
@@ -424,8 +427,9 @@ def anonymize_text(text, sensitive_words):
     
     # 替换特定模式
     patterns = [
-        r'\s*ARJ21\s*',
-        r'\bCF34-10A\b',
+        # 删除这两个可能与敏感词冲突的模式
+        # r'\s*ARJ21\s*',
+        # r'\bCF34-10A\b',
         r'(909|ARJ)/B-?[A-Z0-9]{4}',# 修改为更精确的注册号格式
         r'B-?33[A-Z0-9]{2}',
         r'B-?10[A-Z0-9]{2}',
@@ -438,16 +442,14 @@ def anonymize_text(text, sensitive_words):
         r'[A-Z]{2}\d{4}'
     ]
     
-    for pattern in patterns:
-        text = re.sub(pattern, "", text)
-
-    # 按长度降序排序敏感词
-    sensitive_words.sort(key=len, reverse=True)
-    
-    # 替换敏感词
+    # 先处理敏感词列表
     for word in sensitive_words:
         if word and word.strip():  # 确保敏感词不为空
             text = text.replace(word, "")
+    
+    # 然后处理正则表达式模式
+    for pattern in patterns:
+        text = re.sub(pattern, "", text)
     
     return text
 

@@ -1355,29 +1355,36 @@
                         }
                         
                         // 根据数据源确定需要脱敏的字段
-                        const fieldsToAnonymize = this.defaultSearch.dataSource === 'engineering' 
-                            ? ['原因和说明', '原文文本']
-                            : ['问题描述', '答复详情'];
+                        let fieldsToAnonymize;
+                        if (this.defaultSearch.dataSource === 'engineering') {
+                            fieldsToAnonymize = ['原因和说明', '原文文本', '文件名称'];  // 为工程文件添加"文件名称"字段
+                        } else {
+                            fieldsToAnonymize = ['问题描述', '答复详情'];
+                        }
                         
-                        const response = await fetch('/api/anonymize', {
+                        fetch('/api/anonymize', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
                                 results: this.searchResults,
-                                fields: fieldsToAnonymize,  // 传递需要脱敏的字段
-                                dataSource: this.defaultSearch.dataSource  // 传递当前数据源
+                                fields: fieldsToAnonymize,
+                                dataSource: this.defaultSearch.dataSource
                             })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                this.searchResults = data.data;
+                                this.$message.success('脱敏处理完成');
+                            } else {
+                                throw new Error(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error('脱敏处理失败：' + error.message);
                         });
-                        
-                        const data = await response.json();
-                        if (data.status === 'success') {
-                            this.searchResults = data.data;
-                            this.$message.success('脱敏处理完成');
-                        } else {
-                            throw new Error(data.message);
-                        }
                     } catch (error) {
                         this.$message.error('脱敏处理失败：' + error.message);
                     }
