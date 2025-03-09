@@ -1,0 +1,10 @@
+// 测试数据
+const testResults = [
+  { dataType: '问题', title: '测试问题1' },
+  { dataType: '问题', title: '测试问题2' },
+  { dataType: '服务请求', title: '测试请求1' },
+  { dataType: '客户意见', title: '测试意见1' }
+];
+
+// 在页面某处渲染测试组件
+ReactDOM.render(<SearchResults results={testResults} />, document.getElementById('test-container')); 

@@ -292,6 +292,29 @@
         .control-item .el-select {
             flex: 1;
         }
+        .result-count-container {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .total-count {
+            margin-right: 15px;
+        }
+        
+        .type-statistics {
+            display: flex;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .type-stat {
+            margin-right: 15px;
+            padding: 2px 8px;
+            background-color: #f0f0f0;
+            border-radius: 12px;
+        }
     </style>
 </head>
 <body>
@@ -423,7 +446,14 @@
             <div class="result-section" v-if="total > 0">
                 <!-- 结果信息 -->
                 <div class="result-info">
-                    找到 [[ total ]] 条匹配记录
+                    <div class="result-count-container">
+                        <span class="total-count">找到 [[ total ]] 条匹配记录</span>
+                        <div class="type-statistics" v-if="typeStatistics && Object.keys(typeStatistics).length > 0">
+                            <span v-for="(count, type) in typeStatistics" :key="type" class="type-stat">
+                                [[ type ]]: [[ count ]]条
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 结果表格 -->
@@ -731,6 +761,7 @@
                         locations: [],
                         other: []
                     },
+                    typeStatistics: {},
                 }
             },
             computed: {
@@ -1024,6 +1055,7 @@
                                     type: 'warning'
                                 });
                             }
+                            this.typeStatistics = this.countResultsByType(this.searchResults);
                         } else {
                             // 显示错误提示
                             this.$notify.error({
@@ -1105,6 +1137,7 @@
                                 }
                                 
                                 this.$message.success(`已按相似度排序 ${this.searchResults.length} 条记录`);
+                                this.typeStatistics = this.countResultsByType(this.searchResults);
                             } else {
                                 this.$message.error(data.message);
                             }
@@ -1462,6 +1495,17 @@
                             this.$message.error('删除失败：' + error.message);
                         });
                     }).catch(() => {});
+                },
+                countResultsByType(results) {
+                    const typeCount = {};
+                    
+                    results.forEach(item => {
+                        // 根据实际数据结构调整属性名
+                        const type = item['数据类型'] || '未分类';
+                        typeCount[type] = (typeCount[type] || 0) + 1;
+                    });
+                    
+                    return typeCount;
                 }
             }
         })
