@@ -25,7 +25,8 @@ CORS(app)
 DATA_SOURCES = {
     'case': 'case.parquet',
     'engineering': 'engineering.parquet',
-    'manual': 'manual.parquet'
+    'manual': 'manual.parquet',
+    'faults': 'faults.parquet'  # 添加故障报告数据源
 }
 
 # 数据缓存
@@ -41,6 +42,9 @@ def load_data_source(source):
             if os.path.exists(data_path):
                 print(f"加载数据源 {source} 从: {data_path}")
                 data_frames[source] = pd.read_parquet(data_path)
+                # 添加调试信息，打印列名
+                if source == 'faults':
+                    print(f"故障报告数据源的实际列名: {data_frames[source].columns.tolist()}")
                 print(f"数据源 {source} 加载成功，形状: {data_frames[source].shape}")
             else:
                 print(f"数据文件不存在: {data_path}")
@@ -170,9 +174,10 @@ def search():
     """搜索数据"""
     try:
         data = request.get_json()
-        data_source = data.get('data_source', 'case')  # 获取数据源
+        data_source = data.get('data_source', 'case')
         search_levels = data.get('search_levels', [])
         data_types = data.get('data_types', [])
+        aircraft_types = data.get('aircraft_types', [])
         
         # 加载选定的数据源
         df = load_data_source(data_source)
@@ -182,17 +187,16 @@ def search():
                 'message': f'找不到数据源文件: {DATA_SOURCES[data_source]}'
             }), 404
 
-        # 添加调试信息
-        print(f"搜索使用的数据源: {data_source}")
-        print(f"数据源的列: {df.columns.tolist()}")
-        print(f"搜索条件: {search_levels}")
-        
         # 复制数据框以避免修改原始数据
         result_df = df.copy()
         
         # 首先按数据类型筛选
         if data_types:
             result_df = result_df[result_df['数据类型'].isin(data_types)]
+            
+        # 添加机型筛选
+        if aircraft_types:
+            result_df = result_df[result_df['机型'].isin(aircraft_types)]
         
         # 处理每个搜索层级
         for level in search_levels:
@@ -205,23 +209,26 @@ def search():
                 continue
                 
             try:
-                # 处理搜索
                 result_df = search_column(result_df, keywords, column_name, logic, negative)
             except ValueError as e:
-                # 返回具体的错误信息
                 return jsonify({
                     'status': 'error',
                     'message': str(e)
                 }), 400
         
-        # 转换结果为列表
+        # 在返回结果之前，格式化C919的飞机序列号
         results = result_df.to_dict('records')
+        if data_source == 'faults':
+            for item in results:
+                if item.get('机型') == 'C919' and '飞机序列号' in item:
+                    item['飞机序列号'] = format_msn(item['飞机序列号'])
         
         return jsonify({
             'status': 'success',
             'data': results,
             'total': len(results)
         })
+            
     except Exception as e:
         print(f"搜索时出错: {str(e)}")
         return jsonify({
@@ -239,8 +246,8 @@ def similarity_search():
     try:
         data = request.get_json()
         text = data.get('text', '')
-        columns = data.get('columns', ['问题描述'])  # 获取要搜索的列
-        results = data.get('results', [])  # 获取当前搜索结果
+        columns = data.get('columns', ['问题描述'])
+        results = data.get('results', [])
         
         if not text.strip():
             return jsonify({
@@ -253,6 +260,13 @@ def similarity_search():
         
         # 计算相似度
         result_df = calculate_similarity(df, text, columns)
+        
+        # 确保相似度列在第一位
+        if '相似度' in result_df.columns:
+            cols = result_df.columns.tolist()
+            cols.remove('相似度')
+            result_df = result_df[['相似度'] + cols]
+        
         results = result_df.to_dict('records')
         
         return jsonify({
@@ -317,13 +331,7 @@ def analyze():
         }), 500
 
 def calculate_similarity(df, query_text, columns):
-    """计算文本相似度并按相似度和时间排序
-    
-    参数:
-    - df: 包含文本的DataFrame
-    - query_text: 目标文本
-    - columns: 要搜索的列名列表
-    """
+    """计算文本相似度并按相似度和时间排序"""
     try:
         # 确保所有列都存在
         valid_columns = [col for col in columns if col in df.columns]
@@ -357,18 +365,28 @@ def calculate_similarity(df, query_text, columns):
         # 添加相似度列
         df['相似度'] = similarities
         
-        # 确定时间列名
-        time_column = '发布时间' if '发布时间' in df.columns else '申请时间'
-        
-        # 确保时间列为datetime类型并格式化
-        df[time_column] = pd.to_datetime(df[time_column], errors='coerce')
-        df[time_column] = df[time_column].dt.strftime('%Y-%m-%d')
-        
-        # 排序：首先按相似度降序，其次按时间升序
-        result_df = df.sort_values(
-            by=['相似度', time_column], 
-            ascending=[False, True]
-        )
+        # 更新时间列名判断逻辑
+        time_column = None
+        if '发布时间' in df.columns:
+            time_column = '发布时间'
+        elif '申请时间' in df.columns:
+            time_column = '申请时间'
+        elif '日期' in df.columns:
+            time_column = '日期'
+            
+        if time_column:
+            # 确保时间列为datetime类型并格式化
+            df[time_column] = pd.to_datetime(df[time_column], errors='coerce')
+            df[time_column] = df[time_column].dt.strftime('%Y-%m-%d')
+            
+            # 排序：首先按相似度降序，其次按时间升序
+            result_df = df.sort_values(
+                by=['相似度', time_column], 
+                ascending=[False, True]
+            )
+        else:
+            # 如果没有时间列，只按相似度排序
+            result_df = df.sort_values('相似度', ascending=False)
         
         # 将相似度转换为百分比格式
         result_df['相似度'] = result_df['相似度'].apply(lambda x: f"{x*100:.2f}%")
@@ -388,11 +406,13 @@ def anonymize_results():
     try:
         data = request.get_json()
         results = data.get('results', [])
-        data_source = data.get('dataSource', 'case')  # 获取当前数据源
+        data_source = data.get('dataSource', 'case')
         
         # 根据数据源确定需要脱敏的字段
         if data_source == 'engineering':
-            fields = ["原因和说明", "原文文本", "文件名称"]  # 为工程文件添加"文件名称"字段
+            fields = ["原因和说明", "原文文本", "文件名称"]
+        elif data_source == 'faults':
+            fields = ["问题描述", "排故措施", "运营人", "飞机序列号", "机号"]  # 更新故障报告的脱敏字段
         else:
             fields = ["问题描述", "答复详情"]
         
@@ -529,3 +549,16 @@ def delete_sensitive_word():
             'status': 'error',
             'message': str(e)
         }), 500
+
+def format_msn(value):
+    """格式化C919的机身序列号为5位数字"""
+    try:
+        if pd.isna(value) or not str(value).strip():
+            return value
+        
+        # 如果是纯数字，进行格式化
+        if str(value).isdigit():
+            return f"{int(value):05d}"
+        return value
+    except:
+        return value

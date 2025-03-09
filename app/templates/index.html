@@ -696,7 +696,8 @@
                     defaultVisibleColumns: {
                         'case': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],
                         'engineering': ['发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性'],
-                        'manual': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人']
+                        'manual': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],
+                        'faults': ['日期', '问题描述', '排故措施', '运营人', '飞机序列号', '机号']
                     },
                     importantColumns: ['问题描述', '答复详情'],
                     compactColumns: ['ATA', '版本号', '机型', '数据类型'],
@@ -704,7 +705,8 @@
                     searchableColumns: {
                         'case': ['标题', '问题描述', '答复详情', '客户期望'],
                         'engineering': ['文件名称', '原因和说明', '原文文本'],
-                        'manual': ['标题', '问题描述', '答复详情', '客户期望']
+                        'manual': ['标题', '问题描述', '答复详情', '客户期望'],
+                        'faults': ['问题描述', '排故措施']
                     },
                     statistics: {
                         xAxis: '',
@@ -719,18 +721,21 @@
                     defaultSearchColumn: {
                         'case': '问题描述',
                         'engineering': '原因和说明',
-                        'manual': '问题描述'
+                        'manual': '问题描述',
+                        'faults': '问题描述'
                     },
                     dataSourceTypes: {
                         'case': ['服务请求', '252问题', '客户请求'],
                         'engineering': ['SB', 'SL', 'FTAR', 'OIC', 'FIQS', 'OB', 'FOT'],
-                        'manual': ['AMM', 'IPC', 'SRM']
+                        'manual': ['AMM', 'IPC', 'SRM'],
+                        'faults': ['故障报告', '部件拆换记录']
                     },
                     availableDataTypes: [],
                     dataSourceColumns: {
                         case: [],
                         engineering: [],
-                        manual: []
+                        manual: [],
+                        faults: []
                     },
                     dataSourceDialogVisible: false,
                     selectAllDataTypes: false,
@@ -740,7 +745,8 @@
                     dataSourceOptions: {
                         'case': '快响信息',
                         'engineering': '工程文件',
-                        'manual': '手册'
+                        'manual': '手册',
+                        'faults': '故障报告'
                     },
                     aircraftTypeOptions: ['ARJ21', 'C919'],
                     tempDataSource: 'case',
@@ -766,6 +772,17 @@
             },
             computed: {
                 visibleColumns() {
+                    // 移除原有的故障报告特殊处理逻辑
+                    if (this.columns.includes('相似度')) {
+                        // 确保相似度列在第一位
+                        const cols = this.columns.filter(col => this.columnVisible[col]);
+                        if (cols.includes('相似度')) {
+                            cols.splice(cols.indexOf('相似度'), 1);
+                            return ['相似度', ...cols];
+                        }
+                        return cols;
+                    }
+                    // 如果没有相似度列，返回所有可见列
                     return this.columns.filter(col => this.columnVisible[col]);
                 }
             },
@@ -926,6 +943,21 @@
                     console.log('机型选择已更新:', values);
                 },
                 getColumnMinWidth(column) {
+                    // 故障报告的特殊处理
+                    if (this.defaultSearch.dataSource === 'faults') {
+                        if (column === '问题描述' || column === '排故措施') {
+                            return '300';  // 这些列保持较宽
+                        } else if (column === '相似度') {
+                            return '80';
+                        } else if (column === '拆卸部件件号' || column === '装上部件件号') {
+                            return '120';  // 部件件号列稍宽一些
+                        } else if (column === '拆卸部件序列号' || column === '装上部件序列号') {
+                            return '120';  // 部件序列号列稍宽一些
+                        } else {
+                            return '60';  // 所有其他列（包括日期、飞机序列号、机号等）都设置为最窄
+                        }
+                    }
+                    
                     // 工程文件的特殊处理
                     if (this.defaultSearch.dataSource === 'engineering') {
                         if (column === '原因和说明' || column === '原文文本') {
@@ -989,6 +1021,17 @@
                 showColumnDialog() {
                     // 初始化选中的列
                     this.selectedColumns = this.visibleColumns;
+                    
+                    // 对于故障报告数据源，确保关键列在对话框中默认被选中
+                    if (this.defaultSearch.dataSource === 'faults') {
+                        const essentialColumns = ['日期', '问题描述', '排故措施', '飞机序列号/机号/运营人'];  // 移除 '维修ATA'
+                        essentialColumns.forEach(col => {
+                            if (this.columns.includes(col) && !this.selectedColumns.includes(col)) {
+                                this.selectedColumns.push(col);
+                            }
+                        });
+                    }
+                    
                     this.columnDialogVisible = true;
                 },
                 applyColumnSettings() {
@@ -996,6 +1039,17 @@
                     this.columns.forEach(col => {
                         this.$set(this.columnVisible, col, this.selectedColumns.includes(col));
                     });
+                    
+                    // 对于故障报告数据源，确保关键列始终可见
+                    if (this.defaultSearch.dataSource === 'faults') {
+                        const essentialColumns = ['日期', '问题描述', '排故措施', '飞机序列号/机号/运营人'];
+                        essentialColumns.forEach(col => {
+                            if (this.columns.includes(col)) {
+                                this.$set(this.columnVisible, col, true);
+                            }
+                        });
+                    }
+                    
                     this.columnDialogVisible = false;
                 },
                 addLevel() {
@@ -1045,6 +1099,38 @@
                         console.log('搜索结果:', data);
                         if (data.status === 'success') {
                             this.searchResults = data.data;
+                            
+                            // 处理故障报告数据源的日期格式
+                            if (this.defaultSearch.dataSource === 'faults') {
+                                this.searchResults = this.searchResults.map(item => {
+                                    // 处理日期字段的格式
+                                    if (item['日期']) {  // 使用正确的日期列名
+                                        try {
+                                            const dateStr = item['日期'];
+                                            // 处理GMT格式的日期
+                                            if (dateStr.includes('GMT')) {
+                                                const date = new Date(dateStr);
+                                                item['日期'] = date.getFullYear() + '-' + 
+                                                    String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                                                    String(date.getDate()).padStart(2, '0');
+                                            } 
+                                            // 处理其他格式的日期
+                                            else {
+                                                const date = new Date(dateStr);
+                                                if (!isNaN(date.getTime())) {
+                                                    item['日期'] = date.getFullYear() + '-' + 
+                                                        String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                                                        String(date.getDate()).padStart(2, '0');
+                                                }
+                                            }
+                                        } catch (e) {
+                                            console.warn('日期格式化失败:', item['日期']);
+                                        }
+                                    }
+                                    return item;
+                                });
+                            }
+                            
                             this.total = data.total;
                             if (this.total > 0) {
                                 this.$message.success(`找到 ${this.total} 条匹配记录`);
@@ -1273,7 +1359,7 @@
                 async updateDataSource(value) {
                     try {
                         // 1. 更新默认搜索列
-                        const defaultColumn = value === 'case' ? '问题描述' : this.defaultSearchColumn[value];
+                        const defaultColumn = this.defaultSearchColumn[value];
                         this.searchLevels.forEach(level => {
                             level.column_name = defaultColumn;
                         });
@@ -1282,7 +1368,7 @@
                         if (value === 'engineering') {
                             this.contentSearch.selectedColumns = ['原因和说明'];
                         } else {
-                            this.contentSearch.selectedColumns = ['问题描述'];
+                            this.contentSearch.selectedColumns = ['问题描述'];  // 故障报告默认选中"问题描述"
                         }
 
                         // 3. 移除相似度列
@@ -1357,7 +1443,9 @@
                         // 根据数据源确定需要脱敏的字段
                         let fieldsToAnonymize;
                         if (this.defaultSearch.dataSource === 'engineering') {
-                            fieldsToAnonymize = ['原因和说明', '原文文本', '文件名称'];  // 为工程文件添加"文件名称"字段
+                            fieldsToAnonymize = ['原因和说明', '原文文本', '文件名称'];
+                        } else if (this.defaultSearch.dataSource === 'faults') {
+                            fieldsToAnonymize = ['问题描述', '排故措施'];  // 只脱敏这两列
                         } else {
                             fieldsToAnonymize = ['问题描述', '答复详情'];
                         }
