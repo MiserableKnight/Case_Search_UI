@@ -316,8 +316,8 @@
             border-radius: 12px;
         }
         .el-table .narrow-column {
-            width: auto !important;  // 移除固定宽度限制
-            min-width: 50px !important;  // 为"机型"设置最小宽度
+            width: auto !important;
+            min-width: 50px !important;
         }
         
         /* 优化多选标签的样式 */
@@ -329,6 +329,14 @@
             max-width: 100px;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        /* 添加新的样式用于选中行 */
+        .el-table__body tr.selected-row td {
+            background-color: #e6f1fc !important;
+        }
+        /* 保持鼠标悬停效果 */
+        .el-table__body tr:hover > td {
+            background-color: #e6f1fc !important;
         }
     </style>
 </head>
@@ -489,23 +497,40 @@
                     <el-button type="warning" size="small" @click="anonymizeResults">
                         脱敏显示
                     </el-button>
+                    <el-button type="primary" size="small" @click="toggleHideSelected">
+                        [[ isHidingSelected ? '显示全部' : '隐藏选中' ]]
+                    </el-button>
                     <el-button type="success" size="small" @click="exportToCsv" :disabled="!searchResults.length">
                         导出CSV
                     </el-button>
                 </div>
 
                 <el-table
+                    ref="dataTable"
                     v-loading="loading"
-                    :data="searchResults"
+                    :data="filteredResults"
                     style="width: 100%"
-                    size="mini">
+                    size="mini"
+                    :row-class-name="getRowClass"
+                    @row-click="handleRowClick"
+                    @selection-change="handleSelectionChange">
+                    <el-table-column
+                        type="selection"
+                        width="55">
+                    </el-table-column>
+                    <el-table-column
+                        label="序号"
+                        prop="序号"
+                        width="40"
+                        fixed>
+                    </el-table-column>
                     <el-table-column
                         v-for="col in visibleColumns"
                         :key="col"
                         :prop="col"
                         :label="col"
                         :min-width="getColumnMinWidth(col)"
-                        :width="getColumnFixedWidth(col)"
+                        :width="col === '相似度' ? '70' : getColumnFixedWidth(col)"
                         :class="{'narrow-column': col === '机型' || col === '数据类型'}"
                         resizable>
                     </el-table-column>
@@ -794,6 +819,9 @@
                         other: []
                     },
                     typeStatistics: {},
+                    selectedRows: [],
+                    isHidingSelected: false,
+                    hiddenRowIds: new Set(),
                 }
             },
             computed: {
@@ -810,6 +838,13 @@
                     }
                     // 如果没有相似度列，返回所有可见列
                     return this.columns.filter(col => this.columnVisible[col]);
+                },
+                filteredResults() {
+                    if (!this.isHidingSelected) {
+                        return this.searchResults;
+                    }
+                    // 使用某个唯一标识符（这里假设是数组索引）来过滤结果
+                    return this.searchResults.filter((_, index) => !this.hiddenRowIds.has(index));
                 }
             },
             created() {
@@ -975,7 +1010,7 @@
                         } else if (column === '问题描述' || column === '答复详情') {
                             return '300';
                         } else if (column === '相似度') {
-                            return '80';
+                            return '70';
                         } else if (column === '机型') {
                             return '70';  // 调整为70px
                         } else if (column === '数据类型') {
@@ -990,7 +1025,7 @@
                         if (column === '原因和说明' || column === '原文文本') {
                             return '300';  // 这两列保持较宽
                         } else if (column === '相似度') {
-                            return '80';  // 相似度列保持不变
+                            return '70';  // 相似度列调整为70px
                         } else if (column === 'MSN有效性') {
                             return '90';  // MSN有效性固定宽度，确保标题不换行
                         } else if (column === '文件名称') {
@@ -1004,7 +1039,7 @@
                     
                     // 其他数据源的默认处理
                     if (column === '相似度') {
-                        return '80';
+                        return '70';
                     } else if (column === '问题描述' || column === '答复详情') {
                         return '300';
                     } else if (this.importantColumns.includes(column)) {
@@ -1200,6 +1235,9 @@
                     })
                     .finally(() => {
                         this.loading = false;
+                        this.selectedRows = [];
+                        this.isHidingSelected = false;
+                        this.hiddenRowIds.clear();
                     });
                 },
                 validateSearchLevels() {
@@ -1308,6 +1346,9 @@
                         this.columns.splice(similarityIndex, 1);
                         delete this.columnVisible['相似度'];
                     }
+                    this.selectedRows = [];
+                    this.isHidingSelected = false;
+                    this.hiddenRowIds.clear();
                 },
                 exportToCsv() {
                     const visibleCols = this.visibleColumns;
@@ -1316,7 +1357,7 @@
                     
                     csvContent += visibleCols.join(',') + '\n';
                     
-                    this.searchResults.forEach(row => {
+                    this.filteredResults.forEach(row => {
                         const rowData = visibleCols.map(col => {
                             let cellData = row[col] || '';
                             cellData = cellData.toString().replace(/"/g, '""');
@@ -1656,6 +1697,34 @@
                         // 正常更新选中的列
                         level.column_name = value;
                     }
+                },
+                handleSelectionChange(selection) {
+                    this.selectedRows = selection;
+                },
+                handleRowClick(row, column, event) {
+                    // 只需要切换复选框的状态即可
+                    this.$refs.dataTable.toggleRowSelection(row);
+                },
+                toggleHideSelected() {
+                    if (this.isHidingSelected) {
+                        // 显示全部
+                        this.hiddenRowIds.clear();
+                        this.isHidingSelected = false;
+                    } else {
+                        // 隐藏选中项
+                        this.selectedRows.forEach((row, index) => {
+                            // 使用数组索引作为唯一标识符
+                            const rowIndex = this.searchResults.findIndex(r => r === row);
+                            if (rowIndex !== -1) {
+                                this.hiddenRowIds.add(rowIndex);
+                            }
+                        });
+                        this.isHidingSelected = true;
+                    }
+                },
+                getRowClass({ row }) {
+                    // 检查这一行是否在选中的行数组中
+                    return this.selectedRows.includes(row) ? 'selected-row' : '';
                 },
             }
         })

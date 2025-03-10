@@ -226,6 +226,10 @@ def search():
                 if item.get('机型') == 'C919' and '飞机序列号' in item:
                     item['飞机序列号'] = format_msn(item['飞机序列号'])
         
+        # 添加序号列
+        for index, item in enumerate(results, 1):
+            item['序号'] = index
+        
         return jsonify({
             'status': 'success',
             'data': results,
@@ -271,6 +275,10 @@ def similarity_search():
             result_df = result_df[['相似度'] + cols]
         
         results = result_df.to_dict('records')
+        
+        # 添加序号列
+        for index, item in enumerate(results, 1):
+            item['序号'] = index
         
         return jsonify({
             'status': 'success',
