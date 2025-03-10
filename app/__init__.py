@@ -76,12 +76,15 @@ def search_column(df, keywords, column_name, logic='and', negative_filtering=Fal
     keywords = [str(k).lower() for k in keywords]
     
     # 确定要搜索的列
-    if column_name == 'all' or column_name == ['all']:
-        columns_to_search = df.columns.tolist()
-    elif isinstance(column_name, str):
+    if isinstance(column_name, str):
         columns_to_search = [column_name]
     elif isinstance(column_name, list):
         columns_to_search = [col for col in column_name if col in df.columns]
+    else:
+        raise ValueError("无效的列名参数")
+    
+    if not columns_to_search:
+        raise ValueError("未指定有效的搜索列")
     
     # 使用相同的搜索逻辑
     if logic == 'and':

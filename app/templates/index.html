@@ -148,11 +148,11 @@
             margin-right: 0;        /* 移除右边距 */
         }
         .search-content .el-select {
-            width: 120px;
-            order: -1;  /* 让下拉框显示在最前面 */
+            width: 170px;  /* 从200px减少到170px */
+            order: -1;
         }
         .search-content .el-input {
-            width: 300px;  /* 缩小输入框的固定宽度 */
+            width: 270px;  /* 从300px减少到270px */
         }
         .search-logic {
             display: flex;
@@ -319,6 +319,17 @@
             width: auto !important;  // 移除固定宽度限制
             min-width: 50px !important;  // 为"机型"设置最小宽度
         }
+        
+        /* 优化多选标签的样式 */
+        .el-select__tags {
+            max-width: calc(100% - 30px);
+        }
+        
+        .el-select__tags-text {
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
 </head>
 <body>
@@ -336,8 +347,18 @@
                             <div class="search-content">
                                 <div class="search-inputs">
                                     <el-input v-model="level.keywords" placeholder="请输入关键字"></el-input>
-                                    <el-select v-model="level.column_name" placeholder="搜索列">
-                                        <el-option label="全部列" value="all"></el-option>
+                                    <el-select v-model="level.column_name" 
+                                               multiple 
+                                               collapse-tags 
+                                               placeholder="选择搜索列"
+                                               @change="handleColumnSelectChange($event, level)">
+                                        <!-- 添加全选选项 -->
+                                        <el-option
+                                            key="__select_all__"
+                                            label="全选"
+                                            value="__select_all__">
+                                        </el-option>
+                                        <!-- 原有的列选项 -->
                                         <el-option
                                             v-for="col in dataSourceColumns[defaultSearch.dataSource]"
                                             :key="col"
@@ -679,7 +700,7 @@
                 return {
                     searchLevels: [{
                         keywords: '',
-                        column_name: '问题描述',
+                        column_name: ['问题描述'],
                         logic: 'and',
                         negative_filtering: false
                     }],
@@ -803,7 +824,7 @@
                         // 确保初始搜索列为"问题描述"
                         if (this.defaultSearch.dataSource === 'case') {
                             this.searchLevels.forEach(level => {
-                                level.column_name = '问题描述';
+                                level.column_name = ['问题描述'];  // 修改为数组形式
                             });
                         }
                         
@@ -822,12 +843,18 @@
                             // 保存完整的列信息
                             this.dataSourceColumns = data.columns;
                             
-                            // 不再过滤掉"机型"和"数据类型"列
-                            this.columns = data.columns[this.defaultSearch.dataSource];
-                            
                             // 初始化列的可见性
+                            this.columns = data.columns[this.defaultSearch.dataSource];
                             this.columns.forEach(col => {
                                 this.$set(this.columnVisible, col, this.defaultVisibleColumns[this.defaultSearch.dataSource].includes(col));
+                            });
+                            
+                            // 确保每个搜索层级的 column_name 都有有效的值
+                            const defaultColumn = this.defaultSearchColumn[this.defaultSearch.dataSource];
+                            this.searchLevels.forEach(level => {
+                                if (!Array.isArray(level.column_name) || !level.column_name.length) {
+                                    level.column_name = [defaultColumn];
+                                }
                             });
                         }
                     } catch (error) {
@@ -1061,7 +1088,7 @@
                 addLevel() {
                     this.searchLevels.push({
                         keywords: '',
-                        column_name: 'all',
+                        column_name: ['问题描述'],
                         logic: 'and',
                         negative_filtering: false
                     });
@@ -1264,7 +1291,7 @@
                 resetForm() {
                     this.searchLevels = [{
                         keywords: '',
-                        column_name: 'all',
+                        column_name: ['问题描述'],
                         logic: 'and',
                         negative_filtering: false
                     }];
@@ -1367,7 +1394,7 @@
                         // 1. 更新默认搜索列
                         const defaultColumn = this.defaultSearchColumn[value];
                         this.searchLevels.forEach(level => {
-                            level.column_name = defaultColumn;
+                            level.column_name = [defaultColumn];
                         });
 
                         // 2. 更新相似度搜索的默认选中列
@@ -1607,7 +1634,29 @@
                     });
                     
                     return typeCount;
-                }
+                },
+                handleColumnSelectChange(value, level) {
+                    // 检查是否选择了全选选项
+                    const selectAllIndex = value.indexOf('__select_all__');
+                    if (selectAllIndex > -1) {
+                        // 移除全选选项
+                        value.splice(selectAllIndex, 1);
+                        
+                        // 获取当前数据源的所有列
+                        const allColumns = this.dataSourceColumns[this.defaultSearch.dataSource] || [];
+                        
+                        // 如果当前选中的列数等于总列数（已经全选），则清空选择
+                        if (value.length >= allColumns.length) {
+                            level.column_name = [];
+                        } else {
+                            // 否则全选所有列
+                            level.column_name = [...allColumns];
+                        }
+                    } else {
+                        // 正常更新选中的列
+                        level.column_name = value;
+                    }
+                },
             }
         })
     </script>
