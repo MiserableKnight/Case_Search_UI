@@ -573,3 +573,14 @@ def format_msn(value):
         return value
     except:
         return value
+
+@app.route('/analysis')
+def analysis():
+    """处理数据分析页面"""
+    try:
+        # 直接渲染模板，不需要传递数据
+        # 数据将通过前端 localStorage 获取
+        return render_template('analysis.html')
+    except Exception as e:
+        print(f"处理分析页面时出错: {str(e)}")
+        return str(e), 500

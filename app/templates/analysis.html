@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选中数据</title>
+    <!-- 引入 Element UI -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .el-table {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <el-table
+                :data="tableData"
+                style="width: 100%"
+                size="mini"
+                border>
+                <el-table-column
+                    v-for="col in columns"
+                    :key="col"
+                    :prop="col"
+                    :label="col"
+                    :min-width="getColumnWidth(col)">
+                </el-table-column>
+            </el-table>
+        </div>
+    </div>
+
+    <!-- 引入 Vue 和 Element UI -->
+    <script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/umd/locale/zh-CN.js"></script>
+    <script>
+        ELEMENT.locale(ELEMENT.lang.zhCN)
+        
+        new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data() {
+                // 从 localStorage 中读取数据
+                const storedData = JSON.parse(localStorage.getItem('analysisData'));
+                return {
+                    tableData: storedData.data,
+                    columns: storedData.columns,
+                    dataSource: storedData.dataSource
+                }
+            },
+            methods: {
+                getColumnWidth(column) {
+                    if (column === '问题描述' || column === '答复详情' || 
+                        column === '原因和说明' || column === '原文文本') {
+                        return '300';
+                    }
+                    return '100';
+                }
+            },
+            mounted() {
+                // 读取完数据后清除，避免占用存储空间
+                localStorage.removeItem('analysisData');
+            }
+        })
+    </script>
+</body>
+</html> 

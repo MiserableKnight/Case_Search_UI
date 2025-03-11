@@ -503,6 +503,9 @@
                     <el-button type="success" size="small" @click="exportToCsv" :disabled="!searchResults.length">
                         导出CSV
                     </el-button>
+                    <el-button type="primary" size="small" @click="analyzeSelectedData" :disabled="!selectedRows.length">
+                        数据分析
+                    </el-button>
                 </div>
 
                 <el-table
@@ -822,6 +825,7 @@
                     selectedRows: [],
                     isHidingSelected: false,
                     hiddenRowIds: new Set(),
+                    lastClickedRowIndex: null,  // 添加这一行来记录上次点击的行索引
                 }
             },
             computed: {
@@ -1702,8 +1706,28 @@
                     this.selectedRows = selection;
                 },
                 handleRowClick(row, column, event) {
-                    // 只需要切换复选框的状态即可
-                    this.$refs.dataTable.toggleRowSelection(row);
+                    // 获取当前点击行的索引
+                    const currentIndex = this.filteredResults.indexOf(row);
+                    
+                    if (event.shiftKey && this.lastClickedRowIndex !== null) {
+                        // 如果按住shift键且有上次点击的行记录
+                        // 计算需要选择的行范围
+                        const start = Math.min(this.lastClickedRowIndex, currentIndex);
+                        const end = Math.max(this.lastClickedRowIndex, currentIndex);
+                        
+                        // 选择范围内的所有行
+                        for (let i = start; i <= end; i++) {
+                            const rowToSelect = this.filteredResults[i];
+                            if (!this.selectedRows.includes(rowToSelect)) {
+                                this.$refs.dataTable.toggleRowSelection(rowToSelect, true);
+                            }
+                        }
+                    } else {
+                        // 普通点击，切换当前行的选择状态
+                        this.$refs.dataTable.toggleRowSelection(row);
+                        // 更新最后点击的行索引
+                        this.lastClickedRowIndex = currentIndex;
+                    }
                 },
                 toggleHideSelected() {
                     if (this.isHidingSelected) {
@@ -1725,6 +1749,22 @@
                 getRowClass({ row }) {
                     // 检查这一行是否在选中的行数组中
                     return this.selectedRows.includes(row) ? 'selected-row' : '';
+                },
+                analyzeSelectedData() {
+                    if (!this.selectedRows.length) {
+                        this.$message.warning('请先选择要分析的数据');
+                        return;
+                    }
+
+                    // 将数据存储在浏览器的 localStorage 中
+                    localStorage.setItem('analysisData', JSON.stringify({
+                        data: this.selectedRows,
+                        columns: this.visibleColumns,
+                        dataSource: this.defaultSearch.dataSource
+                    }));
+
+                    // 打开新页面，不带数据参数
+                    window.open('/analysis', '_blank');
                 },
             }
         })
