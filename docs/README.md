@@ -17,6 +17,34 @@
   - 支持选中数据分析
   - 搜索结果导出
 
+## 环境配置与运行
+### 环境要求
+- Python 3.10
+- Anaconda 或 Miniconda
+
+### 配置步骤
+1. 安装 Anaconda
+   - 访问 [Anaconda官网](https://www.anaconda.com/download) 下载并安装 Anaconda
+
+2. 创建 Python 3.10 虚拟环境
+   ```bash
+   conda create -n search python=3.10
+   ```
+
+3. 激活虚拟环境
+   ```bash
+   conda activate search
+   ```
+
+4. 运行项目
+   ```bash
+   python run.py
+   ```
+
+### 注意事项
+- 首次运行前请确保已激活 search 虚拟环境
+- 如需退出虚拟环境，使用命令：`conda deactivate`
+
 ## 技术栈
 - 前端：Vue.js + Element UI
 - 后端：Flask + Pandas
