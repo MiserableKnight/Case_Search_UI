@@ -2,7 +2,38 @@
 __pycache__/
 *.py[cod]
 *$py.class
-text_anonymizer.py
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -21,8 +52,6 @@ app/data/*
 
 # 环境文件
 .env
-venv/
-env/
 
 # IDE 配置
 .vscode/
