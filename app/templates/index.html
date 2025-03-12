@@ -497,10 +497,7 @@
                     <el-button type="warning" size="small" @click="anonymizeResults">
                         脱敏显示
                     </el-button>
-                    <el-button type="primary" size="small" @click="toggleHideSelected">
-                        [[ isHidingSelected ? '显示全部' : '隐藏选中' ]]
-                    </el-button>
-                    <el-button type="success" size="small" @click="exportToCsv" :disabled="!searchResults.length">
+                    <el-button type="primary" size="small" @click="exportToCsv" :disabled="!selectedRows.length">
                         导出CSV
                     </el-button>
                     <el-button type="primary" size="small" @click="analyzeSelectedData" :disabled="!selectedRows.length">
@@ -511,7 +508,7 @@
                 <el-table
                     ref="dataTable"
                     v-loading="loading"
-                    :data="filteredResults"
+                    :data="searchResults"
                     style="width: 100%"
                     size="mini"
                     :row-class-name="getRowClass"
@@ -823,8 +820,6 @@
                     },
                     typeStatistics: {},
                     selectedRows: [],
-                    isHidingSelected: false,
-                    hiddenRowIds: new Set(),
                     lastClickedRowIndex: null,  // 添加这一行来记录上次点击的行索引
                 }
             },
@@ -843,13 +838,6 @@
                     // 如果没有相似度列，返回所有可见列
                     return this.columns.filter(col => this.columnVisible[col]);
                 },
-                filteredResults() {
-                    if (!this.isHidingSelected) {
-                        return this.searchResults;
-                    }
-                    // 使用某个唯一标识符（这里假设是数组索引）来过滤结果
-                    return this.searchResults.filter((_, index) => !this.hiddenRowIds.has(index));
-                }
             },
             created() {
                 this.initializeData();
@@ -1240,8 +1228,6 @@
                     .finally(() => {
                         this.loading = false;
                         this.selectedRows = [];
-                        this.isHidingSelected = false;
-                        this.hiddenRowIds.clear();
                     });
                 },
                 validateSearchLevels() {
@@ -1351,19 +1337,25 @@
                         delete this.columnVisible['相似度'];
                     }
                     this.selectedRows = [];
-                    this.isHidingSelected = false;
-                    this.hiddenRowIds.clear();
                 },
                 exportToCsv() {
+                    if (!this.selectedRows.length) {
+                        this.$message.warning('请先选择要导出的数据');
+                        return;
+                    }
+                    
                     const visibleCols = this.visibleColumns;
                     
-                    let csvContent = '\uFEFF';
+                    let csvContent = '\uFEFF';  // 添加BOM标记以支持中文
                     
+                    // 添加表头
                     csvContent += visibleCols.join(',') + '\n';
                     
-                    this.filteredResults.forEach(row => {
+                    // 只导出选中的行
+                    this.selectedRows.forEach(row => {
                         const rowData = visibleCols.map(col => {
                             let cellData = row[col] || '';
+                            // 处理单元格数据，确保CSV格式正确
                             cellData = cellData.toString().replace(/"/g, '""');
                             if (cellData.includes(',') || cellData.includes('\n') || cellData.includes('"')) {
                                 cellData = `"${cellData}"`;
@@ -1373,8 +1365,8 @@
                         csvContent += rowData.join(',') + '\n';
                     });
                     
+                    // 创建并下载文件
                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-                    
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
                     link.download = `搜索结果_${new Date().toLocaleString()}.csv`;
@@ -1383,7 +1375,7 @@
                     link.click();
                     document.body.removeChild(link);
                     
-                    this.$message.success('导出成功');
+                    this.$message.success(`成功导出 ${this.selectedRows.length} 条记录`);
                 },
                 showSearchColumnsDialog() {
                     this.searchColumnsDialogVisible = true;
@@ -1707,7 +1699,7 @@
                 },
                 handleRowClick(row, column, event) {
                     // 获取当前点击行的索引
-                    const currentIndex = this.filteredResults.indexOf(row);
+                    const currentIndex = this.searchResults.indexOf(row);
                     
                     if (event.shiftKey && this.lastClickedRowIndex !== null) {
                         // 如果按住shift键且有上次点击的行记录
@@ -1717,7 +1709,7 @@
                         
                         // 选择范围内的所有行
                         for (let i = start; i <= end; i++) {
-                            const rowToSelect = this.filteredResults[i];
+                            const rowToSelect = this.searchResults[i];
                             if (!this.selectedRows.includes(rowToSelect)) {
                                 this.$refs.dataTable.toggleRowSelection(rowToSelect, true);
                             }
@@ -1727,23 +1719,6 @@
                         this.$refs.dataTable.toggleRowSelection(row);
                         // 更新最后点击的行索引
                         this.lastClickedRowIndex = currentIndex;
-                    }
-                },
-                toggleHideSelected() {
-                    if (this.isHidingSelected) {
-                        // 显示全部
-                        this.hiddenRowIds.clear();
-                        this.isHidingSelected = false;
-                    } else {
-                        // 隐藏选中项
-                        this.selectedRows.forEach((row, index) => {
-                            // 使用数组索引作为唯一标识符
-                            const rowIndex = this.searchResults.findIndex(r => r === row);
-                            if (rowIndex !== -1) {
-                                this.hiddenRowIds.add(rowIndex);
-                            }
-                        });
-                        this.isHidingSelected = true;
                     }
                 },
                 getRowClass({ row }) {

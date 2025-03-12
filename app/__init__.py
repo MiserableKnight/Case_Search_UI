@@ -291,56 +291,6 @@ def similarity_search():
             'message': str(e)
         }), 500
 
-@app.route('/api/analyze', methods=['POST'])
-def analyze():
-    """仅在用户请求AI分析时执行"""
-    try:
-        data = request.get_json()
-        query = data.get('query', '')
-        results = data.get('results', [])
-        
-        if not query.strip() or not results:
-            return jsonify({
-                'status': 'error',
-                'message': '分析请求参数不完整'
-            }), 400
-            
-        # 这里可以添加实际的AI分析逻辑
-        import requests
-        
-        # 构建提示词
-        prompt = f"请分析以下案例并回答问题：\n\n案例数据：{str(results)}\n\n问题：{query}"
-        
-        # 调用API
-        response = requests.post(
-            API_URL,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {API_KEY}"
-            },
-            json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-                "max_tokens": 2000
-            }
-        )
-        
-        if response.status_code == 200:
-            summary = response.json()['choices'][0]['message']['content']
-        else:
-            summary = "AI分析请求失败，请稍后重试。"
-            
-        return jsonify({
-            'status': 'success',
-            'summary': summary
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
-
 def calculate_similarity(df, query_text, columns):
     """计算文本相似度并按相似度和时间排序"""
     try:
@@ -584,3 +534,10 @@ def analysis():
     except Exception as e:
         print(f"处理分析页面时出错: {str(e)}")
         return str(e), 500
+
+# 应用级别的初始化代码
+def create_app():
+    app = Flask(__name__)
+    # 使用src中的功能
+    some_core_function()
+    return app
