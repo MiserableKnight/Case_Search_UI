@@ -463,16 +463,6 @@
                     <div class="content-search">
                         <div class="default-search-controls">
                             <div class="control-item">
-                                <span class="control-label">数据导入：</span>
-                                <el-button 
-                                    type="primary" 
-                                    size="small" 
-                                    @click="showImportDialog"
-                                    style="width: 120px">
-                                    导入数据<i class="el-icon-upload el-icon--right"></i>
-                                </el-button>
-                            </div>
-                            <div class="control-item">
                                 <span class="control-label">数据源：</span>
                                 <el-button 
                                     type="primary" 
@@ -510,6 +500,16 @@
                                     @click="showSensitiveWordDialog"
                                     style="width: 120px">
                                     管理敏感词<i class="el-icon-edit el-icon--right"></i>
+                                </el-button>
+                            </div>
+                            <div class="control-item">
+                                <span class="control-label">数据导入：</span>
+                                <el-button 
+                                    type="primary" 
+                                    size="small" 
+                                    @click="showImportDialog"
+                                    style="width: 120px">
+                                    导入数据<i class="el-icon-upload el-icon--right"></i>
                                 </el-button>
                             </div>
                         </div>
@@ -759,37 +759,43 @@
                 :close-on-click-modal="false"
                 :close-on-press-escape="false">
                 <div class="import-dialog-content">
-                    <!-- 数据源选择 -->
-                    <div class="import-source-select" style="margin-bottom: 20px;">
-                        <span style="margin-right: 10px;">选择数据源：</span>
-                        <el-radio-group v-model="importSettings.dataSource">
-                            <el-radio v-for="(label, value) in dataSourceOptions" 
-                                     :key="value" 
-                                     :label="value">
-                                [[ label ]]
-                            </el-radio>
-                        </el-radio-group>
-                    </div>
+                    <div class="import-header" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <!-- 数据源选择 -->
+                        <div class="import-source-select" style="flex: 1; padding: 10px; border: 1px solid #DCDFE6; border-radius: 4px;">
+                            <div style="font-weight: bold; margin-bottom: 10px;">选择数据源</div>
+                            <el-radio-group v-model="importSettings.dataSource">
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <el-radio v-for="(label, value) in dataSourceOptions" 
+                                             :key="value" 
+                                             :label="value">
+                                        [[ label ]]
+                                    </el-radio>
+                                </div>
+                            </el-radio-group>
+                        </div>
 
-                    <!-- 文件上传区域 -->
-                    <el-upload
-                        class="upload-area"
-                        drag
-                        action="/api/import_data"
-                        :data="{ dataSource: importSettings.dataSource }"
-                        :before-upload="handleBeforeUpload"
-                        :on-success="handleUploadSuccess"
-                        :on-error="handleUploadError"
-                        :show-file-list="false"
-                        :multiple="false">
-                        <i class="el-icon-upload"></i>
-                        <div class="el-upload__text">
-                            将文件拖到此处，或<em>点击选择文件</em>
+                        <!-- 文件上传区域 -->
+                        <div class="upload-section" style="flex: 1.5;">
+                            <el-upload
+                                class="upload-area"
+                                drag
+                                action="/api/import_data"
+                                :data="{ dataSource: importSettings.dataSource }"
+                                :before-upload="handleBeforeUpload"
+                                :on-success="handleUploadSuccess"
+                                :on-error="handleUploadError"
+                                :show-file-list="false"
+                                :multiple="false">
+                                <i class="el-icon-upload"></i>
+                                <div class="el-upload__text">
+                                    将文件拖到此处，或<em>点击选择文件</em>
+                                </div>
+                                <div class="el-upload__tip" slot="tip">
+                                    支持上传 .xlsx, .xls 格式的文件
+                                </div>
+                            </el-upload>
                         </div>
-                        <div class="el-upload__tip" slot="tip">
-                            支持上传 .xlsx, .xls, .csv 格式的文件
-                        </div>
-                    </el-upload>
+                    </div>
 
                     <!-- 预览区域 -->
                     <div v-if="importSettings.previewData" class="preview-area" style="margin-top: 20px;">
@@ -1884,12 +1890,17 @@
                     this.importDialogVisible = true;
                 },
                 handleBeforeUpload(file) {
-                    // 检查文件类型
-                    const validTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'];
-                    const isValidType = validTypes.includes(file.type);
+                    // 检查文件类型和扩展名
+                    const validTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                    const validExtensions = ['xls', 'xlsx'];
                     
-                    if (!isValidType) {
-                        this.$message.error('只能上传 Excel 或 CSV 文件！');
+                    // 获取文件扩展名
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    const isValidType = validTypes.includes(file.type);
+                    const isValidExtension = validExtensions.includes(extension);
+                    
+                    if (!isValidType && !isValidExtension) {
+                        this.$message.error('只能上传 Excel 文件（.xlsx 或 .xls 格式）！');
                         return false;
                     }
                     
@@ -1915,7 +1926,7 @@
                             duplicate_count: response.data.duplicate_count,
                             new_count: response.data.new_count,
                             final_count: response.data.final_count,
-                            temp_id: response.temp_id  // 保存temp_id
+                            temp_id: response.temp_id
                         };
                         this.$notify({
                             title: '上传成功',
@@ -1924,17 +1935,44 @@
                             duration: 3000
                         });
                     } else {
+                        // 根据错误类型显示不同的错误信息
+                        let errorMessage = response.message || '未知错误';
+                        if (response.error_type === 'format_error') {
+                            errorMessage = '文件格式错误：请检查数据列是否符合要求';
+                        } else if (response.error_type === 'data_source_mismatch') {
+                            errorMessage = '数据源不匹配：上传的数据与所选数据源不符';
+                        } else if (response.error_type === 'missing_columns') {
+                            errorMessage = '缺少必要的数据列：' + response.missing_columns.join(', ');
+                        }
+                        
                         this.$notify.error({
                             title: '上传失败',
-                            message: response.message || '未知错误',
+                            message: errorMessage,
                             duration: 4000
                         });
                     }
                 },
                 handleUploadError(err, file, fileList) {
+                    let errorMessage = '文件上传失败';
+                    
+                    // 尝试解析错误信息
+                    try {
+                        const error = JSON.parse(err.message);
+                        if (error.error_type === 'format_error') {
+                            errorMessage = '文件格式错误：请检查数据列是否符合要求';
+                        } else if (error.error_type === 'data_source_mismatch') {
+                            errorMessage = '数据源不匹配：上传的数据与所选数据源不符';
+                        } else if (error.message) {
+                            errorMessage = error.message;
+                        }
+                    } catch (e) {
+                        // 如果解析失败，使用原始错误信息
+                        errorMessage = err.message || errorMessage;
+                    }
+                    
                     this.$notify.error({
                         title: '上传失败',
-                        message: err.message || '文件上传失败',
+                        message: errorMessage,
                         duration: 4000
                     });
                 },
