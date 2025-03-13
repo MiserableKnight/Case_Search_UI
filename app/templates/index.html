@@ -15,7 +15,7 @@
         .container {
             max-width: 100%;
             margin: 0;
-            padding: 0 20px 20px 20px;
+            padding: 20px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -338,13 +338,45 @@
         .el-table__body tr:hover > td {
             background-color: #e6f1fc !important;
         }
+        /* 添加上传区域样式 */
+        .upload-area {
+            width: 100%;
+        }
+        .import-dialog-content {
+            padding: 10px;
+        }
+        .import-source-select {
+            display: flex;
+            align-items: center;
+        }
+        .el-upload-dragger {
+            width: 100%;
+        }
+        .el-upload__tip {
+            margin-top: 10px;
+            color: #909399;
+        }
+        .preview-area {
+            margin-top: 20px;
+        }
+        .preview-stats {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #606266;
+        }
+        .preview-stats p {
+            margin: 5px 0;
+        }
+        .import-source-select {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="container">
-            <h1>历史问题查询系统</h1>
-            
             <!-- 搜索区域 -->
             <div class="search-section">
                 <!-- 关键字搜索 -->
@@ -430,6 +462,16 @@
                     <div class="block-title">默认搜索设置</div>
                     <div class="content-search">
                         <div class="default-search-controls">
+                            <div class="control-item">
+                                <span class="control-label">数据导入：</span>
+                                <el-button 
+                                    type="primary" 
+                                    size="small" 
+                                    @click="showImportDialog"
+                                    style="width: 120px">
+                                    导入数据<i class="el-icon-upload el-icon--right"></i>
+                                </el-button>
+                            </div>
                             <div class="control-item">
                                 <span class="control-label">数据源：</span>
                                 <el-button 
@@ -708,6 +750,73 @@
                     </div>
                 </div>
             </el-dialog>
+
+            <!-- 数据导入对话框 -->
+            <el-dialog 
+                title="数据导入" 
+                :visible.sync="importDialogVisible" 
+                width="500px"
+                :close-on-click-modal="false"
+                :close-on-press-escape="false">
+                <div class="import-dialog-content">
+                    <!-- 数据源选择 -->
+                    <div class="import-source-select" style="margin-bottom: 20px;">
+                        <span style="margin-right: 10px;">选择数据源：</span>
+                        <el-radio-group v-model="importSettings.dataSource">
+                            <el-radio v-for="(label, value) in dataSourceOptions" 
+                                     :key="value" 
+                                     :label="value">
+                                [[ label ]]
+                            </el-radio>
+                        </el-radio-group>
+                    </div>
+
+                    <!-- 文件上传区域 -->
+                    <el-upload
+                        class="upload-area"
+                        drag
+                        action="/api/import_data"
+                        :data="{ dataSource: importSettings.dataSource }"
+                        :before-upload="handleBeforeUpload"
+                        :on-success="handleUploadSuccess"
+                        :on-error="handleUploadError"
+                        :show-file-list="false"
+                        :multiple="false">
+                        <i class="el-icon-upload"></i>
+                        <div class="el-upload__text">
+                            将文件拖到此处，或<em>点击选择文件</em>
+                        </div>
+                        <div class="el-upload__tip" slot="tip">
+                            支持上传 .xlsx, .xls, .csv 格式的文件
+                        </div>
+                    </el-upload>
+
+                    <!-- 预览区域 -->
+                    <div v-if="importSettings.previewData" class="preview-area" style="margin-top: 20px;">
+                        <el-card class="preview-info">
+                            <div slot="header">
+                                <span style="font-weight: bold">数据预览</span>
+                            </div>
+                            <div class="preview-stats">
+                                <p>原有数据：[[ importSettings.previewData.original_count ]] 条</p>
+                                <p>上传数据：[[ importSettings.previewData.uploaded_count ]] 条</p>
+                                <p>重复数据：[[ importSettings.previewData.duplicate_count ]] 条</p>
+                                <p>实际新增：[[ importSettings.previewData.new_count ]] 条</p>
+                                <p>变更后数据：[[ importSettings.previewData.final_count ]] 条</p>
+                            </div>
+                        </el-card>
+                    </div>
+                </div>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="cancelImport">取消</el-button>
+                    <el-button 
+                        type="primary" 
+                        @click="confirmImport"
+                        :disabled="!importSettings.previewData">
+                        确认导入
+                    </el-button>
+                </div>
+            </el-dialog>
         </div>
     </div>
 
@@ -745,7 +854,7 @@
                     aiDialogVisible: false,
                     aiResult: '',
                     defaultVisibleColumns: {
-                        'case': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],
+                        'case': ['申请时间', '问题描述', '答复详情', '机号/MSN', '运营人'],
                         'engineering': ['发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性'],
                         'manual': ['申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人'],
                         'faults': ['日期', '问题描述', '排故措施', '运营人', '飞机序列号', '机号']
@@ -821,6 +930,12 @@
                     typeStatistics: {},
                     selectedRows: [],
                     lastClickedRowIndex: null,  // 添加这一行来记录上次点击的行索引
+                    importDialogVisible: false,
+                    importSettings: {
+                        dataSource: 'case',
+                        previewData: null,
+                        uploadedFile: null
+                    }
                 }
             },
             computed: {
@@ -997,18 +1112,20 @@
                 getColumnMinWidth(column) {
                     // 快响信息(case)的特殊处理
                     if (this.defaultSearch.dataSource === 'case') {
-                        if (column === '申请时间') {
-                            return '60';
+                        if (column === '故障发生日期' || column === '申请时间') {
+                            return '90';  // 日期类列宽度调整
                         } else if (column === '问题描述' || column === '答复详情') {
                             return '300';
                         } else if (column === '相似度') {
                             return '70';
                         } else if (column === '机型') {
-                            return '70';  // 调整为70px
+                            return '70';
                         } else if (column === '数据类型') {
-                            return '80';  // 调整为80px
+                            return '80';
+                        } else if (column === '机号/MSN' || column === '运营人') {
+                            return '100';  // 新增列的宽度设置
                         } else {
-                            return '60';
+                            return '90';
                         }
                     }
                     
@@ -1515,9 +1632,9 @@
                         if (this.defaultSearch.dataSource === 'engineering') {
                             fieldsToAnonymize = ['原因和说明', '原文文本', '文件名称'];
                         } else if (this.defaultSearch.dataSource === 'faults') {
-                            fieldsToAnonymize = ['问题描述', '排故措施'];  // 只脱敏这两列
+                            fieldsToAnonymize = ['问题描述', '排故措施'];
                         } else {
-                            fieldsToAnonymize = ['问题描述', '答复详情'];
+                            fieldsToAnonymize = ['标题', '问题描述', '答复详情', '客户期望', '机号/MSN', '运营人'];  // 更新快响信息的脱敏字段
                         }
                         
                         fetch('/api/anonymize', {
@@ -1741,6 +1858,130 @@
                     // 打开新页面，不带数据参数
                     window.open('/analysis', '_blank');
                 },
+                showImportDialog() {
+                    this.importSettings.dataSource = this.defaultSearch.dataSource;  // 默认使用当前选择的数据源
+                    this.importDialogVisible = true;
+                },
+                handleBeforeUpload(file) {
+                    // 检查文件类型
+                    const validTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'];
+                    const isValidType = validTypes.includes(file.type);
+                    
+                    if (!isValidType) {
+                        this.$message.error('只能上传 Excel 或 CSV 文件！');
+                        return false;
+                    }
+                    
+                    // 检查文件大小（限制为10MB）
+                    const isLt10M = file.size / 1024 / 1024 < 10;
+                    if (!isLt10M) {
+                        this.$message.error('文件大小不能超过 10MB！');
+                        return false;
+                    }
+                    
+                    // 清除之前的预览数据
+                    this.importSettings.previewData = null;
+                    this.importSettings.uploadedFile = file;
+                    
+                    return true;
+                },
+                handleUploadSuccess(response, file, fileList) {
+                    if (response.status === 'success') {
+                        // 更新预览数据并保存temp_id
+                        this.importSettings.previewData = {
+                            original_count: response.data.original_count,
+                            uploaded_count: response.data.uploaded_count,
+                            duplicate_count: response.data.duplicate_count,
+                            new_count: response.data.new_count,
+                            final_count: response.data.final_count,
+                            temp_id: response.temp_id  // 保存temp_id
+                        };
+                        this.$notify({
+                            title: '上传成功',
+                            message: '文件已上传，请确认数据预览',
+                            type: 'success',
+                            duration: 3000
+                        });
+                    } else {
+                        this.$notify.error({
+                            title: '上传失败',
+                            message: response.message || '未知错误',
+                            duration: 4000
+                        });
+                    }
+                },
+                handleUploadError(err, file, fileList) {
+                    this.$notify.error({
+                        title: '上传失败',
+                        message: err.message || '文件上传失败',
+                        duration: 4000
+                    });
+                },
+                cancelImport() {
+                    // 发送取消请求，清理临时文件
+                    if (this.importSettings.previewData && this.importSettings.previewData.temp_id) {
+                        fetch('/api/cancel_import', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                dataSource: this.importSettings.dataSource,
+                                temp_id: this.importSettings.previewData.temp_id  // 添加temp_id
+                            })
+                        });
+                    }
+                    this.importSettings.previewData = null;
+                    this.importSettings.uploadedFile = null;
+                    this.importDialogVisible = false;
+                },
+                confirmImport() {
+                    if (!this.importSettings.previewData) {
+                        this.$message.warning('请先上传文件');
+                        return;
+                    }
+
+                    this.$confirm('确认要导入这些数据吗？', '确认导入', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        // 发送确认导入请求
+                        fetch('/api/confirm_import', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                dataSource: this.importSettings.dataSource,
+                                temp_id: this.importSettings.previewData.temp_id  // 添加temp_id
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                this.$notify({
+                                    title: '导入成功',
+                                    message: '数据已成功更新',
+                                    type: 'success',
+                                    duration: 3000
+                                });
+                                this.importDialogVisible = false;
+                                this.importSettings.previewData = null;
+                                this.importSettings.uploadedFile = null;
+                            } else {
+                                throw new Error(data.message || '导入失败');
+                            }
+                        })
+                        .catch(error => {
+                            this.$notify.error({
+                                title: '导入失败',
+                                message: error.message,
+                                duration: 4000
+                            });
+                        });
+                    }).catch(() => {});
+                }
             }
         })
     </script>

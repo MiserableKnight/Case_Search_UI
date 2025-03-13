@@ -4,7 +4,8 @@ import os
 
 class TextAnonymizer:
     def __init__(self, sensitive_words_path='app/data/sensitive_words.json'):
-        self.sensitive_words = self.load_sensitive_words(sensitive_words_path)
+        self.sensitive_words = []
+        self.load_sensitive_words(sensitive_words_path)
         self.patterns = [
             r'(909|ARJ)/B-?[A-Z0-9]{4}',
             r'B-?[A-Z0-9]{4}',
@@ -12,27 +13,25 @@ class TextAnonymizer:
             r'执行.{1,15}?航班',
             r'[A-Z]{2}\d{4}'
         ]
-        # 对初始敏感词列表按长度降序排序
-        self.sensitive_words.sort(key=len, reverse=True)
 
     def load_sensitive_words(self, file_path):
-        sensitive_words = []
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
-                content = file.read().strip()
-                sensitive_words = json.loads(content)
+                content = json.load(file)
+                # 从各个分类中提取敏感词
+                for category in content.values():
+                    if isinstance(category, list):
+                        for item in category:
+                            if isinstance(item, dict) and 'word' in item:
+                                self.sensitive_words.append(item['word'])
                 
-                unique_sensitive_words = []
-                for word in sensitive_words:
-                    if word not in unique_sensitive_words:
-                        unique_sensitive_words.append(word)
-                sensitive_words = unique_sensitive_words
+                # 对敏感词列表按长度降序排序
+                self.sensitive_words.sort(key=len, reverse=True)
                 print("敏感词列表读取成功")
         except FileNotFoundError:
             print(f"未找到文件：{file_path}，请检查文件路径和文件名。")
         except Exception as e:
-            print(f"读取文件时出现错误：{e}")
-        return sensitive_words
+            print(f"读取文件时出错：{e}")
 
     def add_sensitive_words(self, new_words):
         if isinstance(new_words, str):
@@ -56,6 +55,8 @@ class TextAnonymizer:
                 text = re.sub(pattern, "", text)
             for word in self.sensitive_words:
                 text = text.replace(word, "")
+            # 清理多余的空白字符
+            text = re.sub(r'\s+', ' ', text.strip())
             return text
         return text
 
@@ -73,4 +74,4 @@ anonymize_text = default_anonymizer.anonymize_text
 add_sensitive_words = default_anonymizer.add_sensitive_words
 add_patterns = default_anonymizer.add_patterns
 get_sensitive_words = default_anonymizer.get_sensitive_words
-get_patterns = default_anonymizer.get_patterns
+get_patterns = default_anonymizer.get_patterns 

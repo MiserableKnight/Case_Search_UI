@@ -1,0 +1,248 @@
+2025-03-12 13:18:54,386 - app.routes - INFO - 创建上传目录: D:\Quant\Search_UI\app\data\temp
+2025-03-12 13:22:54,131 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:22:54,138 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:22:54,139 - app.routes - ERROR - 不支持的文件格式: 服务请求报表.xls
+2025-03-12 13:24:05,812 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:24:05,819 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:24:05,819 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:24:05,825 - app.routes - INFO - 文件保存成功
+2025-03-12 13:24:05,826 - app.routes - INFO - 开始处理数据
+2025-03-12 13:24:05,831 - app.routes - INFO - 数据处理结果: success=False, message=数据处理失败: Missing optional dependency 'xlrd'. Install xlrd >= 2.0.1 for xls Excel support Use pip or conda to install xlrd.
+2025-03-12 13:24:05,833 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:25:54,538 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:25:54,545 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:25:54,546 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:25:54,558 - app.routes - INFO - 文件保存成功
+2025-03-12 13:25:54,558 - app.routes - INFO - 开始处理数据
+2025-03-12 13:25:55,010 - app.routes - INFO - 数据处理结果: success=True, message=数据处理成功
+2025-03-12 13:25:55,012 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:31:08,187 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:31:08,195 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:31:08,195 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:31:08,201 - app.routes - INFO - 文件保存成功
+2025-03-12 13:31:08,202 - app.routes - INFO - 开始处理数据
+2025-03-12 13:31:09,369 - app.routes - INFO - 数据处理结果: success=True, message=数据导入成功！
+原有数据：57085 条
+新增数据：445 条
+现有数据：57530 条
+2025-03-12 13:31:09,371 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:33:16,542 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:33:16,550 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:33:16,550 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:33:16,555 - app.routes - INFO - 文件保存成功
+2025-03-12 13:33:16,555 - app.routes - INFO - 开始处理数据
+2025-03-12 13:33:23,265 - app.routes - INFO - 数据处理结果: success=True, message=数据导入成功！
+原有数据：57530 条
+上传数据：445 条
+重复数据：4880 条
+实际新增：-4435 条
+现有数据：53095 条
+2025-03-12 13:33:23,267 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:37:48,646 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:37:48,654 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:37:48,655 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:37:48,659 - app.routes - INFO - 文件保存成功
+2025-03-12 13:37:48,660 - app.routes - INFO - 开始处理数据
+2025-03-12 13:37:49,786 - app.routes - INFO - 数据处理结果: success=True, message=数据导入成功！
+原有数据：57085 条
+上传数据：445 条
+重复数据：4435 条
+实际新增：-3990 条
+现有数据：53095 条
+2025-03-12 13:37:49,789 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:38:53,448 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:38:53,456 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:38:53,456 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:38:53,462 - app.routes - INFO - 文件保存成功
+2025-03-12 13:38:53,462 - app.routes - INFO - 开始处理数据
+2025-03-12 13:38:54,535 - app.routes - INFO - 数据处理结果: success=True, message=数据导入成功！
+原有数据：57085 条
+上传数据：445 条
+重复数据：4435 条
+实际新增：-3990 条
+现有数据：53095 条
+2025-03-12 13:38:54,538 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:42:08,684 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:42:08,691 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:42:08,691 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:42:08,697 - app.routes - INFO - 文件保存成功
+2025-03-12 13:42:08,697 - app.routes - INFO - 开始分析数据
+2025-03-12 13:42:10,339 - app.routes - ERROR - 处理文件时出错: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+Traceback (most recent call last):
+  File "D:\Quant\Search_UI\app\routes.py", line 83, in upload_file
+    session['pending_data'] = combined_data.to_json()
+  File "D:\anaconda3\envs\search\lib\site-packages\flask\sessions.py", line 97, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+2025-03-12 13:42:10,352 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:43:10,853 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:43:10,862 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:43:10,862 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:43:10,867 - app.routes - INFO - 文件保存成功
+2025-03-12 13:43:10,867 - app.routes - INFO - 开始分析数据
+2025-03-12 13:43:12,215 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:43:33,604 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:43:33,611 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:43:33,611 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:43:33,616 - app.routes - INFO - 文件保存成功
+2025-03-12 13:43:33,616 - app.routes - INFO - 开始分析数据
+2025-03-12 13:43:34,917 - app.routes - INFO - 临时文件删除成功
+2025-03-12 13:45:07,660 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 13:45:07,668 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 13:45:07,669 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 13:45:07,674 - app.routes - INFO - 文件保存成功
+2025-03-12 13:45:07,674 - app.routes - INFO - 开始分析数据
+2025-03-12 13:45:09,051 - app.routes - INFO - 临时文件删除成功
+2025-03-12 14:11:51,877 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 14:11:51,883 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 14:11:51,883 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 14:11:51,892 - app.routes - INFO - 文件保存成功
+2025-03-12 14:11:51,892 - app.routes - INFO - 开始分析数据
+2025-03-12 14:11:53,015 - app.routes - INFO - 临时文件删除成功
+2025-03-12 14:30:43,992 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 14:30:44,000 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 14:30:44,000 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 14:30:44,005 - app.routes - INFO - 文件保存成功
+2025-03-12 14:30:44,006 - app.routes - INFO - 开始分析数据
+2025-03-12 14:30:45,113 - app.routes - INFO - 临时文件删除成功
+2025-03-12 14:36:16,666 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 14:36:16,673 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 14:36:16,673 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 14:36:16,678 - app.routes - INFO - 文件保存成功
+2025-03-12 14:36:16,678 - app.routes - INFO - 开始分析数据
+2025-03-12 14:36:17,723 - app.routes - INFO - 临时文件删除成功
+2025-03-12 14:38:08,287 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 14:38:08,293 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 14:38:08,293 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 14:38:08,299 - app.routes - INFO - 文件保存成功
+2025-03-12 14:38:08,300 - app.routes - INFO - 开始分析数据
+2025-03-12 14:38:09,338 - app.routes - INFO - 临时文件删除成功
+2025-03-12 14:39:47,568 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 14:39:47,574 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 14:39:47,574 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 14:39:47,580 - app.routes - INFO - 文件保存成功
+2025-03-12 14:39:47,580 - app.routes - INFO - 开始分析数据
+2025-03-12 14:39:48,626 - app.routes - INFO - 临时文件删除成功
+2025-03-12 14:40:15,898 - app.routes - INFO - 开始处理文件上传请求
+2025-03-12 14:40:15,906 - app.routes - INFO - 接收到文件: 服务请求报表.xls
+2025-03-12 14:40:15,906 - app.routes - INFO - 准备保存文件到: D:\Quant\Search_UI\app\data\temp\temp_cases.xls
+2025-03-12 14:40:15,911 - app.routes - INFO - 文件保存成功
+2025-03-12 14:40:15,912 - app.routes - INFO - 开始分析数据
+2025-03-12 14:40:17,043 - app.routes - INFO - 临时文件删除成功
+2025-03-13 10:42:06,357 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 10:42:06,361 - app.routes - INFO - 数据源 case 的数据类型: ['服务请求', '客户意见', '252问题']
+2025-03-13 12:31:47,654 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 12:31:47,657 - app.routes - INFO - 数据源 case 的数据类型: ['服务请求', '客户意见', '252问题']
+2025-03-13 12:33:14,357 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 12:33:14,361 - app.routes - INFO - 数据源 case 的数据类型: ['服务请求', '客户意见', '252问题']
+2025-03-13 12:34:27,948 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 12:34:27,952 - app.routes - INFO - 数据源 case 的数据类型: ['服务请求', '客户意见', '252问题']
+2025-03-13 12:37:39,700 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 12:37:39,703 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 12:55:50,469 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 12:55:50,472 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 12:58:00,195 - app.routes - ERROR - 处理文件上传时出错: CaseProcessor.__new__() takes 1 positional argument but 2 were given
+2025-03-13 12:59:31,447 - app.routes - ERROR - 处理文件上传时出错: CaseProcessor.__new__() takes 1 positional argument but 2 were given
+2025-03-13 12:59:58,696 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 12:59:58,699 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 12:59:58,739 - app.routes - ERROR - 处理文件上传时出错: CaseProcessor.__new__() takes 1 positional argument but 2 were given
+2025-03-13 13:01:22,419 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 13:01:22,437 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 13:03:15,762 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 13:03:15,765 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 13:03:19,429 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 13:03:19,432 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 13:03:26,429 - app.routes - INFO - 开始处理文件上传
+2025-03-13 13:03:26,436 - app.routes - INFO - 数据源: case
+2025-03-13 13:03:26,436 - app.routes - INFO - 生成临时ID: 7b308494-ac7e-418b-a5bc-06140ee160ca
+2025-03-13 13:03:26,436 - app.routes - INFO - 临时文件路径: D:\Quant\Search_UI\app\data\temp\7b308494-ac7e-418b-a5bc-06140ee160ca_xls
+2025-03-13 13:03:26,439 - app.routes - INFO - 文件保存成功
+2025-03-13 13:03:27,181 - app.routes - INFO - 数据分析结果: success=True, message=数据变更预览：
+原有数据：57143 条
+上传数据：369 条
+重复数据：369 条
+实际新增：0 条
+变更后数据：57143 条
+
+是否确认更新数据？
+2025-03-13 13:03:27,184 - app.routes - INFO - 临时信息保存成功
+2025-03-13 13:04:48,994 - app.routes - INFO - 开始处理文件上传
+2025-03-13 13:04:49,004 - app.routes - INFO - 数据源: case
+2025-03-13 13:04:49,005 - app.routes - INFO - 生成临时ID: 7a790268-6e1b-468f-8b89-53cf03f933f2
+2025-03-13 13:04:49,007 - app.routes - INFO - 临时文件路径: D:\Quant\Search_UI\app\data\temp\7a790268-6e1b-468f-8b89-53cf03f933f2_xls
+2025-03-13 13:04:49,013 - app.routes - INFO - 文件保存成功
+2025-03-13 13:04:49,702 - app.routes - INFO - 数据分析结果: success=True, message=数据变更预览：
+原有数据：57143 条
+上传数据：369 条
+重复数据：369 条
+实际新增：0 条
+变更后数据：57143 条
+
+是否确认更新数据？
+2025-03-13 13:04:49,703 - app.routes - INFO - 临时信息保存成功
+2025-03-13 13:10:01,468 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 13:10:01,472 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 13:10:06,940 - app.routes - INFO - 开始处理文件上传
+2025-03-13 13:10:06,948 - app.routes - INFO - 数据源: case
+2025-03-13 13:10:06,950 - app.routes - INFO - 生成临时ID: 27b7e717-61ad-4734-9e85-519d2e076fae
+2025-03-13 13:10:06,954 - app.routes - INFO - 临时文件路径: D:\Quant\Search_UI\app\data\temp\27b7e717-61ad-4734-9e85-519d2e076fae_xls
+2025-03-13 13:10:06,956 - app.routes - INFO - 文件保存成功
+2025-03-13 13:10:07,731 - app.routes - INFO - 数据分析结果: success=True, message=数据变更预览：
+原有数据：57143 条
+上传数据：369 条
+重复数据：369 条
+实际新增：0 条
+变更后数据：57143 条
+
+是否确认更新数据？
+2025-03-13 13:10:07,732 - app.routes - INFO - 临时信息保存成功
+2025-03-13 13:10:11,291 - app.routes - INFO - 接收到确认导入请求
+2025-03-13 13:10:11,292 - app.routes - INFO - 请求内容类型: application/json
+2025-03-13 13:10:11,293 - app.routes - INFO - 请求方法: POST
+2025-03-13 13:10:11,294 - app.routes - INFO - JSON数据: {'dataSource': 'case'}
+2025-03-13 13:10:11,294 - app.routes - INFO - 获取到的temp_id: None
+2025-03-13 13:10:11,294 - app.routes - ERROR - 缺少临时文件ID
+2025-03-13 13:11:20,948 - app.routes - INFO - 数据源 case 的列名: ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
+2025-03-13 13:11:20,952 - app.routes - INFO - 数据源 case 的数据类型: ['252问题', '服务请求', '客户意见']
+2025-03-13 13:11:44,023 - app.routes - INFO - 开始处理文件上传
+2025-03-13 13:11:44,029 - app.routes - INFO - 数据源: case
+2025-03-13 13:11:44,030 - app.routes - INFO - 生成临时ID: 9cbcbc75-e84e-49fc-8c7d-0076168e1745
+2025-03-13 13:11:44,031 - app.routes - INFO - 临时文件路径: D:\Quant\Search_UI\app\data\temp\9cbcbc75-e84e-49fc-8c7d-0076168e1745_xls
+2025-03-13 13:11:44,035 - app.routes - INFO - 文件保存成功
+2025-03-13 13:11:44,737 - app.routes - INFO - 数据分析结果: success=True, message=数据变更预览：
+原有数据：57143 条
+上传数据：369 条
+重复数据：369 条
+实际新增：0 条
+变更后数据：57143 条
+
+是否确认更新数据？
+2025-03-13 13:11:44,738 - app.routes - INFO - 临时信息保存成功
+2025-03-13 13:11:47,427 - app.routes - INFO - 接收到确认导入请求
+2025-03-13 13:11:47,427 - app.routes - INFO - 请求内容类型: application/json
+2025-03-13 13:11:47,428 - app.routes - INFO - 请求方法: POST
+2025-03-13 13:11:47,429 - app.routes - INFO - JSON数据: {'dataSource': 'case', 'temp_id': '9cbcbc75-e84e-49fc-8c7d-0076168e1745'}
+2025-03-13 13:11:47,429 - app.routes - INFO - 获取到的temp_id: 9cbcbc75-e84e-49fc-8c7d-0076168e1745
+2025-03-13 13:11:47,430 - app.routes - INFO - 数据源: case
+2025-03-13 13:11:47,430 - app.routes - INFO - 读取到的临时信息: {'file_path': 'D:\\Quant\\Search_UI\\app\\data\\temp\\9cbcbc75-e84e-49fc-8c7d-0076168e1745_xls', 'data_source': 'case', 'timestamp': 1741842704.7376208, 'filename': 'xls'}
+2025-03-13 13:12:04,651 - app.routes - INFO - 开始处理文件上传
+2025-03-13 13:12:04,658 - app.routes - INFO - 数据源: case
+2025-03-13 13:12:04,658 - app.routes - INFO - 生成临时ID: 54679f10-9d90-45f8-91b7-cdf39e3cada7
+2025-03-13 13:12:04,659 - app.routes - INFO - 临时文件路径: D:\Quant\Search_UI\app\data\temp\54679f10-9d90-45f8-91b7-cdf39e3cada7_xls
+2025-03-13 13:12:04,661 - app.routes - INFO - 文件保存成功
+2025-03-13 13:12:05,368 - app.routes - INFO - 数据分析结果: success=True, message=数据变更预览：
+原有数据：57143 条
+上传数据：369 条
+重复数据：369 条
+实际新增：0 条
+变更后数据：57143 条
+
+是否确认更新数据？
+2025-03-13 13:12:05,369 - app.routes - INFO - 临时信息保存成功
+2025-03-13 13:12:11,731 - app.routes - INFO - 接收到确认导入请求
+2025-03-13 13:12:11,731 - app.routes - INFO - 请求内容类型: application/json
+2025-03-13 13:12:11,734 - app.routes - INFO - 请求方法: POST
+2025-03-13 13:12:11,735 - app.routes - INFO - JSON数据: {'dataSource': 'case', 'temp_id': '54679f10-9d90-45f8-91b7-cdf39e3cada7'}
+2025-03-13 13:12:11,735 - app.routes - INFO - 获取到的temp_id: 54679f10-9d90-45f8-91b7-cdf39e3cada7
+2025-03-13 13:12:11,736 - app.routes - INFO - 数据源: case
+2025-03-13 13:12:11,736 - app.routes - INFO - 读取到的临时信息: {'file_path': 'D:\\Quant\\Search_UI\\app\\data\\temp\\54679f10-9d90-45f8-91b7-cdf39e3cada7_xls', 'data_source': 'case', 'timestamp': 1741842725.3686488, 'filename': 'xls'}

@@ -38,6 +38,7 @@ Thumbs.db
 # Jupyter Notebook
 .ipynb_checkpoints
 历史问题查询_R2.1.ipynb
+当前快响单处理.ipynb
 
 # 数据文件
 *.csv
