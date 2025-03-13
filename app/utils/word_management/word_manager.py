@@ -2,21 +2,26 @@ import json
 import os
 import time
 from pathlib import Path
+from flask import current_app
 
 class SensitiveWordManager:
-    def __init__(self):
-        # 获取当前文件所在目录的父目录（app目录）
-        app_dir = Path(__file__).parent.parent
-        self.sensitive_words_path = app_dir / 'data' / 'sensitive_words.json'
-        self.words = self._load_words()
-        self.sorted_words = self._create_sorted_list()  # 新增：维护一个已排序的敏感词列表
+    def __init__(self, file_path=None):
+        if file_path is None:
+            # 使用配置中的路径
+            file_path = current_app.config['FILE_CONFIG']['SENSITIVE_WORDS_FILE']
+        self.file_path = Path(file_path)
+        
         self._ensure_file_exists()
+        self.load_words()
+        self.sorted_words = self._create_sorted_list()
 
     def _ensure_file_exists(self):
         """确保敏感词文件存在，如果不存在则创建"""
         try:
-            if not self.sensitive_words_path.exists():
-                self.sensitive_words_path.parent.mkdir(parents=True, exist_ok=True)
+            if not self.file_path.exists():
+                # 确保目录存在
+                self.file_path.parent.mkdir(parents=True, exist_ok=True)
+                # 创建初始文件
                 initial_data = {
                     "organizations": [],
                     "aircraft": [],
@@ -24,43 +29,38 @@ class SensitiveWordManager:
                     "registration_numbers": [],
                     "other": []
                 }
-                with open(self.sensitive_words_path, 'w', encoding='utf-8') as f:
+                with self.file_path.open('w', encoding='utf-8') as f:
                     json.dump(initial_data, f, ensure_ascii=False, indent=4)
-                print(f"已创建敏感词文件: {self.sensitive_words_path}")
-        except Exception as e:
-            print(f"创建敏感词文件失败: {e}")
-
-    def _load_words(self):
-        """从文件加载敏感词"""
-        if self.sensitive_words_path.exists():
-            try:
-                with open(self.sensitive_words_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except Exception as e:
-                print(f"加载敏感词文件出错: {e}")
-                return self._create_default_structure()
-        else:
-            return self._create_default_structure()
-
-    def _create_default_structure(self):
-        """创建默认的敏感词结构"""
-        return {
-            "organizations": [],
-            "aircraft": [],
-            "locations": [],
-            "registration_numbers": [],
-            "other": []
-        }
-
-    def _save_words(self):
-        """保存敏感词到文件"""
-        try:
-            with open(self.sensitive_words_path, 'w', encoding='utf-8') as f:
-                json.dump(self.words, f, ensure_ascii=False, indent=2)
+                return True
             return True
         except Exception as e:
-            print(f"保存敏感词文件出错: {e}")
+            print(f"创建敏感词文件失败: {e}")
             return False
+
+    def load_words(self):
+        """加载敏感词"""
+        try:
+            # 直接尝试读取文件，因为 _ensure_file_exists 已经确保文件存在
+            with self.file_path.open('r', encoding='utf-8') as f:
+                self.words = json.load(f)
+        except FileNotFoundError:
+            # 使用默认空结构
+            self.words = {
+                "organizations": [],
+                "aircraft": [],
+                "locations": [],
+                "registration_numbers": [],
+                "other": []
+            }
+        except Exception as e:
+            print(f"加载敏感词文件时出错：{type(e).__name__}")
+            self.words = {
+                "organizations": [],
+                "aircraft": [],
+                "locations": [],
+                "registration_numbers": [],
+                "other": []
+            }
 
     def _create_sorted_list(self):
         """创建按长度排序的敏感词列表"""
@@ -141,8 +141,17 @@ class SensitiveWordManager:
         try:
             words = self.load_words()
             category_words = words.get(category, [])
-            print(f"获取类别 {category} 的敏感词: {category_words}")
             return category_words
         except Exception as e:
             print(f"获取类别敏感词失败: {e}")
-            return [] 
+            return []
+
+    def _save_words(self):
+        """保存敏感词到文件"""
+        try:
+            with self.file_path.open('w', encoding='utf-8') as f:
+                json.dump(self.words, f, ensure_ascii=False, indent=2)
+            return True
+        except Exception as e:
+            print(f"保存敏感词文件出错: {e}")
+            return False 

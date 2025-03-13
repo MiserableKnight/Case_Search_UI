@@ -1,4 +1,4 @@
-from flask import request, jsonify, render_template, session, current_app, Blueprint
+from flask import request, jsonify, render_template, session, current_app, Blueprint, send_file
 from app.utils.data_processing.case_processor import CaseProcessor
 import os
 import logging
@@ -11,6 +11,7 @@ import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from werkzeug.utils import secure_filename
+from app.utils.similarity import TextSimilarityCalculator
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -80,27 +81,69 @@ def parse_preview_message(message):
         return None
 
 # 添加获取数据源列名的路由
-@bp.route('/api/data_source_columns', methods=['GET'])
+@bp.route('/api/data_source_columns')
 def get_data_source_columns():
     """获取所有数据源的列名"""
     try:
+        # 定义各数据源的基础列
+        base_columns = {
+            'case': [
+                '故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', 
+                '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型'
+            ],
+            'engineering': [
+                '发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性', 
+                '原文文本', '机型', '数据类型'
+            ],
+            'manual': [
+                '申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人',
+                '机型', '数据类型'
+            ],
+            'faults': [
+                '日期', '问题描述', '排故措施', '运营人', '飞机序列号', '机号',
+                '机型', '数据类型'
+            ]
+        }
+
+        # 获取实际数据源的列
         columns = {}
         for source in current_app.config['DATA_SOURCES']:
-            df = current_app.load_data_source(source)
-            if df is not None:
-                columns[source] = df.columns.tolist()
-            else:
-                columns[source] = []
-        
+            try:
+                # 首先尝试从实际数据中获取列
+                df = current_app.load_data_source(source)
+                if df is not None:
+                    columns[source] = df.columns.tolist()
+                else:
+                    # 如果无法加载数据，使用基础列定义
+                    columns[source] = base_columns.get(source, [])
+                
+                # 确保列表不为空
+                if not columns[source]:
+                    columns[source] = base_columns.get(source, [])
+                
+                # 记录日志
+                logger.info(f"数据源 {source} 的列: {columns[source]}")
+                
+            except Exception as e:
+                logger.warning(f"获取数据源 {source} 的列名时出错: {str(e)}")
+                # 使用基础列作为后备
+                columns[source] = base_columns.get(source, [])
+
+        # 验证返回的数据
+        if not columns or not any(cols for cols in columns.values()):
+            raise ValueError("无法获取任何数据源的列信息")
+
         return jsonify({
             'status': 'success',
             'columns': columns
         })
+
     except Exception as e:
-        logger.error(f"获取数据源列名时出错: {str(e)}")
+        error_msg = f"获取数据源列名失败: {str(e)}"
+        logger.error(error_msg)
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': error_msg
         }), 500
 
 # 添加获取数据类型的路由
@@ -512,4 +555,47 @@ def cleanup_temp_files(temp_id):
                 if os.path.exists(file_path):
                     os.remove(file_path)
     except Exception as e:
-        logger.error(f"清理临时文件时出错: {str(e)}") 
+        logger.error(f"清理临时文件时出错: {str(e)}")
+
+@bp.route('/analysis')
+def analysis():
+    """数据分析页面路由"""
+    return render_template('analysis.html')
+
+@bp.route('/api/similarity', methods=['POST'])
+def calculate_text_similarity():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'status': 'error',
+                'message': '无效的请求数据'
+            }), 400
+
+        # 验证必需的字段
+        required_fields = ['text', 'columns', 'results']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'缺少必需的字段: {field}'
+                }), 400
+
+        # 使用TextSimilarityCalculator计算相似度
+        sorted_results = TextSimilarityCalculator.calculate_similarity(
+            data['text'],
+            data['results'],
+            data['columns']
+        )
+
+        return jsonify({
+            'status': 'success',
+            'data': sorted_results
+        })
+
+    except Exception as e:
+        logger.error(f"计算相似度时出错: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'计算相似度失败: {str(e)}'
+        }), 500 

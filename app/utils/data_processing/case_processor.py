@@ -27,9 +27,13 @@ class CaseProcessor:
         if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
             print("敏感词列表读取成功")
             
-        # 设置数据路径
-        self.data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
-                                     'data', 'case.parquet')
+        # 修改数据路径，使用相对路径
+        self.data_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+            'data',
+            'raw',
+            'case.parquet'
+        )
         
         # 初始化其他属性
         self.REQUIRED_COLUMNS = ['类型', '标题', '状态', '技术请求编号', '服务请求单编号', '支持单编号', '版本号', '优先级', 
@@ -212,4 +216,20 @@ class CaseProcessor:
             return True, "数据更新成功！"
         except Exception as e:
             logger.error(f"保存数据时出错: {str(e)}")
-            return False, f"数据保存失败: {str(e)}" 
+            return False, f"数据保存失败: {str(e)}"
+
+    @staticmethod
+    def validate_columns(columns):
+        """验证列名是否有效"""
+        if not columns or not isinstance(columns, list):
+            return False
+        required_fields = {'问题描述', '答复详情'}  # 定义必需字段
+        return all(field in columns for field in required_fields)
+
+def process_case_data():
+    # 使用 app/__init__.py 中定义的路径
+    input_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES['case'])
+    output_path = os.path.join(DATA_CONFIG['processed_dir'], 'processed_case.parquet')
+    
+    # 处理数据的代码
+    # ... 

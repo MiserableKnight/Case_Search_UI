@@ -981,12 +981,17 @@
                     try {
                         const response = await fetch('/api/data_source_columns');
                         const data = await response.json();
-                        if (data.status === 'success') {
+                        if (data.status === 'success' && data.columns) {
                             // 保存完整的列信息
                             this.dataSourceColumns = data.columns;
                             
+                            // 确保当前数据源的列信息存在
+                            if (!this.dataSourceColumns[this.defaultSearch.dataSource]) {
+                                throw new Error(`未找到数据源 ${this.defaultSearch.dataSource} 的列信息`);
+                            }
+                            
                             // 初始化列的可见性
-                            this.columns = data.columns[this.defaultSearch.dataSource];
+                            this.columns = this.dataSourceColumns[this.defaultSearch.dataSource];
                             this.columns.forEach(col => {
                                 this.$set(this.columnVisible, col, this.defaultVisibleColumns[this.defaultSearch.dataSource].includes(col));
                             });
@@ -998,10 +1003,19 @@
                                     level.column_name = [defaultColumn];
                                 }
                             });
+                        } else {
+                            throw new Error('获取数据源列名失败：返回数据格式不正确');
                         }
                     } catch (error) {
                         console.error('获取数据源列名失败:', error);
-                        this.$message.error('获取数据源列名失败：' + error);
+                        // 使用备用数据
+                        if (this.defaultVisibleColumns[this.defaultSearch.dataSource]) {
+                            this.columns = this.defaultVisibleColumns[this.defaultSearch.dataSource];
+                            this.columns.forEach(col => {
+                                this.$set(this.columnVisible, col, true);
+                            });
+                        }
+                        this.$message.error('获取数据源列名失败：' + error.message);
                     }
                 },
                 async loadInitialDataTypes() {
@@ -1042,67 +1056,43 @@
                         
                         // 更新默认搜索列
                         const defaultColumn = this.defaultSearchColumn[value];
+                        if (!defaultColumn) {
+                            throw new Error(`未找到数据源 ${value} 的默认搜索列`);
+                        }
+                        
                         this.searchLevels.forEach(level => {
-                            level.column_name = defaultColumn;
+                            level.column_name = [defaultColumn];
                         });
 
                         // 更新相似度搜索的默认选中列
-                        if (value === 'engineering') {
-                            this.contentSearch.selectedColumns = ['原因和说明'];  // 工程文件默认选中"原因和说明"
-                        } else {
-                            this.contentSearch.selectedColumns = ['问题描述'];    // 其他数据源默认选中"问题描述"
-                        }
+                        this.contentSearch.selectedColumns = value === 'engineering' ? ['原因和说明'] : ['问题描述'];
 
                         // 获取新数据源的数据类型
-                        try {
-                            const response = await fetch(`/api/data_types/${value}`);
-                            const data = await response.json();
-                            if (data.status === 'success') {
-                                console.log('获取到的数据类型:', data.types);
-                                this.availableDataTypes = data.types;
-                                this.defaultSearch.dataTypes = [...data.types];
-                                
-                                // 更新列显示
-                                await this.loadDataSourceColumns();
-                                
-                                // 清空搜索结果
-                                this.searchResults = [];
-                                this.total = 0;
+                        await this.loadDataTypes();
+                        
+                        // 更新列显示
+                        await this.loadDataSourceColumns();
+                        
+                        // 清空搜索结果
+                        this.searchResults = [];
+                        this.total = 0;
 
-                                // 使用 Element UI 的 Notification 组件显示更醒目的提示
-                                this.$notify({
-                                    title: '成功',
-                                    message: `数据源已切换至${this.dataSourceOptions[value]}`,
-                                    type: 'success',
-                                    duration: 2000,
-                                    position: 'top-right'
-                                });
-                            } else {
-                                throw new Error('获取数据类型失败');
-                            }
-                        } catch (error) {
-                            console.error('获取数据类型失败，使用备用数据:', error);
-                            this.availableDataTypes = this.dataSourceTypes[value] || [];
-                            this.defaultSearch.dataTypes = [...this.availableDataTypes];
-                            
-                            // 显示警告提示
-                            this.$notify({
-                                title: '警告',
-                                message: '使用备用数据类型配置',
-                                type: 'warning',
-                                duration: 3000,
-                                position: 'top-right'
-                            });
-                        }
+                        this.$notify({
+                            title: '成功',
+                            message: `数据源已切换至${this.dataSourceOptions[value]}`,
+                            type: 'success',
+                            duration: 2000
+                        });
                     } catch (error) {
                         console.error('切换数据源失败:', error);
-                        // 显示错误提示
                         this.$notify.error({
                             title: '错误',
                             message: '切换数据源失败：' + error.message,
-                            duration: 4000,
-                            position: 'top-right'
+                            duration: 3000
                         });
+                        
+                        // 恢复到之前的数据源
+                        this.defaultSearch.dataSource = this.tempDataSource;
                     }
                 },
                 handleAircraftTypeChange(values) {
@@ -1374,50 +1364,78 @@
 
                     this.loading = true;
                     const searchText = this.contentSearch.text.trim();
+                    
+                    // 构建请求数据
+                    const requestData = {
+                        text: searchText,
+                        columns: this.contentSearch.selectedColumns,
+                        results: this.searchResults
+                    };
+                    
+                    console.log('发送相似度计算请求:', requestData);
 
-                    try {
-                        // 发送相似度搜索请求到后端
-                        fetch('/api/similarity', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                text: searchText,
-                                columns: this.contentSearch.selectedColumns,
-                                results: this.searchResults
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                // 更新搜索结果
-                                this.searchResults = data.data;
-                                
-                                // 确保相似度列显示在表格中
-                                if (!this.columns.includes('相似度')) {
-                                    this.columns.unshift('相似度');
-                                    this.$set(this.columnVisible, '相似度', true);
+                    // 发送相似度搜索请求到后端
+                    fetch('/api/similarity', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                    .then(response => {
+                        console.log('服务器响应状态:', response.status, response.statusText);
+                        
+                        // 检查响应状态
+                        if (!response.ok) {
+                            // 如果响应不是200-299之间，先尝试解析JSON
+                            return response.text().then(text => {
+                                console.log('非200响应内容:', text);
+                                try {
+                                    // 尝试将响应解析为JSON
+                                    const data = JSON.parse(text);
+                                    throw new Error(data.message || '相似度计算失败');
+                                } catch (e) {
+                                    // 如果不是JSON，可能是HTML错误页面
+                                    if (text.includes('<!doctype')) {
+                                        console.error('服务器返回了HTML错误页面');
+                                        throw new Error('服务器内部错误(500)，请检查服务器日志');
+                                    }
+                                    throw new Error(text || '相似度计算失败');
                                 }
-                                
-                                this.$message.success(`已按相似度排序 ${this.searchResults.length} 条记录`);
-                                this.typeStatistics = this.countResultsByType(this.searchResults);
-                            } else {
-                                this.$message.error(data.message);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('相似度计算结果:', data);
+                        if (data.status === 'success') {
+                            // 更新搜索结果
+                            this.searchResults = data.data;
+                            
+                            // 确保相似度列显示在表格中
+                            if (!this.columns.includes('相似度')) {
+                                this.columns.unshift('相似度');
+                                this.$set(this.columnVisible, '相似度', true);
                             }
-                        })
-                        .catch(error => {
-                            console.error('相似度计算错误:', error);
-                            this.$message.error('相似度计算失败：' + error.message);
-                        })
-                        .finally(() => {
-                            this.loading = false;
-                        });
-                    } catch (error) {
+                            
+                            this.$message.success(`已按相似度排序 ${this.searchResults.length} 条记录`);
+                            this.typeStatistics = this.countResultsByType(this.searchResults);
+                        } else {
+                            throw new Error(data.message || '相似度计算失败');
+                        }
+                    })
+                    .catch(error => {
                         console.error('相似度计算错误:', error);
-                        this.$message.error('相似度计算失败：' + error.message);
+                        this.$notify.error({
+                            title: '相似度计算失败',
+                            message: error.message || '服务器响应异常',
+                            duration: 4000,
+                            type: 'error'
+                        });
+                    })
+                    .finally(() => {
                         this.loading = false;
-                    }
+                    });
                 },
                 handleStatistics() {
                     if (!this.searchResults.length) {
@@ -1981,6 +1999,23 @@
                             });
                         });
                     }).catch(() => {});
+                },
+                handleAnalysis() {
+                    // 确保有选中的数据
+                    if (this.selectedRows.length === 0) {
+                        this.$message.warning('请先选择要分析的数据');
+                        return;
+                    }
+
+                    // 保存数据到 localStorage
+                    localStorage.setItem('analysisData', JSON.stringify({
+                        data: this.selectedRows,
+                        columns: Object.keys(this.selectedRows[0]),
+                        dataSource: this.defaultSearch.dataSource
+                    }));
+
+                    // 在新窗口打开分析页面
+                    window.open('/analysis', '_blank');
                 }
             }
         })

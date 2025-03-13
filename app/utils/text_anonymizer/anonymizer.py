@@ -1,10 +1,22 @@
 import json
 import re
 import os
+from flask import current_app
 
 class TextAnonymizer:
-    def __init__(self, sensitive_words_path='app/data/sensitive_words.json'):
+    _instance = None
+    
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+    
+    def __init__(self, sensitive_words_path=None):
         self.sensitive_words = []
+        if sensitive_words_path is None:
+            # 使用配置中的路径
+            sensitive_words_path = current_app.config['FILE_CONFIG']['SENSITIVE_WORDS_FILE']
         self.load_sensitive_words(sensitive_words_path)
         self.patterns = [
             r'(909|ARJ)/B-?[A-Z0-9]{4}',
@@ -66,12 +78,22 @@ class TextAnonymizer:
     def get_patterns(self):
         return self.patterns
 
-# 创建默认实例
-default_anonymizer = TextAnonymizer()
+# 修改为使用方法获取实例
+def get_anonymizer():
+    return TextAnonymizer.get_instance()
 
-# 为了保持向后兼容，导出函数版本的API
-anonymize_text = default_anonymizer.anonymize_text
-add_sensitive_words = default_anonymizer.add_sensitive_words
-add_patterns = default_anonymizer.add_patterns
-get_sensitive_words = default_anonymizer.get_sensitive_words
-get_patterns = default_anonymizer.get_patterns 
+# 导出函数版本的API
+def anonymize_text(text):
+    return get_anonymizer().anonymize_text(text)
+
+def add_sensitive_words(words):
+    return get_anonymizer().add_sensitive_words(words)
+
+def add_patterns(patterns):
+    return get_anonymizer().add_patterns(patterns)
+
+def get_sensitive_words():
+    return get_anonymizer().get_sensitive_words()
+
+def get_patterns():
+    return get_anonymizer().get_patterns() 

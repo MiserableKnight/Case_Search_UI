@@ -47,9 +47,6 @@ Thumbs.db
 *.json
 *.parquet
 /data/
-/dataset/
-/app/data/
-app/data/*
 
 # 环境文件
 .env

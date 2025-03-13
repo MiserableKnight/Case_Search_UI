@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -10,21 +10,23 @@ from app.utils import SensitiveWordManager
 DATA_CONFIG = {
     'data_dir': os.path.join(os.path.dirname(__file__), 'data'),
     'temp_dir': os.path.join(os.path.dirname(__file__), 'data', 'temp'),
-    'temp_data_dir': os.path.join(os.path.dirname(__file__), 'data', 'temp_data'),
+    'processed_dir': os.path.join(os.path.dirname(__file__), 'data', 'processed'),
+    'raw_dir': os.path.join(os.path.dirname(__file__), 'data', 'raw')
 }
 
 # 文件配置
 FILE_CONFIG = {
-    'UPLOAD_FOLDER': os.path.join(os.path.dirname(__file__), 'data', 'temp'),
-    'MAX_CONTENT_LENGTH': 16 * 1024 * 1024  # 16MB max-limit
+    'UPLOAD_FOLDER': DATA_CONFIG['temp_dir'],
+    'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,  # 16MB max-limit
+    'SENSITIVE_WORDS_FILE': os.path.join(DATA_CONFIG['raw_dir'], 'sensitive_words.json')
 }
 
 # 数据源配置
 DATA_SOURCES = {
-    'case': 'case.parquet',
-    'engineering': 'engineering.parquet',
-    'manual': 'manual.parquet',
-    'faults': 'faults.parquet'
+    'case': os.path.join('raw', 'case.parquet'),
+    'engineering': os.path.join('raw', 'engineering.parquet'),
+    'manual': os.path.join('raw', 'manual.parquet'),
+    'faults': os.path.join('raw', 'faults.parquet')
 }
 
 # 数据缓存
@@ -50,7 +52,7 @@ def create_app():
             os.makedirs(path)
 
     # 初始化敏感词管理器
-    app.word_manager = SensitiveWordManager()
+    app.word_manager = SensitiveWordManager(FILE_CONFIG['SENSITIVE_WORDS_FILE'])
 
     # 允许的文件类型
     ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv', 'parquet'}
@@ -66,33 +68,20 @@ def create_app():
 
     def load_data_source(source):
         """加载指定数据源的数据"""
-        if source not in data_frames:
-            try:
-                data_path = os.path.join(os.path.dirname(__file__), "data", DATA_SOURCES[source])
+        try:
+            if source not in data_frames:
+                data_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES[source])
                 if os.path.exists(data_path):
                     print(f"加载数据源 {source} 从: {data_path}")
                     data_frames[source] = pd.read_parquet(data_path)
-                    
-                    # 添加机型检查
-                    if '机型' in data_frames[source].columns:
-                        unique_types = data_frames[source]['机型'].unique()
-                        print(f"数据源 {source} 中的所有机型类别: {unique_types.tolist()}")
-                        
-                        # 检查是否存在未知机型
-                        valid_types = {'ARJ21', 'C919', '无', None, '', np.nan}
-                        unknown_types = set(unique_types) - valid_types
-                        if unknown_types:
-                            print(f"警告：发现未知机型: {unknown_types}")
-                            raise ValueError(f"数据源 {source} 中存在未知机型: {unknown_types}")
-                    
                     print(f"数据源 {source} 加载成功，形状: {data_frames[source].shape}")
                 else:
                     print(f"数据文件不存在: {data_path}")
                     return None
-            except Exception as e:
-                print(f"加载数据源 {source} 时出错: {str(e)}")
-                return None
-        return data_frames[source]
+            return data_frames[source]
+        except Exception as e:
+            print(f"加载数据源 {source} 时出错: {str(e)}")
+            return None
 
     # 将 load_data_source 函数添加到应用上下文中
     app.load_data_source = load_data_source
@@ -109,6 +98,39 @@ def create_app():
             return value
         except:
             return value
+
+    # 添加脱敏处理路由
+    @app.route('/api/anonymize', methods=['POST'])
+    def anonymize():
+        try:
+            data = request.get_json()
+            if not data or 'results' not in data or 'fields' not in data:
+                return jsonify({'status': 'error', 'message': '无效的请求数据'})
+            
+            results = data['results']
+            fields = data['fields']
+            data_source = data.get('dataSource', 'case')
+            
+            # 初始化脱敏器
+            from app.utils.text_anonymizer import TextAnonymizer
+            anonymizer = TextAnonymizer(FILE_CONFIG['SENSITIVE_WORDS_FILE'])
+            
+            # 对指定字段进行脱敏
+            for result in results:
+                for field in fields:
+                    if field in result and result[field]:
+                        result[field] = anonymizer.anonymize_text(result[field])
+            
+            return jsonify({
+                'status': 'success',
+                'data': results
+            })
+            
+        except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'message': f'脱敏处理失败: {str(e)}'
+            })
 
     # 注册路由
     from app.routes import bp
