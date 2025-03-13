@@ -11,9 +11,24 @@ class SensitiveWordManager:
             file_path = current_app.config['FILE_CONFIG']['SENSITIVE_WORDS_FILE']
         self.file_path = Path(file_path)
         
-        self._ensure_file_exists()
-        self.load_words()
-        self.sorted_words = self._create_sorted_list()
+        # 打印实际使用的文件路径，用于调试
+        print(f"敏感词文件路径: {self.file_path}")
+        
+        # 修改初始化顺序，确保文件存在后再加载
+        if self._ensure_file_exists():
+            self.load_words()
+            self.sorted_words = self._create_sorted_list()
+        else:
+            # 如果文件创建失败，使用默认空数据
+            print(f"无法创建或访问敏感词文件: {self.file_path}")
+            self.words = {
+                "organizations": [],
+                "aircraft": [],
+                "locations": [],
+                "registration_numbers": [],
+                "other": []
+            }
+            self.sorted_words = []
 
     def _ensure_file_exists(self):
         """确保敏感词文件存在，如果不存在则创建"""
@@ -21,6 +36,8 @@ class SensitiveWordManager:
             if not self.file_path.exists():
                 # 确保目录存在
                 self.file_path.parent.mkdir(parents=True, exist_ok=True)
+                print(f"创建目录: {self.file_path.parent}")
+                
                 # 创建初始文件
                 initial_data = {
                     "organizations": [],
@@ -31,7 +48,10 @@ class SensitiveWordManager:
                 }
                 with self.file_path.open('w', encoding='utf-8') as f:
                     json.dump(initial_data, f, ensure_ascii=False, indent=4)
+                print(f"创建敏感词文件: {self.file_path}")
                 return True
+                
+            print(f"敏感词文件已存在: {self.file_path}")
             return True
         except Exception as e:
             print(f"创建敏感词文件失败: {e}")

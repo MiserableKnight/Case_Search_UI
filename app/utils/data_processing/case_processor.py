@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import logging
 from datetime import datetime
+from flask import current_app
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +28,17 @@ class CaseProcessor:
         if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
             print("敏感词列表读取成功")
             
-        # 修改数据路径，使用相对路径
+        # 从应用配置中获取数据路径
         self.data_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            'data',
-            'raw',
-            'case.parquet'
+            current_app.config['DATA_CONFIG']['data_dir'],
+            current_app.config['DATA_SOURCES']['case']
         )
+        
+        # 检查并创建数据目录
+        os.makedirs(os.path.dirname(self.data_path), exist_ok=True)
+        
+        if not os.path.exists(self.data_path):
+            logger.warning(f"数据文件不存在: {self.data_path}")
         
         # 初始化其他属性
         self.REQUIRED_COLUMNS = ['类型', '标题', '状态', '技术请求编号', '服务请求单编号', '支持单编号', '版本号', '优先级', 
@@ -162,12 +167,16 @@ class CaseProcessor:
             # 读取现有数据
             original_count = 0
             if os.path.exists(self.data_path):
-                existing_data = pd.read_parquet(self.data_path)
-                original_count = len(existing_data)
-                logger.info(f"现有数据条数: {original_count}")
+                try:
+                    existing_data = pd.read_parquet(self.data_path)
+                    original_count = len(existing_data)
+                    logger.info(f"现有数据条数: {original_count}")
+                except Exception as e:
+                    logger.error(f"读取现有数据失败: {str(e)}")
+                    existing_data = pd.DataFrame(columns=self.FINAL_COLUMNS)
             else:
+                logger.info(f"数据文件不存在，将在保存时创建新文件: {self.data_path}")
                 existing_data = pd.DataFrame(columns=self.FINAL_COLUMNS)
-                logger.info("没有找到现有数据，将创建新文件")
 
             uploaded_count = len(cleaned_new_data)
             logger.info(f"上传文件包含数据: {uploaded_count} 条")

@@ -2,6 +2,7 @@ import json
 import re
 import os
 from flask import current_app
+from pathlib import Path
 
 class TextAnonymizer:
     _instance = None
@@ -14,10 +15,13 @@ class TextAnonymizer:
     
     def __init__(self, sensitive_words_path=None):
         self.sensitive_words = []
-        if sensitive_words_path is None:
+        if sensitive_words_path is None and current_app:
             # 使用配置中的路径
             sensitive_words_path = current_app.config['FILE_CONFIG']['SENSITIVE_WORDS_FILE']
-        self.load_sensitive_words(sensitive_words_path)
+        
+        if sensitive_words_path:
+            self.load_sensitive_words(sensitive_words_path)
+        
         self.patterns = [
             r'(909|ARJ)/B-?[A-Z0-9]{4}',
             r'B-?[A-Z0-9]{4}',
@@ -28,7 +32,13 @@ class TextAnonymizer:
 
     def load_sensitive_words(self, file_path):
         try:
-            with open(file_path, 'r', encoding='utf-8') as file:
+            # 确保文件路径是 Path 对象
+            file_path = Path(file_path)
+            if not file_path.exists():
+                print(f"敏感词文件不存在：{file_path}")
+                return
+            
+            with file_path.open('r', encoding='utf-8') as file:
                 content = json.load(file)
                 # 从各个分类中提取敏感词
                 for category in content.values():
@@ -40,10 +50,8 @@ class TextAnonymizer:
                 # 对敏感词列表按长度降序排序
                 self.sensitive_words.sort(key=len, reverse=True)
                 print("敏感词列表读取成功")
-        except FileNotFoundError:
-            print(f"未找到文件：{file_path}，请检查文件路径和文件名。")
         except Exception as e:
-            print(f"读取文件时出错：{e}")
+            print(f"读取敏感词文件时出错：{str(e)}")
 
     def add_sensitive_words(self, new_words):
         if isinstance(new_words, str):

@@ -1220,9 +1220,12 @@
                     this.columnDialogVisible = false;
                 },
                 addLevel() {
+                    // 根据当前数据源获取默认搜索列
+                    const defaultColumn = this.defaultSearchColumn[this.defaultSearch.dataSource];
+                    
                     this.searchLevels.push({
                         keywords: '',
-                        column_name: ['问题描述'],
+                        column_name: [defaultColumn],  // 使用对应数据源的默认搜索列
                         logic: 'and',
                         negative_filtering: false
                     });
