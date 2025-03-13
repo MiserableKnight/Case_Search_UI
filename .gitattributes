@@ -1,10 +1,49 @@
 # 设置默认行为，如果core.autocrlf未设置
 * text=auto
 
-# 明确声明应该规范化的文本文件
+# Python相关文件
 *.py text eol=lf
+*.pyw text eol=lf
+*.pyx text eol=lf
+*.pxd text eol=lf
+
+# Web开发相关文件
+*.html text eol=lf
+*.htm text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+
+# 配置文件
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.conf text eol=lf
+*.properties text eol=lf
+*.env text eol=lf
+*.gitattributes text eol=lf
+*.gitignore text eol=lf
+
+# 文档文件
+*.md text eol=lf
 *.txt text eol=lf
+*.rst text eol=lf
+
+# Shell脚本
+*.sh text eol=lf
+*.bash text eol=lf
 
 # 声明二进制文件，不应该被修改
 *.png binary
-*.jpg binary 
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.db binary
+*.sqlite3 binary 
