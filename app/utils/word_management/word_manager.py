@@ -11,6 +11,18 @@ class SensitiveWordManager:
             file_path = current_app.config['FILE_CONFIG']['SENSITIVE_WORDS_FILE']
         self.file_path = Path(file_path)
         
+        # 定义类别
+        self.categories = [
+            'organizations', 'aircraft', 'locations', 'registration_numbers', 'other'
+        ]
+        self.category_labels = {
+            'organizations': '组织机构',
+            'aircraft': '设备型号',
+            'locations': '地点',
+            'registration_numbers': '机号/MSN',
+            'other': '其他'
+        }
+        
         # 打印实际使用的文件路径，用于调试
         print(f"敏感词文件路径: {self.file_path}")
         
@@ -58,28 +70,29 @@ class SensitiveWordManager:
             return False
 
     def load_words(self):
-        """加载敏感词"""
         try:
-            # 直接尝试读取文件，因为 _ensure_file_exists 已经确保文件存在
-            with self.file_path.open('r', encoding='utf-8') as f:
-                self.words = json.load(f)
-        except FileNotFoundError:
-            # 使用默认空结构
-            self.words = {
-                "organizations": [],
-                "aircraft": [],
-                "locations": [],
-                "registration_numbers": [],
-                "other": []
-            }
+            if os.path.exists(self.file_path):
+                with open(self.file_path, 'r', encoding='utf-8') as f:
+                    self.words = json.load(f)
+            else:
+                # 保持与 categories 相同的顺序
+                self.words = {
+                    'organizations': [],
+                    'aircraft': [],
+                    'locations': [],
+                    'registration_numbers': [],
+                    'other': []
+                }
+                self.save_words()
         except Exception as e:
-            print(f"加载敏感词文件时出错：{type(e).__name__}")
+            print(f"加载敏感词失败: {str(e)}")
+            # 这里的顺序也要保持一致
             self.words = {
-                "organizations": [],
-                "aircraft": [],
-                "locations": [],
-                "registration_numbers": [],
-                "other": []
+                'organizations': [],
+                'aircraft': [],
+                'locations': [],
+                'registration_numbers': [],
+                'other': []
             }
 
     def _create_sorted_list(self):
@@ -92,8 +105,11 @@ class SensitiveWordManager:
         return sorted(all_words, key=len, reverse=True)
 
     def get_all_words(self):
-        """获取所有敏感词"""
-        return self.words
+        """获取所有敏感词，按照预定义顺序返回"""
+        ordered_words = {}
+        for category in self.categories:  # self.categories 已经定义了正确的顺序
+            ordered_words[category] = self.words.get(category, [])
+        return ordered_words
 
     def get_sorted_words(self):
         """获取按长度排序的敏感词列表"""

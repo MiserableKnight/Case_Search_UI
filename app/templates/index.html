@@ -590,7 +590,7 @@
                             全选
                         </el-checkbox>
                     </div>
-                    <el-checkbox-group v-model="selectedColumns" @change="handleSelectedChange">
+                    <el-checkbox-group v-model="selectedColumns" @change="handleSelectedChanged">
                         <div v-for="col in columns" :key="col" style="margin-bottom: 10px;">
                             <el-checkbox :label="col">[[ col ]]</el-checkbox>
                         </div>
@@ -919,8 +919,15 @@
                     sensitiveWordDialogVisible: false,
                     newWord: '',
                     selectedCategory: 'organizations',
-                    categories: ['organizations', 'aircraft', 'locations', 'other'],
+                    categories: [
+                        'registration_numbers', 
+                        'organizations', 
+                        'aircraft', 
+                        'locations', 
+                        'other'
+                    ],
                     categoryLabels: {
+                        registration_numbers: '机号/MSN',
                         organizations: '组织机构',
                         aircraft: '设备型号',
                         locations: '地点',
@@ -928,6 +935,7 @@
                     },
                     activeCategory: 'organizations',
                     sensitiveWords: {
+                        registration_numbers: [],
                         organizations: [],
                         aircraft: [],
                         locations: [],
@@ -1708,13 +1716,21 @@
                         .then(data => {
                             console.log('API返回的完整数据:', data); // 添加完整响应数据日志
                             if (data.status === 'success') {
-                                this.sensitiveWords = data.words;
-                                console.log('成功加载敏感词列表:', this.sensitiveWords);
+                                // 确保初始化所有类别的数组
+                                this.categories.forEach(category => {
+                                    if (!this.sensitiveWords[category]) {
+                                        this.$set(this.sensitiveWords, category, []);
+                                    }
+                                });
                                 
-                                // 检查数据结构
-                                if (Object.keys(this.sensitiveWords).length === 0) {
-                                    console.warn('警告：敏感词列表为空对象');
+                                // 更新敏感词数据
+                                if (data.words) {
+                                    Object.keys(data.words).forEach(category => {
+                                        this.$set(this.sensitiveWords, category, data.words[category] || []);
+                                    });
                                 }
+                                
+                                console.log('成功加载敏感词列表:', this.sensitiveWords);
                             } else {
                                 throw new Error(data.message || '加载失败');
                             }
@@ -1722,6 +1738,13 @@
                         .catch(error => {
                             console.error('加载敏感词失败:', error);
                             this.$message.error('加载敏感词失败：' + error.message);
+                            
+                            // 发生错误时也要确保所有类别都被初始化
+                            this.categories.forEach(category => {
+                                if (!this.sensitiveWords[category]) {
+                                    this.$set(this.sensitiveWords, category, []);
+                                }
+                            });
                         });
                 },
                 addSensitiveWord() {
