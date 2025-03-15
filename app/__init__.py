@@ -37,7 +37,9 @@ def create_app():
     load_dotenv()
 
     # 初始化 Flask 应用
-    app = Flask(__name__)
+    app = Flask(__name__, 
+                static_folder='static',  # 指定静态文件夹路径
+                static_url_path='/static')  # 指定静态文件URL前缀
     CORS(app)
 
     # 配置应用
@@ -136,6 +138,17 @@ def create_app():
     from app.routes import bp
     app.register_blueprint(bp)
     
+    @app.after_request
+    def add_security_headers(response):
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self' lib.baomitu.com; "
+            "style-src 'self' 'unsafe-inline' lib.baomitu.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' lib.baomitu.com; "
+            "img-src 'self' data:; "
+            "font-src 'self' data: lib.baomitu.com;"
+        )
+        return response
+
     return app
 
 # 创建应用实例

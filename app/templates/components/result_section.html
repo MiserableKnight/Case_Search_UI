@@ -1,0 +1,65 @@
+<!-- 结果区域 -->
+<div class="result-section">
+    <!-- 结果统计信息 -->
+    <div class="result-count-container" v-if="searchResults.length">
+        <div class="total-count">
+            共找到 [[ total ]] 条结果
+        </div>
+        <div class="type-statistics">
+            <span v-for="(count, type) in typeStatistics" :key="type" class="type-stat">
+                [[ type ]]: [[ count ]]
+            </span>
+        </div>
+    </div>
+
+    <!-- 表格控制区 -->
+    <div class="column-control">
+        <el-button size="small" @click="showColumnDialog">
+            列显示控制<i class="el-icon-setting el-icon--right"></i>
+        </el-button>
+        <el-button type="warning" size="small" @click="anonymizeResults">
+            脱敏显示
+        </el-button>
+        <el-button type="primary" size="small" @click="exportToCsv" :disabled="!selectedRows.length">
+            导出CSV
+        </el-button>
+        <el-button 
+            size="small" 
+            type="primary" 
+            @click="analyzeSelectedData"
+            :disabled="!selectedRows.length">
+            数据分析
+        </el-button>
+        <el-button 
+            size="small" 
+            type="info" 
+            @click="checkSelectedRows"
+            :disabled="!selectedRows.length">
+            检查选中行
+        </el-button>
+    </div>
+
+    <!-- 结果表格 -->
+    <el-table
+        ref="dataTable"
+        :data="searchResults"
+        style="width: 100%"
+        border
+        stripe
+        @selection-change="handleSelectionChange"
+        @row-click="handleRowClick"
+        :row-class-name="getRowClass">
+        <el-table-column
+            type="selection"
+            width="55">
+        </el-table-column>
+        <el-table-column
+            v-for="col in visibleColumns"
+            :key="col"
+            :prop="col"
+            :label="col"
+            :min-width="getColumnMinWidth(col)"
+            show-overflow-tooltip>
+        </el-table-column>
+    </el-table>
+</div> 

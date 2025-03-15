@@ -23,11 +23,25 @@
         .el-table {
             margin-top: 10px;
         }
+        .header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="container">
+            <div class="header">
+                <div class="title">选中数据</div>
+                <el-button type="primary" size="small" @click="goBack">返回主页</el-button>
+            </div>
+            
             <el-table
                 :data="tableData"
                 style="width: 100%"
@@ -38,7 +52,8 @@
                     :key="col"
                     :prop="col"
                     :label="col"
-                    :min-width="getColumnWidth(col)">
+                    :min-width="getColumnWidth(col)"
+                    show-overflow-tooltip>
                 </el-table-column>
             </el-table>
         </div>
@@ -55,12 +70,12 @@
             el: '#app',
             delimiters: ['[[', ']]'],
             data() {
-                // 从 localStorage 中读取数据
-                const storedData = JSON.parse(localStorage.getItem('analysisData'));
+                // 直接从localStorage获取数据
+                const storedData = JSON.parse(localStorage.getItem('analysisData') || sessionStorage.getItem('analysisData') || '{"data":[],"columns":[]}');
                 return {
-                    tableData: storedData.data,
-                    columns: storedData.columns,
-                    dataSource: storedData.dataSource
+                    tableData: storedData.data || [],
+                    columns: storedData.columns || [],
+                    dataSource: storedData.dataSource || 'case'
                 }
             },
             methods: {
@@ -70,11 +85,10 @@
                         return '300';
                     }
                     return '100';
+                },
+                goBack() {
+                    window.location.href = '/';
                 }
-            },
-            mounted() {
-                // 读取完数据后清除，避免占用存储空间
-                localStorage.removeItem('analysisData');
             }
         })
     </script>
