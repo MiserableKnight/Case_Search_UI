@@ -29,10 +29,19 @@ class CaseProcessor:
             print("敏感词列表读取成功")
             
         # 从应用配置中获取数据路径
-        self.data_path = os.path.join(
-            current_app.config['DATA_CONFIG']['data_dir'],
-            current_app.config['DATA_SOURCES']['case']
-        )
+        try:
+            # 尝试从Flask上下文获取配置
+            self.data_path = os.path.join(
+                current_app.config['DATA_CONFIG']['data_dir'],
+                current_app.config['DATA_SOURCES']['case']
+            )
+        except Exception as e:
+            # 如果不在Flask上下文中，使用默认路径
+            print(f"无法从Flask上下文获取配置: {str(e)}")
+            app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            data_dir = os.path.join(app_dir, 'data')
+            self.data_path = os.path.join(data_dir, 'raw', 'case.parquet')
+            print(f"使用默认数据路径: {self.data_path}")
         
         # 检查并创建数据目录
         os.makedirs(os.path.dirname(self.data_path), exist_ok=True)

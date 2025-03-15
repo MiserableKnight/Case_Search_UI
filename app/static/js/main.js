@@ -38,32 +38,43 @@ new Vue({
         if (!this.columns || !this.columns.length) {
             console.log('设置默认列');
             this.columns = this.defaultVisibleColumns[this.defaultSearch.dataSource] || [];
-            
-            // 确保包含相似度列
-            if (!this.columns.includes('相似度')) {
-                this.columns.unshift('相似度');
-                console.log('添加相似度列到columns (created):', this.columns);
-            }
         }
         if (!this.columnVisible) {
             console.log('初始化列可见性');
             this.columnVisible = {};
             this.columns.forEach(col => {
                 // 确保相似度列始终可见
-                if (col === '相似度') {
-                    this.$set(this.columnVisible, col, true);
-                } else {
-                    this.$set(this.columnVisible, col, true);
-                }
+                this.$set(this.columnVisible, col, true);
             });
         }
         console.log('调用initializeData方法');
-        this.initializeData();
+        // 单一初始化方法
+        this.initializeApplication();
     },
     methods: {
         ...searchMethods,
         ...tableMethods,
         ...dialogMethods,
-        ...importMethods
+        ...importMethods,
+        async initializeApplication() {
+            try {
+                console.log('开始初始化应用...');
+                // 调用原始的初始化数据方法
+                await this.initializeData();
+                
+                // 首先加载数据源列信息
+                // 注释掉，因为 initializeData 已经做了这个
+                
+                // 然后初始化表头和列显示控制
+                this.initTableHeaders();
+                
+                // 注释掉，因为 initializeData 已经做了这个
+                
+                console.log('应用初始化完成');
+            } catch (error) {
+                console.error("应用初始化失败:", error);
+                this.$message.error(`初始化失败: ${error.message}`);
+            }
+        }
     }
 }); 

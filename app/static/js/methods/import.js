@@ -137,6 +137,16 @@ const importMethods = {
                     this.importDialogVisible = false;
                     this.importSettings.previewData = null;
                     this.importSettings.uploadedFile = null;
+                    
+                    // 导入成功后刷新数据
+                    this.$message({
+                        message: '正在刷新数据...',
+                        type: 'info',
+                        duration: 2000
+                    });
+                    
+                    // 使用resetForm方法刷新数据
+                    this.resetForm();
                 } else {
                     throw new Error(data.message || '导入失败');
                 }

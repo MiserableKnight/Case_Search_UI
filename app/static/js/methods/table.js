@@ -303,5 +303,42 @@ const tableMethods = {
             .catch(error => {
                 console.error("获取列显示控制内容失败:", error);
             });
+    },
+
+    getDefaultHeaders(dataSource) {
+        // 根据数据源返回默认表头
+        const defaultHeaders = {
+            'case': ['序号', '故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', 
+                    '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型'],
+            'engineering': ['序号', '发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性', 
+                           '原文文本', '机型', '数据类型'],
+            'manual': ['序号', '申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人',
+                      '机型', '数据类型'],
+            'faults': ['序号', '日期', '问题描述', '排故措施', '运营人', '飞机序列号', '机号',
+                      '机型', '数据类型']
+        };
+        
+        return defaultHeaders[dataSource] || [];
+    },
+
+    getHeadersForDataSource(dataSource) {
+        // 尝试从数据源列配置中获取表头
+        if (this.dataSourceColumns && this.dataSourceColumns[dataSource]) {
+            // 添加序号列
+            if (!this.dataSourceColumns[dataSource].includes('序号')) {
+                return ['序号', ...this.dataSourceColumns[dataSource]];
+            }
+            return [...this.dataSourceColumns[dataSource]];
+        }
+        
+        // 如果无法获取，则返回默认表头
+        return this.getDefaultHeaders(dataSource);
+    },
+
+    resetTableDisplay() {
+        // 重置表头和列显示控制
+        this.searchResults = [];
+        this.searchMessage = '';
+        this.initTableHeaders(); // 重新初始化表头
     }
 }; 

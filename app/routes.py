@@ -521,7 +521,13 @@ def confirm_import():
             
             # 清除数据缓存,强制重新加载
             if data_source in current_app.config['DATA_SOURCES']:
-                del current_app.config['DATA_SOURCES'][data_source]
+                # 不要删除配置中的路径信息，只清除数据缓存
+                # del current_app.config['DATA_SOURCES'][data_source]
+                # 正确清除数据缓存
+                from app import data_frames
+                if data_source in data_frames:
+                    del data_frames[data_source]
+                    print(f"已清除数据源 {data_source} 的缓存")
 
             return jsonify({
                 'status': 'success',
@@ -826,12 +832,21 @@ def get_data_columns():
         return jsonify({'success': False, 'message': '未提供数据源参数'})
     
     try:
-        # 修正这里的错误：确保能正确获取case数据源的列信息
-        columns = get_columns_for_source(source)
-        if columns:
-            return jsonify({'success': True, 'columns': columns})
+        # 实现获取列信息的功能
+        if source == 'case':
+            # 使用case处理器获取列信息
+            processor = CaseProcessor()
+            columns = processor.get_columns()
+            if columns:
+                return jsonify({'success': True, 'columns': columns})
         else:
-            return jsonify({'success': False, 'message': f'未找到数据源 {source} 的列信息'})
+            # 其他数据源的处理
+            df = current_app.load_data_source(source)
+            if df is not None:
+                columns = df.columns.tolist()
+                return jsonify({'success': True, 'columns': columns})
+        
+        return jsonify({'success': False, 'message': f'未找到数据源 {source} 的列信息'})
     except Exception as e:
         logger.error(f"获取数据源列失败: {str(e)}")
         return jsonify({'success': False, 'message': f'获取列信息时发生错误: {str(e)}'}) 

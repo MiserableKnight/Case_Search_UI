@@ -41,11 +41,26 @@ const searchMethods = {
                 this.dataSourceColumns = data.columns;
                 
                 if (!this.dataSourceColumns[this.defaultSearch.dataSource]) {
-                    throw new Error(`未找到数据源 ${this.defaultSearch.dataSource} 的列信息`);
+                    console.warn(`未找到数据源 ${this.defaultSearch.dataSource} 的列信息，尝试使用单独的API获取`);
+                    // 尝试使用单独的API获取列信息
+                    try {
+                        const columns = await getDataSourceColumns(this.defaultSearch.dataSource);
+                        if (columns && columns.length) {
+                            this.columns = columns;
+                            // 更新dataSourceColumns
+                            this.$set(this.dataSourceColumns, this.defaultSearch.dataSource, columns);
+                        } else {
+                            throw new Error('获取列信息失败');
+                        }
+                    } catch (err) {
+                        console.error('尝试获取列信息失败:', err);
+                        // 使用默认列
+                        this.columns = this.defaultVisibleColumns[this.defaultSearch.dataSource] || [];
+                    }
+                } else {
+                    // 获取列
+                    this.columns = this.dataSourceColumns[this.defaultSearch.dataSource];
                 }
-                
-                // 获取列
-                this.columns = this.dataSourceColumns[this.defaultSearch.dataSource];
                 
                 // 设置列的可见性
                 this.columns.forEach(col => {
@@ -94,7 +109,7 @@ const searchMethods = {
                 
                 console.log('数据类型加载成功:', this.availableDataTypes);
             } else {
-                throw new Error(result.message || '获取数据类型失败');
+                throw new Error(result.message || '无效的数据源');
             }
         } catch (error) {
             console.error('加载数据类型失败:', error);
@@ -270,7 +285,8 @@ const searchMethods = {
         }
     },
 
-    resetForm() {
+    async resetForm() {
+        // 先重置表单
         this.searchLevels = [{
             keywords: '',
             column_name: [this.defaultSearchColumn[this.defaultSearch.dataSource]],
@@ -288,6 +304,29 @@ const searchMethods = {
         if (similarityIndex !== -1) {
             this.columns.splice(similarityIndex, 1);
             this.$delete(this.columnVisible, '相似度');
+        }
+        
+        // 刷新数据源数据
+        try {
+            this.$message({
+                message: '正在刷新数据...',
+                type: 'info',
+                duration: 2000
+            });
+            
+            // 重新加载数据类型
+            await this.loadInitialDataTypes();
+            
+            // 重新获取数据源列信息
+            await this.getDataSourceColumns();
+            
+            this.$message({
+                message: '数据刷新成功',
+                type: 'success'
+            });
+        } catch (error) {
+            console.error('刷新数据失败:', error);
+            this.$message.error('刷新数据失败: ' + error.message);
         }
     },
 
@@ -312,6 +351,10 @@ const searchMethods = {
         
         // 加载新数据源的列和数据类型
         await this.loadDataSourceColumns();
+        
+        // 重置表头和列显示控制
+        this.initTableHeaders();
+        
         await this.loadInitialDataTypes();
         
         // 重置搜索表单
@@ -345,5 +388,106 @@ const searchMethods = {
             // 正常设置选中的列
             level.column_name = selectedColumns;
         }
+    },
+
+    getDataSourceColumns(source) {
+        return new Promise((resolve, reject) => {
+            axios.get(`/api/data_columns?source=${source}`)
+                .then(response => {
+                    if (response.data.success) {
+                        resolve(response.data.columns);
+                    } else {
+                        reject(new Error(response.data.message || `获取数据源${source}的列信息失败`));
+                    }
+                })
+                .catch(error => {
+                    console.error(`获取数据源${source}列信息错误:`, error);
+                    reject(error);
+                });
+        });
+    },
+
+    performSearch(params) {
+        // 重置表头和列显示控制
+        this.resetTableDisplay();
+        
+        const endpoint = this.searchMode === 'similarity' 
+            ? '/api/search/similarity' 
+            : '/api/search';
+        
+        axios.post(endpoint, params)
+            .then(response => {
+                if (response.data.success) {
+                    this.searchResults = response.data.results;
+                    
+                    // 更新表头，确保相似度列只在相似度搜索中显示
+                    this.updateTableHeaders(this.searchMode);
+                    
+                    this.totalResults = response.data.total;
+                    this.searchMessage = '';
+                } else {
+                    this.searchResults = [];
+                    this.searchMessage = response.data.message || '搜索失败';
+                }
+            })
+            .catch(error => {
+                console.error("搜索错误:", error);
+                this.searchResults = [];
+                this.searchMessage = '搜索过程中发生错误';
+            });
+    },
+
+    updateTableHeaders(searchMode) {
+        // 根据搜索模式设置表头
+        let headers = this.getHeadersForDataSource(this.defaultSearch.dataSource);
+        
+        // 只在相似度搜索中添加相似度列
+        if (searchMode === 'similarity' && !headers.includes('相似度')) {
+            headers.push('相似度');
+        } else if (searchMode !== 'similarity') {
+            // 在普通搜索中移除相似度列
+            headers = headers.filter(h => h !== '相似度');
+        }
+        
+        this.tableHeaders = headers;
+    },
+
+    // 添加获取数据源列信息的方法
+    async getDataSourceColumns() {
+        try {
+            // 使用data.js中定义的getDataSourceColumns函数
+            const columns = await getDataSourceColumns(this.defaultSearch.dataSource);
+            if (columns && columns.length) {
+                // 更新列信息
+                this.columns = columns;
+                // 更新列可见性
+                this.columns.forEach(col => {
+                    if (!this.columnVisible.hasOwnProperty(col)) {
+                        this.$set(this.columnVisible, col, true);
+                    }
+                });
+                console.log('数据源列信息加载成功:', columns);
+                return columns;
+            } else {
+                throw new Error('未找到数据源列信息');
+            }
+        } catch (error) {
+            console.error('获取数据源列名失败:', error);
+            // 如果API调用失败，使用默认列
+            if (this.defaultVisibleColumns[this.defaultSearch.dataSource]) {
+                this.columns = this.defaultVisibleColumns[this.defaultSearch.dataSource];
+                this.columns.forEach(col => {
+                    this.$set(this.columnVisible, col, true);
+                });
+            }
+            this.$message.error('获取数据源列名失败：' + error.message);
+            throw error;
+        }
+    },
+    
+    // 添加手动刷新数据的方法
+    async refreshData() {
+        // 直接调用resetForm方法来刷新数据
+        await this.resetForm();
     }
 }; 
