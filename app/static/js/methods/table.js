@@ -258,5 +258,50 @@ const tableMethods = {
             console.error('测试localStorage存储时出错:', error);
             this.$message.error('测试数据存储失败: ' + error.message);
         }
+    },
+
+    initTableHeaders() {
+        // 修复这里的问题：确保不会错误地添加"相似度"列到普通搜索结果中
+        let headers = [];
+        
+        // 根据当前数据源设置表头
+        if (this.defaultSearch.dataSource) {
+            try {
+                headers = this.getHeadersForDataSource(this.defaultSearch.dataSource);
+                
+                // 只有在相似度搜索模式下才添加相似度列
+                if (this.searchMode === 'similarity' && !headers.includes('相似度')) {
+                    headers.push('相似度');
+                }
+            } catch (error) {
+                console.error("获取表头失败:", error);
+                // 使用默认表头
+                headers = this.getDefaultHeaders(this.defaultSearch.dataSource);
+            }
+        }
+        
+        // 更新表头
+        this.tableHeaders = headers;
+        
+        // 确保列显示控制内容不会被错误修改
+        this.updateColumnDisplayControls();
+    },
+
+    updateColumnDisplayControls() {
+        // 修复列显示控制的内容，确保它独立于当前表头
+        // 从原始数据源获取完整的列列表，而不是使用当前表头
+        this.getDataSourceColumns(this.defaultSearch.dataSource)
+            .then(columns => {
+                // 生成列显示控制项，不包含相似度列
+                this.columnControls = columns.map(col => {
+                    return {
+                        name: col,
+                        visible: this.tableHeaders.includes(col)
+                    };
+                });
+            })
+            .catch(error => {
+                console.error("获取列显示控制内容失败:", error);
+            });
     }
 }; 

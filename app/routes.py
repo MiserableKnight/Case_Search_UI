@@ -817,4 +817,21 @@ def similarity_search():
         return jsonify({
             'status': 'error',
             'message': f'相似度搜索失败: {str(e)}'
-        }), 500 
+        }), 500
+
+@bp.route('/api/data_columns', methods=['GET'])
+def get_data_columns():
+    source = request.args.get('source')
+    if not source:
+        return jsonify({'success': False, 'message': '未提供数据源参数'})
+    
+    try:
+        # 修正这里的错误：确保能正确获取case数据源的列信息
+        columns = get_columns_for_source(source)
+        if columns:
+            return jsonify({'success': True, 'columns': columns})
+        else:
+            return jsonify({'success': False, 'message': f'未找到数据源 {source} 的列信息'})
+    except Exception as e:
+        logger.error(f"获取数据源列失败: {str(e)}")
+        return jsonify({'success': False, 'message': f'获取列信息时发生错误: {str(e)}'}) 

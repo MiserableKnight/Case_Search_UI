@@ -235,6 +235,16 @@ class CaseProcessor:
         required_fields = {'问题描述', '答复详情'}  # 定义必需字段
         return all(field in columns for field in required_fields)
 
+    def get_columns(self):
+        """获取case数据源的所有列"""
+        try:
+            # 确保正确读取case数据的列信息
+            df = pd.read_parquet(self.data_path)
+            return df.columns.tolist()
+        except Exception as e:
+            logger.error(f"读取case数据列名失败: {str(e)}")
+            return []
+
 # 确保与上面CaseProcessor类定义之间有至少两个空行
 # 删除文件末尾的 process_case_data 函数（该函数导致命名空间污染）
 

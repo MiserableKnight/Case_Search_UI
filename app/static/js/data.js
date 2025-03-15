@@ -80,3 +80,20 @@ const initialState = {
         uploadedFile: null
     }
 }; 
+
+function getDataSourceColumns(source) {
+    return new Promise((resolve, reject) => {
+        axios.get(`/api/data_columns?source=${source}`)
+            .then(response => {
+                if (response.data.success) {
+                    resolve(response.data.columns);
+                } else {
+                    reject(new Error(response.data.message || `获取数据源${source}的列信息失败`));
+                }
+            })
+            .catch(error => {
+                console.error(`获取数据源${source}列信息错误:`, error);
+                reject(error);
+            });
+    });
+} 
