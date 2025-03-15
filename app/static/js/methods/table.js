@@ -1,41 +1,59 @@
 const tableMethods = {
     getColumnMinWidth(column) {
+        if (column === '序号') {
+            return '20';
+        }
         if (this.defaultSearch.dataSource === 'case') {
             if (column === '故障发生日期' || column === '申请时间') {
-                return '90';
+                return '100';
             } else if (column === '问题描述' || column === '答复详情') {
-                return '300';
+                return '400';
             } else if (column === '相似度') {
-                return '70';
+                return '60';
             } else if (column === '机型') {
-                return '70';
+                return '60';
             } else if (column === '数据类型') {
-                return '80';
-            } else if (column === '机号/MSN' || column === '运营人') {
+                return '100';
+            } else if (column === '运营人') {
+                return '60';
+            } else if (column === 'ATA') {
+                return '50';
+            } else if (column === '版本号') {
+                return '60';
+            } else if (column === '机号/MSN') {
                 return '100';
             }
-            return '90';
+            return '120';
         }
         
         if (this.defaultSearch.dataSource === 'engineering') {
             if (column === '原因和说明' || column === '原文文本') {
-                return '300';
+                return '400';
             } else if (column === '相似度') {
-                return '70';
+                return '80';
             } else if (column === 'MSN有效性' || column === '文件名称' || column === '发布时间') {
-                return '90';
+                return '120';
             }
-            return '60';
+            return '100';
+        }
+
+        if (this.defaultSearch.dataSource === 'faults') {
+            if (column === '问题描述' || column === '排故措施') {
+                return '400';
+            } else if (column === '相似度') {
+                return '80';
+            } 
+            return '100';
         }
         
         if (column === '相似度') {
-            return '70';
+            return '80';
         } else if (column === '问题描述' || column === '答复详情') {
-            return '300';
+            return '400';
         } else if (this.importantColumns.includes(column)) {
-            return '200';
+            return '250';
         }
-        return '100';
+        return '150';
     },
 
     getColumnFixedWidth(column) {
@@ -88,6 +106,11 @@ const tableMethods = {
             return;
         }
 
+        if (this.selectedRows.length > 300) {
+            this.$message.warning('为确保分析页面性能，建议选择不超过300条数据');
+            return;
+        }
+
         // 准备要传递的数据
         const analysisData = {
             data: this.selectedRows,
@@ -95,12 +118,22 @@ const tableMethods = {
             dataSource: this.defaultSearch.dataSource
         };
         
-        // 存储数据到localStorage和sessionStorage
-        localStorage.setItem('analysisData', JSON.stringify(analysisData));
-        sessionStorage.setItem('analysisData', JSON.stringify(analysisData));
-        
-        // 打开分析页面
-        window.open('/analysis', '_blank');
+        try {
+            console.log('准备传递的数据:', analysisData);
+            console.log('数据大小:', JSON.stringify(analysisData).length, 'bytes');
+            
+            // 存储数据到localStorage和sessionStorage
+            localStorage.setItem('analysisData', JSON.stringify(analysisData));
+            sessionStorage.setItem('analysisData', JSON.stringify(analysisData));
+            
+            console.log('数据已成功存储到localStorage和sessionStorage');
+            
+            // 打开分析页面
+            window.open('/analysis', '_blank');
+        } catch (error) {
+            console.error('数据存储失败:', error);
+            this.$message.error('数据传递失败: ' + error.message);
+        }
     },
 
     anonymizeResults() {

@@ -1,14 +1,17 @@
 # 版本更新记录
 
-## [Unreleased]
-
+## [v1.1.8] (最新)
 ### Changed
-- 优化项目目录结构，采用标准的 Python 项目布局
-  - `src/` 目录包含主要源代码
-  - `tests/` 目录包含测试文件
-  - `docs/` 目录包含项目文档 
+- 优化前端项目架构：
+  - 实现前端代码模块化拆分
+  - CSS样式文件模块化：main.css, search.css, table.css, dialog.css
+  - JavaScript逻辑模块化：search.js, table.js, dialog.js, import.js
+  - HTML模板组件化：search_section, result_section, dialogs
+  - 提升代码可维护性和复用性
+- 使用国内CDN源优化资源加载速度
 
-## v1.1.7 (最新)
+
+## v1.1.7 
 - 加入数据导入功能：
   - 优化文件上传和确认流程
   - 改进错误处理机制

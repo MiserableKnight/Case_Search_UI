@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>选中数据</title>
     <!-- 引入 Element UI -->
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="//lib.baomitu.com/element-ui/2.15.13/theme-chalk/index.css">
     <style>
         body {
             margin: 0;
@@ -22,6 +22,17 @@
         }
         .el-table {
             margin-top: 10px;
+        }
+        /* 确保表格内容可以换行显示 */
+        .el-table .cell {
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.5;
+            padding: 8px 0;
+        }
+        /* 调整表格行高以适应内容 */
+        .el-table td {
+            padding: 8px 0;
         }
         .header {
             margin-bottom: 20px;
@@ -46,23 +57,23 @@
                 :data="tableData"
                 style="width: 100%"
                 size="mini"
-                border>
+                border
+                :cell-style="{ padding: '8px' }">
                 <el-table-column
                     v-for="col in columns"
                     :key="col"
                     :prop="col"
                     :label="col"
-                    :min-width="getColumnWidth(col)"
-                    show-overflow-tooltip>
+                    :min-width="getColumnWidth(col)">
                 </el-table-column>
             </el-table>
         </div>
     </div>
 
     <!-- 引入 Vue 和 Element UI -->
-    <script src="https://unpkg.com/vue@2/dist/vue.js"></script>
-    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
-    <script src="https://unpkg.com/element-ui/lib/umd/locale/zh-CN.js"></script>
+    <script src="//lib.baomitu.com/vue/2.7.14/vue.min.js"></script>
+    <script src="//lib.baomitu.com/element-ui/2.15.13/index.min.js"></script>
+    <script src="//lib.baomitu.com/element-ui/2.15.13/locale/zh-CN.min.js"></script>
     <script>
         ELEMENT.locale(ELEMENT.lang.zhCN)
         
@@ -70,21 +81,55 @@
             el: '#app',
             delimiters: ['[[', ']]'],
             data() {
-                // 直接从localStorage获取数据
-                const storedData = JSON.parse(localStorage.getItem('analysisData') || sessionStorage.getItem('analysisData') || '{"data":[],"columns":[]}');
+                let storedData;
+                try {
+                    // 尝试从localStorage获取数据
+                    storedData = localStorage.getItem('analysisData');
+                    console.log('从localStorage读取的原始数据:', storedData);
+                    
+                    if (!storedData) {
+                        // 如果localStorage没有数据，尝试从sessionStorage获取
+                        storedData = sessionStorage.getItem('analysisData');
+                        console.log('从sessionStorage读取的原始数据:', storedData);
+                    }
+                    
+                    if (storedData) {
+                        storedData = JSON.parse(storedData);
+                        console.log('解析后的数据:', storedData);
+                    } else {
+                        console.warn('没有找到存储的数据');
+                        storedData = {data: [], columns: []};
+                    }
+                } catch (error) {
+                    console.error('读取或解析数据时出错:', error);
+                    this.$message.error('数据加载失败: ' + error.message);
+                    storedData = {data: [], columns: []};
+                }
+                
                 return {
                     tableData: storedData.data || [],
                     columns: storedData.columns || [],
                     dataSource: storedData.dataSource || 'case'
                 }
             },
+            mounted() {
+                console.log('Vue实例已挂载');
+                console.log('表格数据:', this.tableData);
+                console.log('列信息:', this.columns);
+                
+                if (this.tableData.length === 0) {
+                    this.$message.warning('没有找到要分析的数据');
+                } else {
+                    this.$message.success(`成功加载 ${this.tableData.length} 条数据`);
+                }
+            },
             methods: {
                 getColumnWidth(column) {
                     if (column === '问题描述' || column === '答复详情' || 
                         column === '原因和说明' || column === '原文文本') {
-                        return '300';
+                        return '400';
                     }
-                    return '100';
+                    return '150';
                 },
                 goBack() {
                     window.location.href = '/';

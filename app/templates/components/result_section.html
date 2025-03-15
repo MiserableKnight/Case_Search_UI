@@ -30,13 +30,6 @@
             :disabled="!selectedRows.length">
             数据分析
         </el-button>
-        <el-button 
-            size="small" 
-            type="info" 
-            @click="checkSelectedRows"
-            :disabled="!selectedRows.length">
-            检查选中行
-        </el-button>
     </div>
 
     <!-- 结果表格 -->
@@ -54,12 +47,16 @@
             width="55">
         </el-table-column>
         <el-table-column
+            prop="序号"
+            label="序号"
+            width="60">
+        </el-table-column>
+        <el-table-column
             v-for="col in visibleColumns"
             :key="col"
             :prop="col"
             :label="col"
-            :min-width="getColumnMinWidth(col)"
-            show-overflow-tooltip>
+            :min-width="getColumnMinWidth(col)">
         </el-table-column>
     </el-table>
 </div> 

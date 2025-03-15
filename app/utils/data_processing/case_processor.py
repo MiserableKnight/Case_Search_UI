@@ -235,10 +235,18 @@ class CaseProcessor:
         required_fields = {'问题描述', '答复详情'}  # 定义必需字段
         return all(field in columns for field in required_fields)
 
-def process_case_data():
+# 确保与上面CaseProcessor类定义之间有至少两个空行
+# 删除文件末尾的 process_case_data 函数（该函数导致命名空间污染）
+
+# 在 CaseProcessor 类定义之后（文件末尾）添加以下代码
+def load_case_data():
+    """加载原始案例数据"""
+    data_path = Path(__file__).parent.parent.parent / 'data/raw/case.parquet'
+    return pd.read_parquet(data_path)
+    
     # 使用 app/__init__.py 中定义的路径
     input_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES['case'])
     output_path = os.path.join(DATA_CONFIG['processed_dir'], 'processed_case.parquet')
     
     # 处理数据的代码
-    # ... 
+    # ...

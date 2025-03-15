@@ -571,6 +571,7 @@ def calculate_text_similarity():
     try:
         data = request.get_json()
         if not data:
+            logger.error("相似度计算请求数据为空")
             return jsonify({
                 'status': 'error',
                 'message': '无效的请求数据'
@@ -580,17 +581,33 @@ def calculate_text_similarity():
         required_fields = ['text', 'columns', 'results']
         for field in required_fields:
             if field not in data:
+                logger.error(f"相似度计算请求缺少必需的字段: {field}")
                 return jsonify({
                     'status': 'error',
                     'message': f'缺少必需的字段: {field}'
                 }), 400
 
+        # 记录请求信息
+        logger.info(f"相似度计算请求: 搜索文本长度={len(data['text'])}, 搜索列={data['columns']}, 结果数量={len(data['results'])}")
+        
         # 使用TextSimilarityCalculator计算相似度
+        logger.info("开始调用TextSimilarityCalculator.calculate_similarity")
         sorted_results = TextSimilarityCalculator.calculate_similarity(
             data['text'],
             data['results'],
             data['columns']
         )
+        logger.info(f"相似度计算完成，结果数量: {len(sorted_results)}")
+        
+        # 添加序号列
+        for index, item in enumerate(sorted_results, 1):
+            item['序号'] = index
+        
+        # 检查结果中是否包含相似度列
+        if sorted_results and '相似度' in sorted_results[0]:
+            logger.info(f"结果包含相似度列，第一条结果相似度: {sorted_results[0]['相似度']}")
+        else:
+            logger.warning("结果中不包含相似度列")
 
         return jsonify({
             'status': 'success',
@@ -598,7 +615,7 @@ def calculate_text_similarity():
         })
 
     except Exception as e:
-        logger.error(f"计算相似度时出错: {str(e)}")
+        logger.error(f"计算相似度时出错: {str(e)}", exc_info=True)
         return jsonify({
             'status': 'error',
             'message': f'计算相似度失败: {str(e)}'

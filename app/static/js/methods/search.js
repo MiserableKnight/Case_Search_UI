@@ -44,23 +44,12 @@ const searchMethods = {
                     throw new Error(`未找到数据源 ${this.defaultSearch.dataSource} 的列信息`);
                 }
                 
-                // 获取列并确保包含"相似度"列
+                // 获取列
                 this.columns = this.dataSourceColumns[this.defaultSearch.dataSource];
-                
-                // 如果不包含"相似度"列，添加它
-                if (!this.columns.includes('相似度')) {
-                    this.columns.unshift('相似度'); // 将相似度列添加到最前面
-                    console.log('添加相似度列到columns:', this.columns);
-                }
                 
                 // 设置列的可见性
                 this.columns.forEach(col => {
-                    // 确保相似度列始终可见
-                    if (col === '相似度') {
-                        this.$set(this.columnVisible, col, true);
-                    } else {
-                        this.$set(this.columnVisible, col, this.defaultVisibleColumns[this.defaultSearch.dataSource].includes(col));
-                    }
+                    this.$set(this.columnVisible, col, this.defaultVisibleColumns[this.defaultSearch.dataSource].includes(col));
                 });
                 
                 const defaultColumn = this.defaultSearchColumn[this.defaultSearch.dataSource];
@@ -76,20 +65,8 @@ const searchMethods = {
             console.error('获取数据源列名失败:', error);
             if (this.defaultVisibleColumns[this.defaultSearch.dataSource]) {
                 this.columns = this.defaultVisibleColumns[this.defaultSearch.dataSource];
-                
-                // 确保包含"相似度"列
-                if (!this.columns.includes('相似度')) {
-                    this.columns.unshift('相似度');
-                    console.log('添加相似度列到columns (错误处理):', this.columns);
-                }
-                
                 this.columns.forEach(col => {
-                    // 确保相似度列始终可见
-                    if (col === '相似度') {
-                        this.$set(this.columnVisible, col, true);
-                    } else {
-                        this.$set(this.columnVisible, col, true);
-                    }
+                    this.$set(this.columnVisible, col, true);
                 });
             }
             this.$message.error('获取数据源列名失败：' + error.message);
@@ -234,63 +211,50 @@ const searchMethods = {
             this.$message.warning('请选择要搜索的列');
             return;
         }
-        
+
         try {
-            // 设置加载状态
             this.loading = true;
-            
-            console.log('开始执行相似度搜索，搜索文本:', this.contentSearch.text);
+            console.log('开始相似度搜索，搜索文本:', this.contentSearch.text);
             console.log('搜索列:', this.contentSearch.selectedColumns);
-            console.log('数据源:', this.defaultSearch.dataSource);
-            console.log('数据类型:', this.defaultSearch.dataTypes);
-            console.log('机型:', this.defaultSearch.aircraftTypes);
-            
-            // 构建搜索请求数据
-            const searchData = {
-                data_source: this.defaultSearch.dataSource,
-                content: this.contentSearch.text,
-                columns: this.contentSearch.selectedColumns,
-                data_types: this.defaultSearch.dataTypes,
-                aircraft_types: this.defaultSearch.aircraftTypes
-            };
-            
-            console.log('发送相似度搜索请求:', JSON.stringify(searchData));
-            
-            // 发送搜索请求
-            const response = await fetch('/api/similarity_search', {
+
+            const response = await fetch('/api/similarity', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(searchData)
+                body: JSON.stringify({
+                    text: this.contentSearch.text,
+                    columns: this.contentSearch.selectedColumns,
+                    results: this.searchResults.length > 0 ? this.searchResults : null
+                })
             });
-            
+
             console.log('相似度搜索响应状态:', response.status);
-            
             const result = await response.json();
-            
-            console.log('相似度搜索响应结果:', result);
-            
+            console.log('相似度搜索响应结果:', result.status);
+
             if (result.status === 'success') {
                 // 更新搜索结果
                 this.searchResults = result.data || [];
-                this.total = result.total || 0;
+                this.total = this.searchResults.length;
                 
                 console.log('相似度搜索成功，结果数量:', this.total);
                 
-                // 确保相似度列在columns中并且可见
-                if (!this.columns.includes('相似度')) {
-                    this.columns.unshift('相似度');
-                    console.log('添加相似度列到columns (搜索结果处理):', this.columns);
+                // 只有在有结果且结果中包含相似度列时才添加相似度列
+                if (this.searchResults.length > 0 && '相似度' in this.searchResults[0]) {
+                    if (!this.columns.includes('相似度')) {
+                        this.columns.unshift('相似度');
+                        console.log('添加相似度列到columns:', this.columns);
+                    }
+                    this.$set(this.columnVisible, '相似度', true);
                 }
-                this.$set(this.columnVisible, '相似度', true);
                 
                 // 计算数据类型统计
                 this.calculateTypeStatistics();
                 
-                // 如果结果为空，不再显示弹窗提示，只依靠页面上的无数据提示区域
+                // 显示成功消息
+                this.$message.success('相似度搜索完成');
             } else {
-                // 处理错误
                 console.error('相似度搜索失败:', result.message);
                 this.$message.error(result.message || '搜索失败');
                 this.searchResults = [];
@@ -302,7 +266,6 @@ const searchMethods = {
             this.searchResults = [];
             this.total = 0;
         } finally {
-            // 无论成功失败，都关闭加载状态
             this.loading = false;
         }
     },
@@ -319,6 +282,13 @@ const searchMethods = {
         this.total = 0;
         this.loading = false;
         this.typeStatistics = {};
+        
+        // 移除相似度列
+        const similarityIndex = this.columns.indexOf('相似度');
+        if (similarityIndex !== -1) {
+            this.columns.splice(similarityIndex, 1);
+            this.$delete(this.columnVisible, '相似度');
+        }
     },
 
     addLevel() {
@@ -346,9 +316,6 @@ const searchMethods = {
         
         // 重置搜索表单
         this.resetForm();
-        
-        // 执行搜索以更新结果
-        await this.handleSearch();
     },
 
     // 处理搜索列选择变化，包括全选功能
