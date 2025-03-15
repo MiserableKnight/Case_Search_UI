@@ -12,13 +12,24 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from werkzeug.utils import secure_filename
 from app.utils.similarity import TextSimilarityCalculator
+from logging.handlers import RotatingFileHandler
 
-# 配置日志
+# 确保日志目录存在
+log_dir = 'logs'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 在文件顶部添加文件日志处理器
-file_handler = logging.FileHandler('upload.log')
+# 配置轮转日志处理器
+log_file = os.path.join(log_dir, 'app.log')
+file_handler = RotatingFileHandler(
+    log_file,
+    maxBytes=10*1024*1024,  # 10MB
+    backupCount=5,          # 保留5个备份文件
+    encoding='utf-8'
+)
 file_handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
