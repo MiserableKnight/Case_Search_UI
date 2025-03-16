@@ -16,7 +16,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 rem 运行 Python 脚本
-python run.py
+python wsgi.py
 if %errorlevel% neq 0 (
     echo 运行 Python 脚本时出错
     pause
