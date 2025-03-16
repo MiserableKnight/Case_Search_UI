@@ -138,6 +138,10 @@ def create_app():
     from app.routes import bp
     app.register_blueprint(bp)
     
+    # 注册API蓝图
+    from app.api import bp as api_bp
+    app.register_blueprint(api_bp)
+    
     @app.after_request
     def add_security_headers(response):
         response.headers['Content-Security-Policy'] = (

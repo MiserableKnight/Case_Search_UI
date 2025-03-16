@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@bp.route('/api/sensitive_words', methods=['GET'])
+@bp.route('/sensitive_words', methods=['GET'])
 def get_sensitive_words():
     """获取敏感词列表"""
     try:
@@ -22,7 +22,7 @@ def get_sensitive_words():
         }), 500
 
 
-@bp.route('/api/sensitive_words', methods=['POST'])
+@bp.route('/sensitive_words', methods=['POST'])
 def add_sensitive_word():
     """添加敏感词"""
     try:
@@ -58,7 +58,7 @@ def add_sensitive_word():
         }), 500
 
 
-@bp.route('/api/sensitive_words', methods=['DELETE'])
+@bp.route('/sensitive_words', methods=['DELETE'])
 def remove_sensitive_word():
     """删除敏感词"""
     try:

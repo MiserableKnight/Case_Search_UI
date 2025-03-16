@@ -5,7 +5,48 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-@bp.route('/api/data_source_columns')
+def search_column(df, keywords, column_name, logic='and', negative_filtering=False):
+    """基础搜索功能"""
+    if not keywords:
+        return df
+        
+    # 将所有关键字转换为小写
+    if isinstance(keywords, str):
+        keywords = keywords.replace('，', ',')
+        keywords = [k.strip() for k in keywords.split(',') if k.strip()]
+    keywords = [str(k).lower() for k in keywords]
+    
+    # 确定要搜索的列
+    if isinstance(column_name, str):
+        columns_to_search = [column_name]
+    elif isinstance(column_name, list):
+        columns_to_search = [col for col in column_name if col in df.columns]
+    else:
+        raise ValueError("无效的列名参数")
+    
+    if not columns_to_search:
+        raise ValueError("未指定有效的搜索列")
+    
+    # 使用相同的搜索逻辑
+    if logic == 'and':
+        final_mask = pd.Series(True, index=df.index)
+        for keyword in keywords:
+            keyword_mask = pd.Series(False, index=df.index)
+            for col in columns_to_search:
+                col_values = df[col].fillna('').astype(str).str.lower()
+                keyword_mask |= col_values.str.contains(keyword, na=False, regex=False)
+            final_mask &= keyword_mask
+    else:  # logic == 'or'
+        final_mask = pd.Series(False, index=df.index)
+        for keyword in keywords:
+            for col in columns_to_search:
+                col_values = df[col].fillna('').astype(str).str.lower()
+                final_mask |= col_values.str.contains(keyword, na=False, regex=False)
+    
+    # 根据negative_filtering参数决定是否反向过滤
+    return df[~final_mask] if negative_filtering else df[final_mask]
+
+@bp.route('/data_source_columns')
 def get_data_source_columns():
     """获取所有数据源的列名"""
     try:
@@ -70,8 +111,7 @@ def get_data_source_columns():
             'message': error_msg
         }), 500
 
-
-@bp.route('/api/data_types/<source>', methods=['GET'])
+@bp.route('/data_types/<source>', methods=['GET'])
 def get_data_types(source):
     """获取指定数据源的数据类型"""
     try:
@@ -112,8 +152,7 @@ def get_data_types(source):
             'message': str(e)
         }), 500
 
-
-@bp.route('/api/search', methods=['POST'])
+@bp.route('/search', methods=['POST'])
 def search():
     """搜索数据"""
     try:
@@ -179,3 +218,30 @@ def search():
             'status': 'error',
             'message': str(e)
         }), 500
+
+@bp.route('/data_columns', methods=['GET'])
+def get_data_columns():
+    source = request.args.get('source')
+    if not source:
+        return jsonify({'success': False, 'message': '未提供数据源参数'})
+    
+    try:
+        # 实现获取列信息的功能
+        if source == 'case':
+            # 使用case处理器获取列信息
+            from app.utils.data_processing.case_processor import CaseProcessor
+            processor = CaseProcessor()
+            columns = processor.get_columns()
+            if columns:
+                return jsonify({'success': True, 'columns': columns})
+        else:
+            # 其他数据源的处理
+            df = current_app.load_data_source(source)
+            if df is not None:
+                columns = df.columns.tolist()
+                return jsonify({'success': True, 'columns': columns})
+        
+        return jsonify({'success': False, 'message': f'未找到数据源 {source} 的列信息'})
+    except Exception as e:
+        logger.error(f"获取数据源列失败: {str(e)}")
+        return jsonify({'success': False, 'message': f'获取列信息时发生错误: {str(e)}'})

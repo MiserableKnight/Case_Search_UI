@@ -5,13 +5,60 @@ import os
 import uuid
 import json
 import time
+import re
 from werkzeug.utils import secure_filename
 from app.utils.data_processing.case_processor import CaseProcessor
 
 logger = logging.getLogger(__name__)
 
-@bp.route('/api/import_data', methods=['POST'])
-@bp.route('/api/import_data', methods=['POST'])
+# 修改上传文件夹路径
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'temp')
+if not os.path.exists(UPLOAD_FOLDER):
+    logger.info(f"创建上传目录: {UPLOAD_FOLDER}")
+    os.makedirs(UPLOAD_FOLDER)
+
+# 添加临时文件存储路径
+TEMP_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'temp_data')
+if not os.path.exists(TEMP_DATA_DIR):
+    os.makedirs(TEMP_DATA_DIR)
+
+# 添加支持的Excel文件扩展名
+ALLOWED_EXTENSIONS = {'xls', 'xlsx'}
+
+def allowed_file(filename):
+    """检查文件扩展名是否允许"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def parse_preview_message(message):
+    """从预览消息中解析数据统计信息"""
+    try:
+        stats = {
+            'original_count': 0,
+            'uploaded_count': 0,
+            'duplicate_count': 0,
+            'new_count': 0,
+            'final_count': 0
+        }
+        
+        patterns = {
+            'original_count': r'原有数据：(\d+)\s*条',
+            'uploaded_count': r'上传数据：(\d+)\s*条',
+            'duplicate_count': r'重复数据：(\d+)\s*条',
+            'new_count': r'实际新增：(\d+)\s*条',
+            'final_count': r'变更后数据：(\d+)\s*条'
+        }
+        
+        for key, pattern in patterns.items():
+            match = re.search(pattern, message)
+            if match:
+                stats[key] = int(match.group(1))
+                
+        return stats
+    except Exception as e:
+        logger.error(f"解析预览消息时出错: {str(e)}")
+        return None
+
+@bp.route('/import_data', methods=['POST'])
 def import_data():
     """处理文件上传并生成预览"""
     try:
@@ -35,7 +82,7 @@ def import_data():
             }), 400
 
         # 使用 current_app 访问应用上下文中的函数和变量
-        if not current_app.allowed_file(file.filename):
+        if not allowed_file(file.filename):
             return jsonify({
                 'status': 'error',
                 'message': '不支持的文件类型'
@@ -127,7 +174,7 @@ def import_data():
             'message': f'处理上传失败: {str(e)}'
         }), 500
 
-@bp.route('/api/confirm_import', methods=['POST'])
+@bp.route('/confirm_import', methods=['POST'])
 def confirm_import():
     """确认导入数据"""
     try:
@@ -217,8 +264,6 @@ def confirm_import():
             # 清除数据缓存,强制重新加载
             if data_source in current_app.config['DATA_SOURCES']:
                 # 不要删除配置中的路径信息，只清除数据缓存
-                # del current_app.config['DATA_SOURCES'][data_source]
-                # 正确清除数据缓存
                 from app import data_frames
                 if data_source in data_frames:
                     del data_frames[data_source]
@@ -240,7 +285,7 @@ def confirm_import():
             'message': str(e)
         }), 500
 
-@bp.route('/api/cancel_import', methods=['POST'])
+@bp.route('/cancel_import', methods=['POST'])
 def cancel_import():
     """取消导入并清理临时文件"""
     try:
@@ -268,16 +313,6 @@ def cleanup_temp_files(temp_id):
         for filename in os.listdir(UPLOAD_FOLDER):
             if filename.startswith(temp_id):
                 file_path = os.path.join(UPLOAD_FOLDER, filename)
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-    except Exception as e:
-        logger.error(f"清理临时文件时出错: {str(e)}")
-
-    """清理与指定temp_id相关的所有临时文件"""
-    try:
-        for filename in os.listdir(current_app.config['UPLOAD_FOLDER']):
-            if filename.startswith(temp_id):
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                 if os.path.exists(file_path):
                     os.remove(file_path)
     except Exception as e:

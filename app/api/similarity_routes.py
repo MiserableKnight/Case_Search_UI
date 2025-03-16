@@ -5,7 +5,7 @@ from app.utils.similarity import TextSimilarityCalculator
 
 logger = logging.getLogger(__name__)
 
-@bp.route('/api/similarity', methods=['POST'])
+@bp.route('/similarity', methods=['POST'])
 def calculate_text_similarity():
     try:
         data = request.get_json()
@@ -60,7 +60,7 @@ def calculate_text_similarity():
             'message': f'计算相似度失败: {str(e)}'
         }), 500
 
-@bp.route('/api/similarity_search', methods=['POST'])
+@bp.route('/similarity_search', methods=['POST'])
 def similarity_search():
     """相似度搜索功能"""
     try:
