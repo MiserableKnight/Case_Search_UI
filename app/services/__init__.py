@@ -1,25 +1,30 @@
 """
-服务层模块，提供对核心功能的封装和对外接口
+服务层包，提供各种业务服务
 """
+# 导入数据服务
+from .data_services import (
+    DataImportService,
+    CaseService,
+    FaultReportService,
+    RAndIRecordService
+)
 
-# 导入服务
+# 导入其他服务
 from .word_service import WordService
-from .case_service import CaseService
 from .similarity_service import SimilarityService
 from .anonymization_service import AnonymizationService
 from .error_service import ErrorService
 from .api_response import ApiResponse
-from .fault_report_service import FaultReportService
-from .r_and_i_record_service import RAndIRecordService
 
 # 导出所有服务
 __all__ = [
     'WordService',
-    'CaseService',
     'SimilarityService',
     'AnonymizationService',
     'ErrorService',
     'ApiResponse',
+    'DataImportService',
+    'CaseService',
     'FaultReportService',
-    'RAndIRecordService'
+    'RAndIRecordService',
 ] 

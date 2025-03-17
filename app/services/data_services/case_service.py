@@ -2,8 +2,9 @@
 案例处理服务，提供对案例数据的处理功能
 """
 from app.core.case_processor import CaseProcessor
+from .data_import_service import DataImportService
 
-class CaseService:
+class CaseService(DataImportService):
     """案例处理服务类，封装对CaseProcessor的调用"""
     
     def __init__(self, config=None):
@@ -13,7 +14,7 @@ class CaseService:
         Args:
             config: 配置信息，默认为None，使用默认配置
         """
-        self.processor = CaseProcessor(config)
+        super().__init__(CaseProcessor, config)
     
     def process_case_file(self, file_path, file_type=None):
         """
@@ -75,39 +76,4 @@ class CaseService:
         Returns:
             案例数据
         """
-        return self.processor.get_case_by_id(case_id)
-        
-    def analyze_changes(self, temp_path):
-        """
-        分析数据变化
-        
-        Args:
-            temp_path: 临时文件路径
-            
-        Returns:
-            (success, message, combined_data): 分析结果
-        """
-        # 创建一个新的CaseProcessor实例，传入临时文件路径
-        temp_processor = CaseProcessor(temp_path)
-        return temp_processor.analyze_changes()
-        
-    def save_changes(self, combined_data):
-        """
-        保存数据变化
-        
-        Args:
-            combined_data: 合并后的数据
-            
-        Returns:
-            (success, message): 保存结果
-        """
-        return self.processor.save_changes(combined_data)
-    
-    def get_columns(self):
-        """
-        获取案例数据的列信息
-        
-        Returns:
-            列信息列表
-        """
-        return self.processor.get_columns() 
+        return self.processor.get_case_by_id(case_id) 

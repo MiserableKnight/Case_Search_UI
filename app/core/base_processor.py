@@ -7,41 +7,40 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-class CaseProcessor:
-    _instance = None
-    _initialized = False
+class BaseDataProcessor:
+    _instances = {}
     
     def __new__(cls, file_path=None):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__new__(cls)
+        return cls._instances[cls]
     
     def __init__(self, file_path=None):
         # 确保初始化代码只运行一次
-        if not self._initialized:
+        if not hasattr(self, '_initialized'):
             self.__initialize()
-            CaseProcessor._initialized = True
-        self.file_path = file_path  # 保存文件路径
+            self._initialized = True
+        self.file_path = file_path
     
     def __initialize(self):
         """私有初始化方法"""
         # 只在主进程中打印信息
         if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-            print("敏感词列表读取成功")
+            print(f"{self.processor_name}初始化成功")
             
         # 从应用配置中获取数据路径
         try:
             # 尝试从Flask上下文获取配置
             self.data_path = os.path.join(
                 current_app.config['DATA_CONFIG']['data_dir'],
-                current_app.config['DATA_SOURCES']['case']
+                current_app.config['DATA_SOURCES'][self.data_source_key]
             )
         except Exception as e:
             # 如果不在Flask上下文中，使用默认路径
             print(f"无法从Flask上下文获取配置: {str(e)}")
             app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             data_dir = os.path.join(os.path.dirname(app_dir), 'data')
-            self.data_path = os.path.join(data_dir, 'raw', 'case.parquet')
+            self.data_path = os.path.join(data_dir, 'raw', f'{self.data_source_key}.parquet')
             print(f"使用默认数据路径: {self.data_path}")
         
         # 检查并创建数据目录
@@ -49,28 +48,6 @@ class CaseProcessor:
         
         if not os.path.exists(self.data_path):
             logger.warning(f"数据文件不存在: {self.data_path}")
-        
-        # 初始化其他属性
-        self.REQUIRED_COLUMNS = ['类型', '标题', '状态', '技术请求编号', '服务请求单编号', '支持单编号', '版本号', '优先级', 
-                               '受理渠道', '申请人', '申请时间', '初始要求答复日期', '协商答复日期', 'SR变更人', '变更原因', 
-                               '实际答复时间', '客户名称', 'TR联系人', '联系人电话', '联系人邮箱', '运营人', 'mro', '机型', 
-                               '飞机序列号/注册号', '飞机总小时数', '飞机总循环数', '故障发生日期', '故障发生地点', 'ATA', 
-                               'CAS信息', 'CMS信息', '维修级别', '问题描述', '客户期望', '答复详情', '答复用时(小时)', 
-                               '答复是否超时', 'SR创建人', '创建时间', '答复者', '答复时间', '审批者', '审批时间', '备注信息']
-        self.FINAL_COLUMNS = ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', 
-                             '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
-
-    # 原始数据必需的列
-    REQUIRED_COLUMNS = ['类型', '标题', '状态', '技术请求编号', '服务请求单编号', '支持单编号', '版本号', '优先级', 
-                       '受理渠道', '申请人', '申请时间', '初始要求答复日期', '协商答复日期', 'SR变更人', '变更原因', 
-                       '实际答复时间', '客户名称', 'TR联系人', '联系人电话', '联系人邮箱', '运营人', 'mro', '机型', 
-                       '飞机序列号/注册号', '飞机总小时数', '飞机总循环数', '故障发生日期', '故障发生地点', 'ATA', 
-                       'CAS信息', 'CMS信息', '维修级别', '问题描述', '客户期望', '答复详情', '答复用时(小时)', 
-                       '答复是否超时', 'SR创建人', '创建时间', '答复者', '答复时间', '审批者', '审批时间', '备注信息']
-    
-    # 最终需要保留的列
-    FINAL_COLUMNS = ['故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', 
-                     '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型']
 
     def validate_headers(self, df):
         """验证数据表头是否符合要求"""
@@ -81,47 +58,21 @@ class CaseProcessor:
             raise ValueError(f"缺少必需的列: {missing_columns}")
         return True
 
-    def clean_data(self, df):
-        """清洗数据"""
-        # 复制数据框以避免修改原始数据
-        cleaned_df = df.copy()
-        
-        # 清洗日期数据
-        def convert_date(date_str):
-            try:
-                return pd.to_datetime(date_str, format='%Y/%m/%d %H:%M:%S')
-            except ValueError:
-                try:
-                    return pd.to_datetime(date_str, format='%Y/%m/%d %H:%M')
-                except ValueError:
-                    try:
-                        return pd.to_datetime(date_str, format='%Y/%m/%d %H %M')
-                    except ValueError:
-                        return pd.NaT
-
-        date_columns = ['故障发生日期', '申请时间']
-        for col in date_columns:
-            cleaned_df[col] = cleaned_df[col].apply(convert_date)
-            cleaned_df[col] = cleaned_df[col].dt.strftime('%Y-%m-%d')
-
-        # 清洗机型数据
-        cleaned_df['机型'] = cleaned_df['机型'].fillna('无')
-        cleaned_df['机型'] = cleaned_df['机型'].str.replace(r'.*ARJ21.*', 'ARJ21', regex=True)
-        cleaned_df['机型'] = cleaned_df['机型'].str.replace(r'.*C919.*', 'C919', regex=True)
-
-        # 更新运营人替换规则
+    def clean_operator_names(self, df, column='运营人'):
+        """清洗运营人名称的通用方法"""
         replace_rules = [
             (['天骄', '天骄航空', '天骄航空有限公司'], '天骄'),
             (['东航', '东方航空', '一二三航空', '一二三航空有限公司（东方航空）', '东航技术', 
-              '中国东方航空有限公司', '一二三航空有限公司（东航）', '一二三航空有限公司'], '东航'),
+              '中国东方航空有限公司', '一二三航空有限公司（东航）', '一二三航空有限公司',
+              '中国东方航空集团有限公司'], '东航'),
             (['江西航', '江西航空有限公司', '江西航空'], '江西航'),
-            (['南航', '南方航空', '中国南方航空有限公司'], '南航'),
+            (['南航', '南方航空', '中国南方航空有限公司', '中国南方航空股份有限公司'], '南航'),
             (['国航', '中国国航', '中国国际航空股份有限公司'], '国航'),
             (['成航', '成都航空', '成都航空有限公司'], '成航'),
             (['乌航', '乌鲁木齐航空'], '乌航'),
             (['华夏', '华夏航空', '华夏航空股份有限公司'], '华夏'),
             (['金鹏', '金鹏航空'], '金鹏'),
-            (['圆通', '圆通货航', '圆通航空'], '圆通'),
+            (['圆通', '圆通货航', '圆通航空', '杭州圆通货运航空有限公司'], '圆通'),
             (['中飞通', '中飞通航', '中飞通用航空有限责任公司'], '中飞通'),
             (['中原龙浩', '中原龙浩航空'], '中原龙浩'),
             (['上飞公司维修中心'], '上飞公司维修中心'),
@@ -138,39 +89,53 @@ class CaseProcessor:
         filtered_replace_rules = [rule for rule in replace_rules if len(rule[0]) > 1]
         
         # 进行替换操作
+        df_copy = df.copy()
         for replacements, target in filtered_replace_rules:
-            cleaned_df['运营人'] = cleaned_df['运营人'].replace(replacements, target)
-        cleaned_df['运营人'] = cleaned_df['运营人'].fillna('无')
-
-        # 清洗机号数据
-        cleaned_df['机号/MSN'] = cleaned_df['飞机序列号/注册号']  # 重命名列
-        cleaned_df['机号/MSN'] = cleaned_df['机号/MSN'].str.replace('all', 'ALL', case=True)
-        cleaned_df['机号/MSN'] = cleaned_df['机号/MSN'].str.replace('./ALL', 'ALL/ALL', case=True)
-
-        # 清洗ATA数据
-        cleaned_df['ATA'] = cleaned_df['ATA'].astype(str)
-
-        # 添加数据类型标记
-        cleaned_df['数据类型'] = '服务请求'
-
-        # 删除答复详情为"无"的记录
-        cleaned_df = cleaned_df[cleaned_df['答复详情'] != '无']
-
-        # 只保留需要的列
-        final_df = cleaned_df[self.FINAL_COLUMNS]
+            df_copy[column] = df_copy[column].replace(replacements, target)
+        df_copy[column] = df_copy[column].fillna('无')
         
-        return final_df
+        return df_copy
+
+    def clean_aircraft_type(self, df, column='机型'):
+        """清洗机型数据的通用方法"""
+        df_copy = df.copy()
+        df_copy[column] = df_copy[column].fillna('无')
+        df_copy[column] = df_copy[column].str.replace(r'.*ARJ21.*', 'ARJ21', regex=True)
+        df_copy[column] = df_copy[column].str.replace(r'.*C919.*', 'C919', regex=True)
+        return df_copy
+
+    def convert_date(self, date_str):
+        """转换日期格式的通用方法"""
+        if pd.isna(date_str):
+            return pd.NaT
+            
+        formats = [
+            '%Y-%m-%d',
+            '%Y/%m/%d %H:%M:%S',
+            '%Y/%m/%d %H:%M',
+            '%Y/%m/%d %H %M',
+            '%Y/%m/%d'
+        ]
+        
+        for fmt in formats:
+            try:
+                return pd.to_datetime(date_str, format=fmt)
+            except:
+                continue
+        
+        try:
+            # 最后尝试让pandas自动识别格式
+            return pd.to_datetime(date_str)
+        except:
+            logger.error(f"无法解析的日期格式: {date_str}")
+            return pd.NaT
 
     def analyze_changes(self):
-        """分析数据变化，但不保存"""
+        """分析数据变化的通用方法"""
         try:
-            # 直接读取Excel文件
+            # 读取并清洗新数据
             new_data = pd.read_excel(self.file_path)
-            
-            # 验证表头
             self.validate_headers(new_data)
-            
-            # 清洗新数据
             cleaned_new_data = self.clean_data(new_data)
             logger.info("新数据清洗完成")
             
@@ -194,8 +159,8 @@ class CaseProcessor:
             # 合并数据
             combined_data = pd.concat([cleaned_new_data, existing_data], ignore_index=True)
             
-            # 按申请时间倒序排序并去重
-            combined_data = combined_data.sort_values('申请时间', ascending=False)
+            # 按日期倒序排序并去重
+            combined_data = combined_data.sort_values(self.date_column, ascending=False)
             combined_data = combined_data.drop_duplicates(keep='first')
             final_count = len(combined_data)
             
@@ -221,7 +186,7 @@ class CaseProcessor:
             return False, f"数据分析失败: {str(e)}", None
 
     def save_changes(self, combined_data):
-        """保存确认后的数据"""
+        """保存确认后的数据的通用方法"""
         try:
             if combined_data is None:
                 raise ValueError("没有可保存的数据")
@@ -239,34 +204,40 @@ class CaseProcessor:
 
     @staticmethod
     def validate_columns(columns):
-        """验证列名是否有效"""
+        """验证列名是否有效的通用方法"""
         if not columns or not isinstance(columns, list):
             return False
-        required_fields = {'问题描述', '答复详情'}  # 定义必需字段
+        required_fields = {'问题描述'}  # 基类中定义最基本的必需字段
         return all(field in columns for field in required_fields)
 
     def get_columns(self):
-        """获取case数据源的所有列"""
+        """获取数据源的所有列的通用方法"""
         try:
-            # 确保正确读取case数据的列信息
-            df = pd.read_parquet(self.data_path)
-            return df.columns.tolist()
+            if os.path.exists(self.data_path):
+                df = pd.read_parquet(self.data_path)
+                return list(df.columns)
+            else:
+                return self.FINAL_COLUMNS
         except Exception as e:
-            logger.error(f"读取case数据列名失败: {str(e)}")
-            return []
+            logger.error(f"获取列名时出错: {str(e)}")
+            return self.FINAL_COLUMNS
 
-# 确保与上面CaseProcessor类定义之间有至少两个空行
-# 删除文件末尾的 process_case_data 函数（该函数导致命名空间污染）
+    # 以下属性和方法需要在子类中实现
+    @property
+    def processor_name(self):
+        """处理器名称"""
+        raise NotImplementedError("子类必须实现processor_name属性")
 
-# 在 CaseProcessor 类定义之后（文件末尾）添加以下代码
-def load_case_data():
-    """加载原始案例数据"""
-    data_path = Path(__file__).parent.parent.parent.parent / 'data/raw/case.parquet'
-    return pd.read_parquet(data_path)
-    
-    # 使用 app/__init__.py 中定义的路径
-    # input_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES['case'])
-    # output_path = os.path.join(DATA_CONFIG['processed_dir'], 'processed_case.parquet')
-    
-    # 处理数据的代码
-    # ...
+    @property
+    def data_source_key(self):
+        """数据源键名"""
+        raise NotImplementedError("子类必须实现data_source_key属性")
+
+    @property
+    def date_column(self):
+        """日期列名"""
+        raise NotImplementedError("子类必须实现date_column属性")
+
+    def clean_data(self, df):
+        """数据清洗方法"""
+        raise NotImplementedError("子类必须实现clean_data方法") 
