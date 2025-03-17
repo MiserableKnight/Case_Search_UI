@@ -2,6 +2,8 @@ from flask import request, jsonify, current_app
 from app.api import bp
 import logging
 import pandas as pd
+import re
+from app.core.r_and_i_record_processor import load_r_and_i_data
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +33,60 @@ def search_column(df, keywords, column_name, logic='and', negative_filtering=Fal
     if logic == 'and':
         final_mask = pd.Series(False, index=df.index)
         for col in columns_to_search:
-            col_values = df[col].fillna('').astype(str).str.lower()
-            # 检查该列中是否包含所有关键字
-            col_mask = pd.Series(True, index=df.index)
-            for keyword in keywords:
-                col_mask &= col_values.str.contains(keyword, na=False, regex=False)
+            # 检查是否是日期列
+            is_date_column = col == '日期' or '时间' in col or '日期' in col
+            
+            if is_date_column:
+                # 日期列特殊处理
+                col_values = df[col].fillna('')
+                # 检查该列中是否包含所有关键字
+                col_mask = pd.Series(True, index=df.index)
+                for keyword in keywords:
+                    # 检查是否是年月格式 (YYYY-MM)
+                    year_month_match = re.match(r'^(\d{4})-(\d{1,2})$', keyword)
+                    if year_month_match:
+                        year = year_month_match.group(1)
+                        month = year_month_match.group(2).zfill(2)
+                        # 匹配年月
+                        date_pattern = f"{year}-{month}"
+                        col_mask &= col_values.str.contains(date_pattern, na=False, regex=False)
+                    else:
+                        # 普通关键字匹配
+                        col_mask &= col_values.str.lower().str.contains(keyword, na=False, regex=False)
+            else:
+                # 非日期列正常处理
+                col_values = df[col].fillna('').astype(str).str.lower()
+                # 检查该列中是否包含所有关键字
+                col_mask = pd.Series(True, index=df.index)
+                for keyword in keywords:
+                    col_mask &= col_values.str.contains(keyword, na=False, regex=False)
+            
             final_mask |= col_mask
     else:  # logic == 'or'
         final_mask = pd.Series(False, index=df.index)
         for keyword in keywords:
             for col in columns_to_search:
-                col_values = df[col].fillna('').astype(str).str.lower()
-                final_mask |= col_values.str.contains(keyword, na=False, regex=False)
+                # 检查是否是日期列
+                is_date_column = col == '日期' or '时间' in col or '日期' in col
+                
+                if is_date_column:
+                    # 日期列特殊处理
+                    col_values = df[col].fillna('')
+                    # 检查是否是年月格式 (YYYY-MM)
+                    year_month_match = re.match(r'^(\d{4})-(\d{1,2})$', keyword)
+                    if year_month_match:
+                        year = year_month_match.group(1)
+                        month = year_month_match.group(2).zfill(2)
+                        # 匹配年月
+                        date_pattern = f"{year}-{month}"
+                        final_mask |= col_values.str.contains(date_pattern, na=False, regex=False)
+                    else:
+                        # 普通关键字匹配
+                        final_mask |= col_values.str.lower().str.contains(keyword, na=False, regex=False)
+                else:
+                    # 非日期列正常处理
+                    col_values = df[col].fillna('').astype(str).str.lower()
+                    final_mask |= col_values.str.contains(keyword, na=False, regex=False)
     
     # 根据negative_filtering参数决定是否反向过滤
     return df[~final_mask] if negative_filtering else df[final_mask]
@@ -68,6 +112,12 @@ def get_data_source_columns():
             'faults': [
                 '日期', '问题描述', '排故措施', '运营人', '飞机序列号', '机号',
                 '机型', '数据类型'
+            ],
+            'r_and_i_record': [
+                '机型', '注册号', '运营人', '日期', '机号', '故障描述', 
+                '故障现象', '故障原因', '处理结果', '故障件名称', '故障件件号', 
+                '故障件序号', '故障ATA章节', '故障MEL', '延期修复', '延期原因', 
+                '延期期限', '延期审批人', '备注', '数据类型'
             ]
         }
 
@@ -122,12 +172,43 @@ def get_data_types(source):
                 'message': '无效的数据源'
             }), 400
         
-        df = current_app.load_data_source(source)
-        if df is None:
-            return jsonify({
-                'status': 'error',
-                'message': f'找不到数据源文件: {current_app.config["DATA_SOURCES"][source]}'
-            }), 404
+        # 如果数据源是faults，则同时加载faults和r_and_i_record数据源
+        if source == 'faults':
+            # 加载故障报告数据
+            faults_df = current_app.load_data_source('faults')
+            if faults_df is None:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'找不到故障报告数据源文件: {current_app.config["DATA_SOURCES"]["faults"]}'
+                }), 404
+            
+            # 尝试加载部件拆换记录数据
+            try:
+                ri_df = current_app.load_data_source('r_and_i_record')
+                if ri_df is not None and '数据类型' in ri_df.columns:
+                    # 合并两个数据源的数据类型
+                    faults_types = faults_df['数据类型'].unique() if '数据类型' in faults_df.columns else []
+                    ri_types = ri_df['数据类型'].unique()
+                    all_types = sorted(list(set(list(faults_types) + list(ri_types))))
+                    logger.info(f"合并后的数据类型: {all_types}")
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'types': all_types
+                    })
+                else:
+                    df = faults_df
+            except Exception as e:
+                logger.warning(f"加载部件拆换记录数据时出错: {str(e)}")
+                df = faults_df
+        else:
+            # 加载选定的数据源
+            df = current_app.load_data_source(source)
+            if df is None:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'找不到数据源文件: {current_app.config["DATA_SOURCES"][source]}'
+                }), 404
         
         logger.info(f"数据源 {source} 的列名: {df.columns.tolist()}")
         
@@ -246,3 +327,50 @@ def get_data_columns():
     except Exception as e:
         logger.error(f"获取数据源列失败: {str(e)}")
         return jsonify({'success': False, 'message': f'获取列信息时发生错误: {str(e)}'})
+
+@bp.route('/reset_data_source/<source>', methods=['POST'])
+def reset_data_source(source):
+    """重置数据源，重新加载并合并数据"""
+    try:
+        if source not in current_app.config['DATA_SOURCES']:
+            return jsonify({
+                'status': 'error',
+                'message': '无效的数据源'
+            }), 400
+            
+        # 如果是故障报告数据源，则重新加载并合并数据
+        if source == 'faults':
+            # 重新加载部件拆换记录数据
+            success = load_r_and_i_data()
+            if not success:
+                logger.warning("重新加载部件拆换记录数据失败")
+            
+            # 清除数据缓存，强制重新加载
+            from app import data_frames
+            if source in data_frames:
+                del data_frames[source]
+                logger.info(f"已清除数据源 {source} 的缓存")
+                
+            return jsonify({
+                'status': 'success',
+                'message': '数据源已重置并重新加载'
+            })
+        else:
+            # 对于其他数据源，仅清除缓存
+            from app import data_frames
+            if source in data_frames:
+                del data_frames[source]
+                logger.info(f"已清除数据源 {source} 的缓存")
+            
+            return jsonify({
+                'status': 'success',
+                'message': '数据源缓存已清除'
+            })
+            
+    except Exception as e:
+        error_msg = f"重置数据源失败: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            'status': 'error',
+            'message': error_msg
+        }), 500

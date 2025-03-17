@@ -35,7 +35,8 @@ DATA_SOURCES = {
     'case': os.path.join('raw', 'case.parquet'),
     'engineering': os.path.join('raw', 'engineering.parquet'),
     'manual': os.path.join('raw', 'manual.parquet'),
-    'faults': os.path.join('raw', 'faults.parquet')
+    'faults': os.path.join('raw', 'faults.parquet'),
+    'r_and_i_record': os.path.join('raw', 'r_and_i_record.parquet')
 }
 
 # 数据缓存
@@ -162,7 +163,7 @@ def create_app(config_name='development'):
     
     # 注册API蓝图
     from app.api import bp as api_bp
-    app.register_blueprint(api_bp)
+    app.register_blueprint(api_bp, url_prefix='/api')
     
     # 注册全局错误处理器
     @app.errorhandler(Exception)
@@ -201,6 +202,16 @@ def create_app(config_name='development'):
         if hasattr(app, 'temp_manager'):
             app.temp_manager.stop_scheduler()
 
+    # 初始化数据
+    from app.core.fault_report_processor import load_fault_report_data
+    from app.core.r_and_i_record_processor import load_r_and_i_data
+    
+    # 加载故障报告数据
+    load_fault_report_data()
+    
+    # 加载部件拆换记录数据
+    load_r_and_i_data()
+    
     return app
 
 # 创建默认应用实例

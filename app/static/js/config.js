@@ -6,6 +6,14 @@ const CONFIG = {
         'manual': '手册',
         'faults': '故障报告'
     },
+    // 导入对话框的数据源选项
+    importDataSourceOptions: {
+        'case': '快响信息',
+        'engineering': '工程文件',
+        'manual': '手册',
+        'faults': '故障报告',
+        'r_and_i_record': '部件拆换记录'
+    },
     defaultVisibleColumns: {
         'case': ['申请时间', '问题描述', '答复详情', '机号/MSN', '运营人'],
         'engineering': ['发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性'],

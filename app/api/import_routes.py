@@ -7,7 +7,7 @@ import json
 import time
 import re
 from werkzeug.utils import secure_filename
-from app.services import CaseService
+from app.services import CaseService, FaultReportService, RAndIRecordService
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +34,11 @@ def parse_preview_message(message):
             'uploaded_count': 0,
             'duplicate_count': 0,
             'new_count': 0,
-            'final_count': 0
+            'final_count': 0,
+            'total_count': 0
         }
         
+        # 使用与前端显示一致的格式
         patterns = {
             'original_count': r'原有数据：(\d+)\s*条',
             'uploaded_count': r'上传数据：(\d+)\s*条',
@@ -45,10 +47,14 @@ def parse_preview_message(message):
             'final_count': r'变更后数据：(\d+)\s*条'
         }
         
+        # 解析消息
         for key, pattern in patterns.items():
             match = re.search(pattern, message)
             if match:
                 stats[key] = int(match.group(1))
+        
+        # 总数等于最终数
+        stats['total_count'] = stats['final_count']
                 
         return stats
     except Exception as e:
@@ -90,6 +96,21 @@ def import_data():
         logger.info(f"生成临时ID: {temp_id}")
         
         filename = secure_filename(file.filename)
+        
+        # 根据选择的数据源处理文件名
+        if data_source == 'faults':
+            # 检查文件名是否只包含日期
+            if re.match(r'^\d{8}.*\.xlsx$', filename):
+                filename = f"故障报告_{filename}"
+                logger.info(f"已为故障报告文件添加前缀: {filename}")
+        elif data_source == 'r_and_i_record':
+            # 如果选择了部件拆换记录数据源
+            if not filename.startswith('部件拆换记录_'):
+                # 如果文件名不以"部件拆换记录_"开头，则添加前缀
+                if re.match(r'^\d{8}.*\.xlsx$', filename):
+                    filename = f"部件拆换记录_{filename}"
+                    logger.info(f"已为部件拆换记录文件添加前缀: {filename}")
+        
         temp_path = os.path.join(UPLOAD_FOLDER, f"{temp_id}_{filename}")
         logger.info(f"临时文件路径: {temp_path}")
         
@@ -106,6 +127,15 @@ def import_data():
         # 根据数据源选择相应的处理器
         if data_source == 'case':
             processor = CaseService()
+            processor_type = 'case'
+        elif data_source == 'faults':
+            processor = FaultReportService()
+            processor_type = 'fault_report'
+            logger.info("使用故障报告处理器")
+        elif data_source == 'r_and_i_record':
+            processor = RAndIRecordService()
+            processor_type = 'r_and_i_record'
+            logger.info("使用部件拆换记录处理器")
         else:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
@@ -125,13 +155,14 @@ def import_data():
                     'status': 'error',
                     'message': message
                 }), 400
-
+                
             # 保存临时信息
             temp_info = {
+                'temp_id': temp_id,
                 'file_path': temp_path,
                 'data_source': data_source,
-                'timestamp': time.time(),
-                'filename': filename
+                'processor_type': processor_type,  # 添加处理器类型
+                'timestamp': time.time()
             }
             
             info_path = os.path.join(UPLOAD_FOLDER, f"{temp_id}_info.json")
@@ -243,6 +274,12 @@ def confirm_import():
             # 根据数据源选择处理器
             if data_source == 'case':
                 processor = CaseService()
+            elif data_source == 'faults':
+                processor = FaultReportService()
+                logger.info("使用故障报告处理器")
+            elif data_source == 'r_and_i_record':
+                processor = RAndIRecordService()
+                logger.info("使用部件拆换记录处理器")
             else:
                 raise ValueError('暂不支持该数据源的导入')
 
@@ -265,6 +302,11 @@ def confirm_import():
                 if data_source in data_frames:
                     del data_frames[data_source]
                     print(f"已清除数据源 {data_source} 的缓存")
+                
+                # 如果是部件拆换记录数据，同时清除faults数据源的缓存
+                if data_source == 'r_and_i_record' and 'faults' in data_frames:
+                    del data_frames['faults']
+                    print(f"已清除数据源 faults 的缓存")
 
             return jsonify({
                 'status': 'success',

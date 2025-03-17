@@ -183,7 +183,7 @@
                 <div style="font-weight: bold; margin-bottom: 10px;">选择数据源</div>
                 <el-radio-group v-model="importSettings.dataSource">
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <el-radio v-for="(label, value) in dataSourceOptions" 
+                        <el-radio v-for="(label, value) in CONFIG.importDataSourceOptions" 
                                  :key="value" 
                                  :label="value">
                             [[ label ]]
