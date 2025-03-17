@@ -3,6 +3,7 @@ import os
 import logging
 import pandas as pd
 from logging.handlers import RotatingFileHandler
+from app.api.data_source_routes import search_column
 
 # 确保日志目录存在
 log_dir = 'logs'
@@ -35,47 +36,6 @@ def index():
 @bp.route('/test')
 def test():
     return render_template('test.html')
-
-def search_column(df, keywords, column_name, logic='and', negative_filtering=False):
-    """基础搜索功能"""
-    if not keywords:
-        return df
-        
-    # 将所有关键字转换为小写
-    if isinstance(keywords, str):
-        keywords = keywords.replace('，', ',')
-        keywords = [k.strip() for k in keywords.split(',') if k.strip()]
-    keywords = [str(k).lower() for k in keywords]
-    
-    # 确定要搜索的列
-    if isinstance(column_name, str):
-        columns_to_search = [column_name]
-    elif isinstance(column_name, list):
-        columns_to_search = [col for col in column_name if col in df.columns]
-    else:
-        raise ValueError("无效的列名参数")
-    
-    if not columns_to_search:
-        raise ValueError("未指定有效的搜索列")
-    
-    # 使用相同的搜索逻辑
-    if logic == 'and':
-        final_mask = pd.Series(True, index=df.index)
-        for keyword in keywords:
-            keyword_mask = pd.Series(False, index=df.index)
-            for col in columns_to_search:
-                col_values = df[col].fillna('').astype(str).str.lower()
-                keyword_mask |= col_values.str.contains(keyword, na=False, regex=False)
-            final_mask &= keyword_mask
-    else:  # logic == 'or'
-        final_mask = pd.Series(False, index=df.index)
-        for keyword in keywords:
-            for col in columns_to_search:
-                col_values = df[col].fillna('').astype(str).str.lower()
-                final_mask |= col_values.str.contains(keyword, na=False, regex=False)
-    
-    # 根据negative_filtering参数决定是否反向过滤
-    return df[~final_mask] if negative_filtering else df[final_mask]
 
 def init_app(app):
     """初始化应用，注册蓝图"""

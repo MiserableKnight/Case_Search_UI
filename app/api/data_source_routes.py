@@ -29,13 +29,14 @@ def search_column(df, keywords, column_name, logic='and', negative_filtering=Fal
     
     # 使用相同的搜索逻辑
     if logic == 'and':
-        final_mask = pd.Series(True, index=df.index)
-        for keyword in keywords:
-            keyword_mask = pd.Series(False, index=df.index)
-            for col in columns_to_search:
-                col_values = df[col].fillna('').astype(str).str.lower()
-                keyword_mask |= col_values.str.contains(keyword, na=False, regex=False)
-            final_mask &= keyword_mask
+        final_mask = pd.Series(False, index=df.index)
+        for col in columns_to_search:
+            col_values = df[col].fillna('').astype(str).str.lower()
+            # 检查该列中是否包含所有关键字
+            col_mask = pd.Series(True, index=df.index)
+            for keyword in keywords:
+                col_mask &= col_values.str.contains(keyword, na=False, regex=False)
+            final_mask |= col_mask
     else:  # logic == 'or'
         final_mask = pd.Series(False, index=df.index)
         for keyword in keywords:
