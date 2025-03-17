@@ -7,20 +7,17 @@ import json
 import time
 import re
 from werkzeug.utils import secure_filename
-from app.utils.data_processing.case_processor import CaseProcessor
+from app.services import CaseService
 
 logger = logging.getLogger(__name__)
 
-# 修改上传文件夹路径
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'temp')
-if not os.path.exists(UPLOAD_FOLDER):
-    logger.info(f"创建上传目录: {UPLOAD_FOLDER}")
-    os.makedirs(UPLOAD_FOLDER)
+# 上传文件夹配置
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'temp')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# 添加临时文件存储路径
-TEMP_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'temp_data')
-if not os.path.exists(TEMP_DATA_DIR):
-    os.makedirs(TEMP_DATA_DIR)
+# 临时数据目录
+TEMP_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'temp_data')
+os.makedirs(TEMP_DATA_DIR, exist_ok=True)
 
 # 添加支持的Excel文件扩展名
 ALLOWED_EXTENSIONS = {'xls', 'xlsx'}
@@ -108,7 +105,7 @@ def import_data():
 
         # 根据数据源选择相应的处理器
         if data_source == 'case':
-            processor = CaseProcessor(temp_path)
+            processor = CaseService()
         else:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
@@ -119,7 +116,7 @@ def import_data():
 
         # 分析数据变化但不保存
         try:
-            success, message, combined_data = processor.analyze_changes()
+            success, message, combined_data = processor.analyze_changes(temp_path)
             logger.info(f"数据分析结果: success={success}, message={message}")
             
             if not success:
@@ -245,12 +242,12 @@ def confirm_import():
         try:
             # 根据数据源选择处理器
             if data_source == 'case':
-                processor = CaseProcessor(temp_path)
+                processor = CaseService()
             else:
                 raise ValueError('暂不支持该数据源的导入')
 
             # 重新分析并保存数据
-            success, message, combined_data = processor.analyze_changes()
+            success, message, combined_data = processor.analyze_changes(temp_path)
             if success:
                 save_success, save_message = processor.save_changes(combined_data)
                 if not save_success:

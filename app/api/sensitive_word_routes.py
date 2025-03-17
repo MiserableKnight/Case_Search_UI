@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 def get_sensitive_words():
     """获取敏感词列表"""
     try:
-        word_manager = current_app.word_manager
-        words = word_manager.get_all_words()
+        word_service = current_app.word_manager
+        words = word_service.get_all_words()
         return jsonify({
             'status': 'success',
             'words': words
@@ -30,14 +30,14 @@ def add_sensitive_word():
         if not data or 'word' not in data or 'category' not in data:
             return jsonify({
                 'status': 'error',
-                'message': '缺少必要参数'
+                'message': '无效的请求数据'
             }), 400
 
         word = data['word']
         category = data['category']
         
-        word_manager = current_app.word_manager
-        success, message = word_manager.add_word(word, category)
+        word_service = current_app.word_manager
+        success, message = word_service.add_word(word, category)
         
         if success:
             return jsonify({
@@ -66,14 +66,14 @@ def remove_sensitive_word():
         if not data or 'word' not in data or 'category' not in data:
             return jsonify({
                 'status': 'error',
-                'message': '缺少必要参数'
+                'message': '无效的请求数据'
             }), 400
 
         word = data['word']
         category = data['category']
         
-        word_manager = current_app.word_manager
-        success, message = word_manager.remove_word(word, category)
+        word_service = current_app.word_manager
+        success, message = word_service.remove_word(word, category)
         
         if success:
             return jsonify({

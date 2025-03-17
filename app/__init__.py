@@ -4,14 +4,14 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
-from app.utils import SensitiveWordManager
+from app.services import WordService
 
 # 配置数据目录
 DATA_CONFIG = {
-    'data_dir': os.path.join(os.path.dirname(__file__), 'data'),
-    'temp_dir': os.path.join(os.path.dirname(__file__), 'data', 'temp'),
-    'processed_dir': os.path.join(os.path.dirname(__file__), 'data', 'processed'),
-    'raw_dir': os.path.join(os.path.dirname(__file__), 'data', 'raw')
+    'data_dir': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data'),
+    'temp_dir': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'temp'),
+    'processed_dir': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'processed'),
+    'raw_dir': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'raw')
 }
 
 # 文件配置
@@ -54,7 +54,7 @@ def create_app():
             os.makedirs(path)
 
     # 初始化敏感词管理器
-    app.word_manager = SensitiveWordManager(FILE_CONFIG['SENSITIVE_WORDS_FILE'])
+    app.word_manager = WordService(FILE_CONFIG['SENSITIVE_WORDS_FILE'])
 
     # 允许的文件类型
     ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv', 'parquet'}
@@ -114,14 +114,14 @@ def create_app():
             data_source = data.get('dataSource', 'case')
             
             # 初始化脱敏器
-            from app.utils.text_anonymizer import TextAnonymizer
-            anonymizer = TextAnonymizer(FILE_CONFIG['SENSITIVE_WORDS_FILE'])
+            from app.services import AnonymizationService
+            anonymizer_service = AnonymizationService()
             
             # 对指定字段进行脱敏
             for result in results:
                 for field in fields:
                     if field in result and result[field]:
-                        result[field] = anonymizer.anonymize_text(result[field])
+                        result[field] = anonymizer_service.anonymize_text(result[field])
             
             return jsonify({
                 'status': 'success',

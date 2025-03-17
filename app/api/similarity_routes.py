@@ -1,9 +1,12 @@
 from flask import request, jsonify
 from app.api import bp
 import logging
-from app.utils.similarity import TextSimilarityCalculator
+from app.services import SimilarityService
 
 logger = logging.getLogger(__name__)
+
+# 创建SimilarityService实例
+similarity_service = SimilarityService()
 
 @bp.route('/similarity', methods=['POST'])
 def calculate_text_similarity():
@@ -29,9 +32,9 @@ def calculate_text_similarity():
         # 记录请求信息
         logger.info(f"相似度计算请求: 搜索文本长度={len(data['text'])}, 搜索列={data['columns']}, 结果数量={len(data['results'])}")
         
-        # 使用TextSimilarityCalculator计算相似度
-        logger.info("开始调用TextSimilarityCalculator.calculate_similarity")
-        sorted_results = TextSimilarityCalculator.calculate_similarity(
+        # 使用SimilarityService计算相似度
+        logger.info("开始调用SimilarityService.calculate_similarity")
+        sorted_results = similarity_service.calculate_batch_similarity(
             data['text'],
             data['results'],
             data['columns']
@@ -132,9 +135,9 @@ def similarity_search():
         results = result_df.to_dict('records')
         logger.info(f"转换为字典列表，数量: {len(results)}")
         
-        # 使用TextSimilarityCalculator计算相似度
+        # 使用SimilarityService计算相似度
         logger.info(f"开始计算相似度，搜索列: {columns}")
-        sorted_results = TextSimilarityCalculator.calculate_similarity(
+        sorted_results = similarity_service.calculate_batch_similarity(
             content,
             results,
             columns

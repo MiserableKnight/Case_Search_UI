@@ -3,6 +3,7 @@ import os
 import logging
 from datetime import datetime
 from flask import current_app
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class CaseProcessor:
             # 如果不在Flask上下文中，使用默认路径
             print(f"无法从Flask上下文获取配置: {str(e)}")
             app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            data_dir = os.path.join(app_dir, 'data')
+            data_dir = os.path.join(os.path.dirname(app_dir), 'data')
             self.data_path = os.path.join(data_dir, 'raw', 'case.parquet')
             print(f"使用默认数据路径: {self.data_path}")
         
@@ -260,12 +261,12 @@ class CaseProcessor:
 # 在 CaseProcessor 类定义之后（文件末尾）添加以下代码
 def load_case_data():
     """加载原始案例数据"""
-    data_path = Path(__file__).parent.parent.parent / 'data/raw/case.parquet'
+    data_path = Path(__file__).parent.parent.parent.parent / 'data/raw/case.parquet'
     return pd.read_parquet(data_path)
     
     # 使用 app/__init__.py 中定义的路径
-    input_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES['case'])
-    output_path = os.path.join(DATA_CONFIG['processed_dir'], 'processed_case.parquet')
+    # input_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES['case'])
+    # output_path = os.path.join(DATA_CONFIG['processed_dir'], 'processed_case.parquet')
     
     # 处理数据的代码
     # ...

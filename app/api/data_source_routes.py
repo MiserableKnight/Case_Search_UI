@@ -230,9 +230,9 @@ def get_data_columns():
         # 实现获取列信息的功能
         if source == 'case':
             # 使用case处理器获取列信息
-            from app.utils.data_processing.case_processor import CaseProcessor
-            processor = CaseProcessor()
-            columns = processor.get_columns()
+            from app.services import CaseService
+            case_service = CaseService()
+            columns = case_service.get_columns()
             if columns:
                 return jsonify({'success': True, 'columns': columns})
         else:
