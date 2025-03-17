@@ -7,11 +7,15 @@ from .word_service import WordService
 from .case_service import CaseService
 from .similarity_service import SimilarityService
 from .anonymization_service import AnonymizationService
+from .error_service import ErrorService
+from .api_response import ApiResponse
 
 # 导出所有服务
 __all__ = [
     'WordService',
     'CaseService',
     'SimilarityService',
-    'AnonymizationService'
+    'AnonymizationService',
+    'ErrorService',
+    'ApiResponse'
 ] 

@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
 from app.services import WordService
+from app.services.temp_file_manager import TempFileManager
+from werkzeug.exceptions import HTTPException
+from app.core.error_handler import AppError, InternalError
+from app.services.error_service import ErrorService
 
 # 配置数据目录
 DATA_CONFIG = {
@@ -66,6 +70,12 @@ def create_app(config_name='development'):
     for path in app.config['DATA_CONFIG'].values():
         if not os.path.exists(path):
             os.makedirs(path)
+    
+    # 初始化临时文件管理器
+    temp_manager = TempFileManager()
+    temp_manager.clean_old_files()  # 启动时清理一次
+    temp_manager.start_scheduler()  # 启动定时任务
+    app.temp_manager = temp_manager  # 将管理器添加到应用上下文
     
     # 初始化敏感词管理器
     app.word_manager = WordService(app.config['SENSITIVE_WORDS_FILE'])
@@ -154,11 +164,43 @@ def create_app(config_name='development'):
     from app.api import bp as api_bp
     app.register_blueprint(api_bp)
     
+    # 注册全局错误处理器
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        """全局异常处理器"""
+        return ErrorService.handle_exception(e)
+    
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(e):
+        """HTTP异常处理器"""
+        return ErrorService.handle_exception(e)
+    
+    @app.errorhandler(AppError)
+    def handle_app_error(e):
+        """应用自定义异常处理器"""
+        return ErrorService.handle_exception(e)
+    
+    @app.errorhandler(404)
+    def handle_404(e):
+        """404错误处理器"""
+        return ErrorService.handle_exception(e)
+    
+    @app.errorhandler(500)
+    def handle_500(e):
+        """500错误处理器"""
+        return ErrorService.handle_exception(e)
+    
     @app.after_request
     def add_security_headers(response):
         response.headers['Content-Security-Policy'] = app.config['CONTENT_SECURITY_POLICY']
         return response
     
+    # 在应用关闭时停止调度器
+    @app.teardown_appcontext
+    def shutdown_scheduler(exception=None):
+        if hasattr(app, 'temp_manager'):
+            app.temp_manager.stop_scheduler()
+
     return app
 
 # 创建默认应用实例

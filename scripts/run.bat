@@ -1,26 +1,32 @@
 @echo off
-rem µ÷ÓÃ Anaconda µÄ¼¤»î½Å±¾
+rem é¡¹ç›®å¯åŠ¨è„šæœ¬
+
+rem æ¿€æ´» Anaconda ç¯å¢ƒ
 call D:\anaconda3\Scripts\activate.bat D:\anaconda3
-rem ¼¤»îÖ¸¶¨µÄ Conda »·¾³
+
+rem æ¿€æ´»æŒ‡å®šçš„ Conda ç¯å¢ƒ
 call conda activate search
 if %errorlevel% neq 0 (
-    echo ¼¤»î Conda »·¾³Ê±³ö´í
+    echo Conda ç¯å¢ƒæ¿€æ´»å¤±è´¥
     pause
     exit /b %errorlevel%
 )
-rem ÇĞ»»µ½Ö¸¶¨Ä¿Â¼
+
+rem åˆ‡æ¢åˆ°é¡¹ç›®ç›®å½•
 cd /d D:\Quant\Case_Search_UI
 if %errorlevel% neq 0 (
-    echo ÇĞ»»Ä¿Â¼Ê±³ö´í
+    echo åˆ‡æ¢ç›®å½•å¤±è´¥
     pause
     exit /b %errorlevel%
 )
-rem ÔËĞĞ Python ½Å±¾
+
+rem å¯åŠ¨ Flask åº”ç”¨
 python wsgi.py
 if %errorlevel% neq 0 (
-    echo ÔËĞĞ Python ½Å±¾Ê±³ö´í
+    echo åº”ç”¨å¯åŠ¨å¤±è´¥
     pause
     exit /b %errorlevel%
 )
-rem ÔİÍ£Ò»ÏÂ£¬·½±ã²é¿´Êä³ö½á¹û
+
+rem ä¿æŒçª—å£æ‰“å¼€ä»¥æŸ¥çœ‹è¾“å‡º
 pause  
