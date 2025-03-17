@@ -1,6 +1,34 @@
 # 版本更新记录
 
-## [v1.1.8.1] (最新)
+## [v1.1.9.1] (最新)
+### Changed
+- 重构项目架构，优化代码组织结构：
+  - 配置管理 
+    - 创建了专门的config目录，支持不同环境的配置（开发、生产等）
+    - 将原来在__init__.py中的配置逻辑移至配置模块
+    - 实现了基于继承的配置类结构，便于管理不同环境的配置
+- 应用初始化
+  - 重构了__init__.py中的应用创建逻辑，使用工厂模式创建应用实例
+  - 简化了应用初始化过程，通过配置对象加载配置
+  - 使应用创建更加灵活，便于测试和部署
+- WSGI入口
+  - 更新了wsgi.py文件，使其支持不同环境配置
+  - 通过环境变量控制使用哪个配置
+
+## v1.1.9
+### Changed
+- 重构项目架构，优化代码组织结构：
+  - 将utils模块拆分为core和services两层架构
+  - core层：包含核心业务逻辑，如word_manager, case_processor, calculator, anonymizer
+  - services层：封装core层功能，提供对外接口
+  - 简化导入路径，统一使用`from app.services import XXXService`
+  - 提高代码可维护性和可扩展性
+- 修复接口不匹配问题：
+  - 调整SimilarityService适配TextSimilarityCalculator的静态方法设计
+  - 调整AnonymizationService适配TextAnonymizer的构造函数
+  - 更新API路由使用新的服务层接口
+
+## v1.1.8.1
 ### Changed
 - 重构了路由结构：
   - 将数据源相关的路由进行了模块化，提升了代码的可维护性和可读性

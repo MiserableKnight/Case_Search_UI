@@ -1,3 +1,8 @@
+"""
+应用初始化模块
+使用工厂模式创建Flask应用实例
+"""
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
@@ -32,47 +37,54 @@ DATA_SOURCES = {
 # 数据缓存
 data_frames = {}
 
-def create_app():
+def create_app(config_name='development'):
+    """
+    应用工厂函数
+    
+    Args:
+        config_name: 配置名称，默认为'development'
+    
+    Returns:
+        Flask应用实例
+    """
     # 加载环境变量
     load_dotenv()
-
+    
     # 初始化 Flask 应用
     app = Flask(__name__, 
                 static_folder='static',  # 指定静态文件夹路径
                 static_url_path='/static')  # 指定静态文件URL前缀
+    
+    # 加载配置
+    from app.config import config_by_name
+    app.config.from_object(config_by_name[config_name])
+    
+    # 启用CORS
     CORS(app)
-
-    # 配置应用
-    app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_key_for_session')
-    app.config.update(FILE_CONFIG)
-    app.config['DATA_SOURCES'] = DATA_SOURCES
-    app.config['DATA_CONFIG'] = DATA_CONFIG
     
     # 确保数据目录存在
-    for path in DATA_CONFIG.values():
+    for path in app.config['DATA_CONFIG'].values():
         if not os.path.exists(path):
             os.makedirs(path)
-
+    
     # 初始化敏感词管理器
-    app.word_manager = WordService(FILE_CONFIG['SENSITIVE_WORDS_FILE'])
-
-    # 允许的文件类型
-    ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv', 'parquet'}
-
+    app.word_manager = WordService(app.config['SENSITIVE_WORDS_FILE'])
+    
     def allowed_file(filename, types=None):
         """检查文件扩展名是否允许"""
         if types is None:
-            types = ALLOWED_EXTENSIONS
+            types = app.config['ALLOWED_EXTENSIONS']
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in types
-
+    
     # 将 allowed_file 函数添加到应用上下文中
     app.allowed_file = allowed_file
-
+    
     def load_data_source(source):
         """加载指定数据源的数据"""
         try:
             if source not in data_frames:
-                data_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES[source])
+                data_path = os.path.join(app.config['DATA_CONFIG']['data_dir'], 
+                                        app.config['DATA_SOURCES'][source])
                 if os.path.exists(data_path):
                     print(f"加载数据源 {source} 从: {data_path}")
                     data_frames[source] = pd.read_parquet(data_path)
@@ -84,7 +96,7 @@ def create_app():
         except Exception as e:
             print(f"加载数据源 {source} 时出错: {str(e)}")
             return None
-
+    
     # 将 load_data_source 函数添加到应用上下文中
     app.load_data_source = load_data_source
     
@@ -100,7 +112,7 @@ def create_app():
             return value
         except:
             return value
-
+    
     # 添加脱敏处理路由
     @app.route('/api/anonymize', methods=['POST'])
     def anonymize():
@@ -133,7 +145,7 @@ def create_app():
                 'status': 'error',
                 'message': f'脱敏处理失败: {str(e)}'
             })
-
+    
     # 注册路由
     from app.routes import bp
     app.register_blueprint(bp)
@@ -144,16 +156,12 @@ def create_app():
     
     @app.after_request
     def add_security_headers(response):
-        response.headers['Content-Security-Policy'] = (
-            "default-src 'self' lib.baomitu.com; "
-            "style-src 'self' 'unsafe-inline' lib.baomitu.com; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' lib.baomitu.com; "
-            "img-src 'self' data:; "
-            "font-src 'self' data: lib.baomitu.com;"
-        )
+        response.headers['Content-Security-Policy'] = app.config['CONTENT_SECURITY_POLICY']
         return response
-
+    
     return app
 
-# 创建应用实例
-app = create_app()
+# 创建默认应用实例
+# 可以通过环境变量FLASK_ENV控制使用哪个配置
+config_name = os.environ.get('FLASK_ENV', 'development')
+app = create_app(config_name)
