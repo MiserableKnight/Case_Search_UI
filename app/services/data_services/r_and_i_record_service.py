@@ -1,7 +1,7 @@
 """
 部件拆换记录处理服务，提供对部件拆换记录数据的处理功能
 """
-from app.core.r_and_i_record_processor import RAndIRecordProcessor
+from app.core.data_processors.r_and_i_record_processor import RAndIRecordProcessor
 from .data_import_service import DataImportService
 
 class RAndIRecordService(DataImportService):

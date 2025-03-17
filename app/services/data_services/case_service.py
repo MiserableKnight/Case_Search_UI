@@ -1,7 +1,7 @@
 """
 案例处理服务，提供对案例数据的处理功能
 """
-from app.core.case_processor import CaseProcessor
+from app.core.data_processors.case_processor import CaseProcessor
 from .data_import_service import DataImportService
 
 class CaseService(DataImportService):

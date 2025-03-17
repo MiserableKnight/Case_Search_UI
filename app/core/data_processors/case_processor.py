@@ -4,11 +4,11 @@ import logging
 from datetime import datetime
 from flask import current_app
 from pathlib import Path
-from .base_processor import BaseDataProcessor
+from .data_import_processor import DataImportProcessor
 
 logger = logging.getLogger(__name__)
 
-class CaseProcessor(BaseDataProcessor):
+class CaseProcessor(DataImportProcessor):
     # 原始数据必需的列
     REQUIRED_COLUMNS = ['类型', '标题', '状态', '技术请求编号', '服务请求单编号', '支持单编号', '版本号', '优先级', 
                        '受理渠道', '申请人', '申请时间', '初始要求答复日期', '协商答复日期', 'SR变更人', '变更原因', 
@@ -72,20 +72,4 @@ class CaseProcessor(BaseDataProcessor):
 def load_case_data():
     """加载原始案例数据"""
     data_path = Path(__file__).parent.parent.parent.parent / 'data/raw/case.parquet'
-    return pd.read_parquet(data_path)
-
-# 确保与上面CaseProcessor类定义之间有至少两个空行
-# 删除文件末尾的 process_case_data 函数（该函数导致命名空间污染）
-
-# 在 CaseProcessor 类定义之后（文件末尾）添加以下代码
-def load_case_data():
-    """加载原始案例数据"""
-    data_path = Path(__file__).parent.parent.parent.parent / 'data/raw/case.parquet'
-    return pd.read_parquet(data_path)
-    
-    # 使用 app/__init__.py 中定义的路径
-    # input_path = os.path.join(DATA_CONFIG['data_dir'], DATA_SOURCES['case'])
-    # output_path = os.path.join(DATA_CONFIG['processed_dir'], 'processed_case.parquet')
-    
-    # 处理数据的代码
-    # ...
+    return pd.read_parquet(data_path) 

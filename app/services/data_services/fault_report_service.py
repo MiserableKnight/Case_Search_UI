@@ -1,7 +1,7 @@
 """
 故障报告处理服务，提供对故障报告数据的处理功能
 """
-from app.core.fault_report_processor import FaultReportProcessor
+from app.core.data_processors.fault_report_processor import FaultReportProcessor
 from .data_import_service import DataImportService
 
 class FaultReportService(DataImportService):

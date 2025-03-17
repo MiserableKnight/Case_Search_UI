@@ -5,11 +5,11 @@ import re
 from datetime import datetime
 from flask import current_app
 from pathlib import Path
-from .base_processor import BaseDataProcessor
+from .data_import_processor import DataImportProcessor
 
 logger = logging.getLogger(__name__)
 
-class FaultReportProcessor(BaseDataProcessor):
+class FaultReportProcessor(DataImportProcessor):
     # 必需的原始列
     REQUIRED_COLUMNS = ['运营人', '机型', '系列', '飞机序列号', '机号', '日期', '航班号', '故障报告类型', '故障ATA',
                       '维修ATA', '故障确认', '确认人', '确认时间', '问题描述', '排故措施', '飞行阶段', '发生地',

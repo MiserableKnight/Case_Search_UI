@@ -1,14 +1,14 @@
-﻿import pandas as pd
+import pandas as pd
 import os
 import logging
 from datetime import datetime
 from flask import current_app
 from pathlib import Path
-from .base_processor import BaseDataProcessor
+from .data_import_processor import DataImportProcessor
 
 logger = logging.getLogger(__name__)
 
-class RAndIRecordProcessor(BaseDataProcessor):
+class RAndIRecordProcessor(DataImportProcessor):
     # 原始数据必需的列
     REQUIRED_COLUMNS = ['运营人', '机型', '系列', '飞机序列号', '机号', '拆换日期', 'ATA', '拆卸部件件号', 
                        '拆卸部件序列号', '拆换类型', '拆换原因', '装上部件件号', '装上部件序列号', 
@@ -67,4 +67,4 @@ def load_faults_data():
 def load_r_and_i_data():
     """加载部件拆换记录数据"""
     data_path = Path(__file__).parent.parent.parent.parent / 'data/raw/faults.parquet'
-    return pd.read_parquet(data_path)
+    return pd.read_parquet(data_path) 

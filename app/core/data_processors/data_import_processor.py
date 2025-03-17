@@ -7,7 +7,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-class BaseDataProcessor:
+class DataImportProcessor:
     _instances = {}
     
     def __new__(cls, file_path=None):

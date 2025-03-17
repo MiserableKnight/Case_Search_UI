@@ -14,6 +14,8 @@ from app.services.temp_file_manager import TempFileManager
 from werkzeug.exceptions import HTTPException
 from app.core.error_handler import AppError, InternalError
 from app.services.error_service import ErrorService
+from app.core.data_processors.fault_report_processor import load_fault_report_data
+from app.core.data_processors.r_and_i_record_processor import load_r_and_i_data
 
 # 配置数据目录
 DATA_CONFIG = {
@@ -203,9 +205,6 @@ def create_app(config_name='development'):
             app.temp_manager.stop_scheduler()
 
     # 初始化数据
-    from app.core.fault_report_processor import load_fault_report_data
-    from app.core.r_and_i_record_processor import load_r_and_i_data
-    
     # 加载故障报告数据
     load_fault_report_data()
     

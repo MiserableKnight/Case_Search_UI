@@ -3,7 +3,7 @@ from app.api import bp
 import logging
 import pandas as pd
 import re
-from app.core.r_and_i_record_processor import load_r_and_i_data
+from app.core.data_processors.r_and_i_record_processor import load_r_and_i_data
 
 logger = logging.getLogger(__name__)
 
