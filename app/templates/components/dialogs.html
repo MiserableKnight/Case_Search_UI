@@ -2,8 +2,8 @@
 <el-dialog title="列显示控制" :visible.sync="columnDialogVisible" width="300px">
     <div style="max-height: 400px; overflow-y: auto;">
         <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
-            <el-checkbox 
-                v-model="selectAll" 
+            <el-checkbox
+                v-model="selectAll"
                 @change="handleSelectAllChange">
                 全选
             </el-checkbox>
@@ -56,8 +56,8 @@
 <el-dialog title="选择数据类型" :visible.sync="dataTypesDialogVisible" width="300px">
     <div style="max-height: 400px; overflow-y: auto;">
         <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
-            <el-checkbox 
-                v-model="selectAllDataTypes" 
+            <el-checkbox
+                v-model="selectAllDataTypes"
                 @change="handleSelectAllDataTypes">
                 全选
             </el-checkbox>
@@ -78,8 +78,8 @@
 <el-dialog title="选择机型" :visible.sync="aircraftTypesDialogVisible" width="300px">
     <div style="max-height: 400px; overflow-y: auto;">
         <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
-            <el-checkbox 
-                v-model="selectAllAircraftTypes" 
+            <el-checkbox
+                v-model="selectAllAircraftTypes"
                 @change="handleSelectAllAircraftTypes">
                 全选
             </el-checkbox>
@@ -112,8 +112,8 @@
 </el-dialog>
 
 <!-- 敏感词管理对话框 -->
-<el-dialog title="敏感词管理" 
-           :visible.sync="sensitiveWordDialogVisible" 
+<el-dialog title="敏感词管理"
+           :visible.sync="sensitiveWordDialogVisible"
            width="525px"
            style="margin-top: 5vh">
     <div class="sensitive-word-manager">
@@ -137,7 +137,7 @@
                 </el-form-item>
             </el-form>
         </div>
-        
+
         <!-- 敏感词列表 -->
         <div class="sensitive-word-list">
             <el-tabs v-model="activeCategory">
@@ -145,7 +145,7 @@
                             :key="cat"
                             :label="categoryLabels[cat]"
                             :name="cat">
-                    <el-table :data="sensitiveWords[cat]" 
+                    <el-table :data="sensitiveWords[cat]"
                              size="mini"
                             max-height="200px"
                             :cell-style="{ padding: '0px' }"
@@ -154,8 +154,8 @@
                         <el-table-column prop="word" label="敏感词"></el-table-column>
                         <el-table-column width="60" align="center">
                             <template slot-scope="scope">
-                                <el-button type="danger" 
-                                         size="mini" 
+                                <el-button type="danger"
+                                         size="mini"
                                          style="padding: 3px 6px; font-size: 11px;"
                                          @click="removeSensitiveWord(scope.row.word, cat)">
                                     删除
@@ -170,9 +170,9 @@
 </el-dialog>
 
 <!-- 数据导入对话框 -->
-<el-dialog 
-    title="数据导入" 
-    :visible.sync="importDialogVisible" 
+<el-dialog
+    title="数据导入"
+    :visible.sync="importDialogVisible"
     width="500px"
     :close-on-click-modal="false"
     :close-on-press-escape="false">
@@ -183,8 +183,8 @@
                 <div style="font-weight: bold; margin-bottom: 10px;">选择数据源</div>
                 <el-radio-group v-model="importSettings.dataSource">
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <el-radio v-for="(label, value) in CONFIG.importDataSourceOptions" 
-                                 :key="value" 
+                        <el-radio v-for="(label, value) in CONFIG.importDataSourceOptions"
+                                 :key="value"
                                  :label="value">
                             [[ label ]]
                         </el-radio>
@@ -197,7 +197,7 @@
                 <el-upload
                     class="upload-area"
                     drag
-                    action="/api/import_data"
+                    :action="'/api/import/' + importSettings.dataSource + '/import'"
                     :data="{ dataSource: importSettings.dataSource }"
                     :before-upload="handleBeforeUpload"
                     :on-success="handleUploadSuccess"
@@ -233,11 +233,11 @@
     </div>
     <div slot="footer" class="dialog-footer">
         <el-button @click="cancelImport">取消</el-button>
-        <el-button 
-            type="primary" 
+        <el-button
+            type="primary"
             @click="confirmImport"
             :disabled="!importSettings.previewData">
             确认导入
         </el-button>
     </div>
-</el-dialog> 
+</el-dialog>

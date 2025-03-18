@@ -1,0 +1,20 @@
+from flask import current_app, jsonify, request
+
+from app.services import CaseService
+
+from . import bp
+from .data_import_routes import BaseDataImportRoutes
+
+case_routes = BaseDataImportRoutes("case", CaseService)
+
+
+@bp.route("/case/import", methods=["POST"])
+def import_case_data():
+    """处理案例文件上传并生成预览"""
+    return case_routes.process_import()
+
+
+@bp.route("/case/confirm", methods=["POST"])
+def confirm_case_import():
+    """确认导入案例数据"""
+    return case_routes.process_confirm()

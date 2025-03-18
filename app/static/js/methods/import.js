@@ -7,25 +7,25 @@ const importMethods = {
     handleBeforeUpload(file) {
         const validTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
         const validExtensions = ['xls', 'xlsx'];
-        
+
         const extension = file.name.split('.').pop().toLowerCase();
         const isValidType = validTypes.includes(file.type);
         const isValidExtension = validExtensions.includes(extension);
-        
+
         if (!isValidType && !isValidExtension) {
             this.$message.error('只能上传 Excel 文件（.xlsx 或 .xls 格式）！');
             return false;
         }
-        
+
         const isLt10M = file.size / 1024 / 1024 < 10;
         if (!isLt10M) {
             this.$message.error('文件大小不能超过 10MB！');
             return false;
         }
-        
+
         this.importSettings.previewData = null;
         this.importSettings.uploadedFile = file;
-        
+
         return true;
     },
 
@@ -54,7 +54,7 @@ const importMethods = {
             } else if (response.error_type === 'missing_columns') {
                 errorMessage = '缺少必要的数据列：' + response.missing_columns.join(', ');
             }
-            
+
             this.$notify.error({
                 title: '上传失败',
                 message: errorMessage,
@@ -65,7 +65,7 @@ const importMethods = {
 
     handleUploadError(err, file, fileList) {
         let errorMessage = '文件上传失败';
-        
+
         try {
             const error = JSON.parse(err.message);
             if (error.error_type === 'format_error') {
@@ -78,7 +78,7 @@ const importMethods = {
         } catch (e) {
             errorMessage = err.message || errorMessage;
         }
-        
+
         this.$notify.error({
             title: '上传失败',
             message: errorMessage,
@@ -88,13 +88,12 @@ const importMethods = {
 
     cancelImport() {
         if (this.importSettings.previewData && this.importSettings.previewData.temp_id) {
-            fetch('/api/cancel_import', {
+            fetch(`/api/import/${this.importSettings.dataSource}/cancel`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    dataSource: this.importSettings.dataSource,
                     temp_id: this.importSettings.previewData.temp_id
                 })
             });
@@ -115,13 +114,12 @@ const importMethods = {
             cancelButtonText: '取消',
             type: 'warning'
         }).then(() => {
-            fetch('/api/confirm_import', {
+            fetch(`/api/import/${this.importSettings.dataSource}/confirm`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    dataSource: this.importSettings.dataSource,
                     temp_id: this.importSettings.previewData.temp_id
                 })
             })
@@ -137,14 +135,14 @@ const importMethods = {
                     this.importDialogVisible = false;
                     this.importSettings.previewData = null;
                     this.importSettings.uploadedFile = null;
-                    
+
                     // 导入成功后刷新数据
                     this.$message({
                         message: '正在刷新数据...',
                         type: 'info',
                         duration: 2000
                     });
-                    
+
                     // 使用resetForm方法刷新数据
                     this.resetForm();
                 } else {
@@ -160,4 +158,4 @@ const importMethods = {
             });
         }).catch(() => {});
     }
-}; 
+};
