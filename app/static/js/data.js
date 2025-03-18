@@ -22,16 +22,15 @@ const initialState = {
     aiDialogVisible: false,
     aiResult: '',
     importantColumns: ['问题描述', '答复详情'],
-    compactColumns: ['ATA', '版本号', '机型', '数据类型'],
+    compactColumns: ['ATA', '版本号', '机型'],
     searchColumnsDialogVisible: false,
     statistics: {
         xAxis: '',
         yAxis: ''
     },
-    statisticsColumns: ['机型', 'ATA', '数据类型', '申请时间'],
+    statisticsColumns: ['机型', 'ATA', '申请时间'],
     defaultSearch: {
         dataSource: 'case',
-        dataTypes: [],
         aircraftTypes: ["ARJ21", "无"]
     },
     defaultVisibleColumns: CONFIG.defaultVisibleColumns,
@@ -44,10 +43,7 @@ const initialState = {
     dataSourceOptions: CONFIG.dataSourceOptions,
     defaultSearchColumn: CONFIG.defaultSearchColumn,
     searchableColumns: CONFIG.searchableColumns,
-    availableDataTypes: [],
     dataSourceDialogVisible: false,
-    selectAllDataTypes: false,
-    dataTypesDialogVisible: false,
     aircraftTypesDialogVisible: false,
     selectAllAircraftTypes: false,
     tempDataSource: 'case',

@@ -26,12 +26,6 @@ const CONFIG = {
         'manual': ['标题', '问题描述', '答复详情', '客户期望'],
         'faults': ['问题描述', '排故措施']
     },
-    dataSourceTypes: {
-        'case': ['服务请求', '252问题', '客户请求'],
-        'engineering': ['SB', 'SL', 'FTAR', 'OIC', 'FIQS', 'OB', 'FOT'],
-        'manual': ['AMM', 'IPC', 'SRM'],
-        'faults': ['故障报告', '部件拆换记录']
-    },
     defaultSearchColumn: {
         'case': '问题描述',
         'engineering': '原因和说明',
@@ -46,4 +40,4 @@ const CONFIG = {
         locations: '地点',
         other: '其他'
     }
-}; 
+};

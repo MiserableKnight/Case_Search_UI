@@ -52,28 +52,6 @@
     </span>
 </el-dialog>
 
-<!-- 数据类型选择对话框 -->
-<el-dialog title="选择数据类型" :visible.sync="dataTypesDialogVisible" width="300px">
-    <div style="max-height: 400px; overflow-y: auto;">
-        <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
-            <el-checkbox
-                v-model="selectAllDataTypes"
-                @change="handleSelectAllDataTypes">
-                全选
-            </el-checkbox>
-        </div>
-        <el-checkbox-group v-model="defaultSearch.dataTypes">
-            <div v-for="type in availableDataTypes" :key="type" style="margin-bottom: 10px;">
-                <el-checkbox :label="type">[[ type ]]</el-checkbox>
-            </div>
-        </el-checkbox-group>
-    </div>
-    <span slot="footer" class="dialog-footer">
-        <el-button @click="dataTypesDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="applyDataTypesSettings">确定</el-button>
-    </span>
-</el-dialog>
-
 <!-- 机型选择对话框 -->
 <el-dialog title="选择机型" :visible.sync="aircraftTypesDialogVisible" width="300px">
     <div style="max-height: 400px; overflow-y: auto;">
