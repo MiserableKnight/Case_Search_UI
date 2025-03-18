@@ -20,3 +20,9 @@ def import_faults_data():
 def confirm_faults_import():
     """确认导入故障报告数据"""
     return faults_routes.process_confirm()
+
+
+@bp.route("/faults/manual_import", methods=["POST"])
+def manual_import_faults_data():
+    """处理手动输入的故障报告数据"""
+    return faults_routes.process_manual_import()

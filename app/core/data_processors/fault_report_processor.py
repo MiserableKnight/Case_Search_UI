@@ -159,9 +159,7 @@ class FaultReportProcessor(DataImportProcessor):
 def load_fault_report_data():
     """加载故障报告数据，用于应用初始化时"""
     try:
-        # 只记录日志，不实例化处理器类
-        # 这样可以避免在初始化阶段产生潜在的循环引用问题
-        logger.info("故障报告数据加载成功")
+        # 此函数只作为占位符，实际操作由服务类完成
         return True
     except Exception as e:
         logger.error(f"加载故障报告数据时出错: {str(e)}")

@@ -1,7 +1,11 @@
+import json
 import logging
 import os
 import re
+import tempfile
+import uuid
 
+import pandas as pd
 from flask import current_app, jsonify, request
 
 from app.utils.file_handlers import (
@@ -29,6 +33,120 @@ class BaseDataImportRoutes:
         self.service_class = service_class
         self.file_prefix = file_prefix
         self.processor = None
+
+    def process_manual_import(self):
+        """处理手动输入的数据"""
+        try:
+            logger.info(f"开始处理{self.data_type}手动输入数据")
+            if not request.is_json:
+                logger.error("请求不是JSON格式")
+                return (
+                    jsonify({"status": "error", "message": "请求必须是JSON格式"}),
+                    400,
+                )
+
+            data = request.get_json()
+            if not data or "data" not in data or not isinstance(data["data"], list):
+                logger.error("数据格式错误或没有找到数据")
+                return (
+                    jsonify(
+                        {"status": "error", "message": "数据格式错误或没有找到数据"}
+                    ),
+                    400,
+                )
+
+            rows = data["data"]
+            if not rows:
+                logger.error("没有找到有效的数据行")
+                return (
+                    jsonify({"status": "error", "message": "没有找到有效的数据行"}),
+                    400,
+                )
+
+            # 过滤掉完全为空的行
+            filtered_rows = []
+            for row in rows:
+                if any(
+                    value.strip() for value in row.values() if isinstance(value, str)
+                ):
+                    filtered_rows.append(row)
+
+            if not filtered_rows:
+                logger.error("所有行都是空的")
+                return jsonify({"status": "error", "message": "所有行都是空的"}), 400
+
+            # 创建临时的Excel文件
+            temp_id = str(uuid.uuid4())
+            temp_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_id)
+            os.makedirs(temp_dir, exist_ok=True)
+
+            excel_path = os.path.join(temp_dir, f"{self.data_type}_manual_import.xlsx")
+
+            # 转换为DataFrame
+            df = pd.DataFrame(filtered_rows)
+
+            # 将DataFrame保存为Excel
+            df.to_excel(excel_path, index=False)
+            logger.info(f"手动输入数据已保存为临时Excel文件: {excel_path}")
+
+            # 保存临时信息
+            temp_info_path = os.path.join(
+                current_app.config["UPLOAD_FOLDER"], f"{temp_id}_info.json"
+            )
+            with open(temp_info_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "file_path": excel_path,
+                        "data_type": self.data_type,
+                        "import_type": "manual",
+                    },
+                    f,
+                )
+
+            # 分析数据变化
+            try:
+                self.processor = self.service_class()
+                success, message, combined_data = self.processor.analyze_changes(
+                    excel_path
+                )
+                logger.info(f"数据分析结果: success={success}, message={message}")
+
+                if not success:
+                    cleanup_temp_files(temp_id)
+                    return jsonify({"status": "error", "message": message}), 400
+
+                # 解析预览信息
+                stats = parse_preview_message(message)
+                if not stats:
+                    cleanup_temp_files(temp_id)
+                    return (
+                        jsonify({"status": "error", "message": "解析预览信息失败"}),
+                        500,
+                    )
+
+                return jsonify(
+                    {
+                        "status": "success",
+                        "data": stats,
+                        "temp_id": temp_id,
+                        "filename": f"{self.data_type}_manual_import.xlsx",
+                    }
+                )
+
+            except Exception as e:
+                logger.error(f"处理手动输入数据时出错: {str(e)}")
+                cleanup_temp_files(temp_id)
+                return (
+                    jsonify({"status": "error", "message": f"处理数据失败: {str(e)}"}),
+                    500,
+                )
+
+        except Exception as e:
+            logger.error(f"处理手动输入数据时出错: {str(e)}")
+            return (
+                jsonify({"status": "error", "message": f"处理数据失败: {str(e)}"}),
+                500,
+            )
 
     def process_import(self):
         """处理文件上传并生成预览"""

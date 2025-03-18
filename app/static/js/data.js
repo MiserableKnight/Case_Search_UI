@@ -75,6 +75,11 @@ const initialState = {
         dataSource: 'case',
         previewData: null,
         uploadedFile: null
+    },
+    manualImportDialogVisible: false,
+    columnHeaders: [],
+    manualImportData: {
+        rows: []
     }
 };
 

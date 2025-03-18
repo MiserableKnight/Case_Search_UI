@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import uuid
+from typing import Any, Dict, Optional, Tuple
 
 from werkzeug.utils import secure_filename
 
@@ -24,12 +25,14 @@ os.makedirs(TEMP_DATA_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {"xls", "xlsx"}
 
 
-def allowed_file(filename):
+def allowed_file(filename: str) -> bool:
     """检查文件扩展名是否允许"""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def save_temp_file(file, data_source, custom_filename=None):
+def save_temp_file(
+    file: Any, data_source: str, custom_filename: Optional[str] = None
+) -> Tuple[str, str]:
     """保存上传的临时文件"""
     temp_id = str(uuid.uuid4())
     filename = custom_filename or secure_filename(file.filename)
@@ -44,7 +47,9 @@ def save_temp_file(file, data_source, custom_filename=None):
         raise
 
 
-def save_temp_info(temp_id, temp_path, data_source, processor_type):
+def save_temp_info(
+    temp_id: str, temp_path: str, data_source: str, processor_type: str
+) -> None:
     """保存临时文件信息"""
     try:
         temp_info = {
@@ -64,7 +69,7 @@ def save_temp_info(temp_id, temp_path, data_source, processor_type):
         raise
 
 
-def parse_preview_message(message):
+def parse_preview_message(message: str) -> Optional[Dict[str, int]]:
     """从预览消息中解析数据统计信息"""
     try:
         stats = {
@@ -100,7 +105,7 @@ def parse_preview_message(message):
         return None
 
 
-def cleanup_temp_files(temp_id):
+def cleanup_temp_files(temp_id: str) -> None:
     """清理与指定temp_id相关的所有临时文件"""
     try:
         for filename in os.listdir(UPLOAD_FOLDER):

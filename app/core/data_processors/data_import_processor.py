@@ -26,10 +26,6 @@ class DataImportProcessor:
 
     def __initialize(self):
         """私有初始化方法"""
-        # 只在主进程中打印信息
-        if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
-            print(f"{self.processor_name}初始化成功")
-
         # 从应用配置中获取数据路径
         try:
             # 尝试在当前应用上下文中获取配置
@@ -40,10 +36,15 @@ class DataImportProcessor:
                 )
             else:
                 # 不在应用上下文中，使用默认路径
-                raise RuntimeError("不在Flask应用上下文中")
-        except Exception as e:
+                app_dir = os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
+                data_dir = os.path.join(os.path.dirname(app_dir), "data")
+                self.data_path = os.path.join(
+                    data_dir, "raw", f"{self.data_source_key}.parquet"
+                )
+        except Exception:
             # 如果不在Flask上下文中，使用默认路径
-            print(f"无法从Flask上下文获取配置: {str(e)}")
             app_dir = os.path.dirname(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             )
@@ -51,7 +52,6 @@ class DataImportProcessor:
             self.data_path = os.path.join(
                 data_dir, "raw", f"{self.data_source_key}.parquet"
             )
-            print(f"使用默认数据路径: {self.data_path}")
 
         # 检查并创建数据目录
         os.makedirs(os.path.dirname(self.data_path), exist_ok=True)

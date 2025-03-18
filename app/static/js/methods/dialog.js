@@ -234,5 +234,108 @@ const dialogMethods = {
                 this.$message.error('删除失败：' + error.message);
             });
         }).catch(() => {});
+    },
+
+    // 获取列宽度
+    getColumnWidth(column) {
+        // 根据列名设置不同的宽度
+        const widthMap = {
+            '日期': '80px',
+            '问题描述': '200px',
+            '排故措施': '200px',
+            '飞机序列号/机号/运营人': '80px'
+        };
+        return widthMap[column] || '150px';
+    },
+
+    // 获取输入框类型
+    getInputType(column) {
+        if (column === '问题描述' || column === '排故措施') {
+            return 'textarea';
+        }
+        return 'text';
+    },
+
+    // 获取文本框行数
+    getInputRows(column) {
+        if (column === '问题描述' || column === '排故措施') {
+            return 3;
+        }
+        return 1;
+    },
+
+    // 显示手动导入对话框
+    showManualImportDialog() {
+        this.manualImportDialogVisible = true;
+        // 初始化一个空行
+        if (!this.manualImportData.rows.length) {
+            this.addRow();
+        }
+    },
+
+    // 添加新行
+    addRow() {
+        const newRow = {};
+        this.columnHeaders.forEach(column => {
+            newRow[column] = '';
+        });
+        this.manualImportData.rows.push(newRow);
+    },
+
+    // 删除行
+    removeRow(index) {
+        this.manualImportData.rows.splice(index, 1);
+    },
+
+    // 提交手动导入的数据
+    submitManualImport() {
+        // 验证数据
+        if (!this.validateManualImportData()) {
+            return;
+        }
+
+        // 发送数据到服务器
+        fetch('/api/manual_import', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                dataSource: this.importSettings.dataSource,
+                data: this.manualImportData.rows
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.$message.success('数据导入成功');
+                this.manualImportDialogVisible = false;
+                this.manualImportData.rows = [];
+                // 刷新数据列表
+                this.handleSearch();
+            } else {
+                throw new Error(data.message || '导入失败');
+            }
+        })
+        .catch(error => {
+            this.$message.error('导入失败：' + error.message);
+        });
+    },
+
+    // 验证手动导入的数据
+    validateManualImportData() {
+        let isValid = true;
+        const requiredColumns = ['日期']; // 可以根据需要添加其他必填字段
+
+        this.manualImportData.rows.forEach((row, index) => {
+            requiredColumns.forEach(column => {
+                if (!row[column]) {
+                    this.$message.error(`第${index + 1}行的${column}不能为空`);
+                    isValid = false;
+                }
+            });
+        });
+
+        return isValid;
     }
 };

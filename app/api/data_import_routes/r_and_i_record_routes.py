@@ -29,3 +29,9 @@ def confirm_r_and_i_record_import():
             del data_frames["faults"]
 
     return response
+
+
+@bp.route("/r_and_i_record/manual_import", methods=["POST"])
+def manual_import_r_and_i_record_data():
+    """处理手动输入的部件拆换记录数据"""
+    return r_and_i_record_routes.process_manual_import()

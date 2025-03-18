@@ -4,7 +4,7 @@
 
 import json
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from app.utils.file_handlers import UPLOAD_FOLDER
 
@@ -12,7 +12,9 @@ from app.utils.file_handlers import UPLOAD_FOLDER
 class DataImportService:
     """数据导入服务基类，包含所有数据导入处理服务的通用方法"""
 
-    def __init__(self, processor_class, config=None):
+    def __init__(
+        self, processor_class: Type[Any], config: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         初始化数据导入服务
 
@@ -22,7 +24,7 @@ class DataImportService:
         """
         self.processor = processor_class(config)
 
-    def analyze_changes(self, temp_path: str) -> Tuple[bool, str, Any]:
+    def analyze_changes(self, temp_path: str) -> Tuple[bool, str, Dict[str, Any]]:
         """
         分析数据变化
 
@@ -35,7 +37,7 @@ class DataImportService:
         temp_processor = self.processor.__class__(temp_path)
         return temp_processor.analyze_changes()
 
-    def save_changes(self, combined_data: Any) -> Tuple[bool, str]:
+    def save_changes(self, combined_data: Dict[str, Any]) -> Tuple[bool, str]:
         """
         保存数据变化
 

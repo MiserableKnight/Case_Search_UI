@@ -18,3 +18,9 @@ def import_case_data():
 def confirm_case_import():
     """确认导入案例数据"""
     return case_routes.process_confirm()
+
+
+@bp.route("/case/manual_import", methods=["POST"])
+def manual_import_case_data():
+    """处理手动输入的案例数据"""
+    return case_routes.process_manual_import()

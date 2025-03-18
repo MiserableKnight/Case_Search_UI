@@ -95,8 +95,22 @@ def create_app(config_name="development"):
     app.temp_manager = temp_manager  # 将管理器添加到应用上下文
 
     # 初始化敏感词管理器
-    # 只在主进程或非调试模式下初始化并打印信息
     app.word_manager = WordService(app.config["SENSITIVE_WORDS_FILE"])
+
+    # 初始化数据服务
+    from app.services import (
+        CaseService,
+        EngineeringService,
+        FaultReportService,
+        ManualService,
+        RAndIRecordService,
+    )
+
+    app.case_service = CaseService()
+    app.fault_report_service = FaultReportService()
+    app.r_and_i_record_service = RAndIRecordService()
+    app.engineering_service = EngineeringService()
+    app.manual_service = ManualService()
 
     def allowed_file(filename, types=None):
         """检查文件扩展名是否允许"""
@@ -116,17 +130,11 @@ def create_app(config_name="development"):
                     app.config["DATA_SOURCES"][source],
                 )
                 if os.path.exists(data_path):
-                    print(f"加载数据源 {source} 从: {data_path}")
                     data_frames[source] = pd.read_parquet(data_path)
-                    print(
-                        f"数据源 {source} 加载成功，形状: {data_frames[source].shape}"
-                    )
                 else:
-                    print(f"数据文件不存在: {data_path}")
                     return None
             return data_frames[source]
         except Exception as e:
-            print(f"加载数据源 {source} 时出错: {str(e)}")
             return None
 
     # 将 load_data_source 函数添加到应用上下文中
@@ -223,13 +231,12 @@ def create_app(config_name="development"):
             app.temp_manager.stop_scheduler()
 
     # 初始化数据
-    # 只在主进程中加载数据，避免重复加载
-    if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+    # 只在非调试模式或主进程中加载数据
+    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") != "true":
         # 在应用上下文中加载数据
         with app.app_context():
             # 加载故障报告数据
             load_fault_report_data()
-
             # 加载部件拆换记录数据
             load_r_and_i_data()
 

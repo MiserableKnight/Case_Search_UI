@@ -44,6 +44,12 @@ def test():
     return render_template("test.html")
 
 
+@bp.route("/analysis")
+def analysis():
+    """渲染数据分析页面"""
+    return render_template("analysis.html")
+
+
 def init_app(app):
     """初始化应用，注册蓝图"""
     # 注册主蓝图

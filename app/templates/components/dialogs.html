@@ -190,6 +190,17 @@
                         支持上传 .xlsx, .xls 格式的文件
                     </div>
                 </el-upload>
+
+                <!-- 手动导入按钮 -->
+                <div style="text-align: center; margin-top: 15px;">
+                    <el-button
+                        type="primary"
+                        size="small"
+                        @click="showManualImportDialog"
+                        style="width: 120px;">
+                        手动导入<i class="el-icon-edit-outline el-icon--right"></i>
+                    </el-button>
+                </div>
             </div>
         </div>
 
@@ -215,6 +226,88 @@
             type="primary"
             @click="confirmImport"
             :disabled="!importSettings.previewData">
+            确认导入
+        </el-button>
+    </div>
+</el-dialog>
+
+<!-- 手动数据输入对话框 -->
+<el-dialog
+    title="手动导入数据"
+    :visible.sync="manualImportDialogVisible"
+    width="95%"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false">
+    <div class="manual-import-content">
+        <el-alert
+            v-if="importSettings.dataSource"
+            type="info"
+            :title="`当前选择的数据源：${CONFIG.importDataSourceOptions[importSettings.dataSource]}`"
+            :closable="false"
+            show-icon
+            style="margin-bottom: 15px;">
+        </el-alert>
+
+        <!-- 表格数据输入区域 -->
+        <div v-if="columnHeaders.length > 0" class="manual-table-input">
+            <el-form ref="manualImportForm" :model="manualImportData" label-width="100px">
+                <div class="table-header" style="display: flex; margin-bottom: 10px; background-color: #f5f7fa; padding: 8px; border-radius: 4px;">
+                    <div v-for="(column, index) in columnHeaders" :key="index"
+                         :style="{
+                             'font-weight': 'bold',
+                             'text-align': 'center',
+                             'padding': '0 5px',
+                             'width': getColumnWidth(column)
+                         }">
+                        [[ column ]]
+                    </div>
+                    <div style="width: 50px;"></div> <!-- 操作列占位 -->
+                </div>
+
+                <div
+                    v-for="(row, rowIndex) in manualImportData.rows"
+                    :key="rowIndex"
+                    style="display: flex; margin-bottom: 5px; align-items: center;">
+                    <div v-for="(column, colIndex) in columnHeaders" :key="`${rowIndex}-${colIndex}`"
+                         :style="{
+                             'padding': '0 5px',
+                             'width': getColumnWidth(column)
+                         }">
+                        <el-input
+                            v-model="row[column]"
+                            size="small"
+                            placeholder="请输入"
+                            :type="getInputType(column)"
+                            :rows="getInputRows(column)">
+                        </el-input>
+                    </div>
+                    <div style="width: 50px; text-align: center;">
+                        <el-button
+                            type="danger"
+                            icon="el-icon-delete"
+                            circle
+                            size="mini"
+                            @click="removeRow(rowIndex)">
+                        </el-button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; text-align: center;">
+                    <el-button type="primary" @click="addRow" size="small">添加一行</el-button>
+                </div>
+            </el-form>
+        </div>
+
+        <div v-else class="no-columns-message" style="text-align: center; padding: 20px;">
+            请先选择数据源
+        </div>
+    </div>
+    <div slot="footer" class="dialog-footer">
+        <el-button @click="manualImportDialogVisible = false">取消</el-button>
+        <el-button
+            type="primary"
+            @click="submitManualImport"
+            :disabled="!manualImportData.rows.length">
             确认导入
         </el-button>
     </div>

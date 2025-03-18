@@ -3,139 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>选中数据</title>
-    <!-- 引入 Element UI -->
-    <link rel="stylesheet" href="//lib.baomitu.com/element-ui/2.15.13/theme-chalk/index.css">
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f7fa;
-        }
-        .container {
-            max-width: 100%;
-            margin: 0;
-            padding: 20px;
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
-        }
-        .el-table {
-            margin-top: 10px;
-        }
-        /* 确保表格内容可以换行显示 */
-        .el-table .cell {
-            white-space: pre-wrap;
-            word-break: break-all;
-            line-height: 1.5;
-            padding: 8px 0;
-        }
-        /* 调整表格行高以适应内容 */
-        .el-table td {
-            padding: 8px 0;
-        }
-        .header {
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-    </style>
+    <title>已选数据</title>
+    <!-- 使用国内CDN -->
+    <link rel="stylesheet" href="https://lib.baomitu.com/element-ui/2.15.13/theme-chalk/index.css">
+    <!-- 引入拆分的CSS文件 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/analysis.css') }}">
 </head>
 <body>
     <div id="app">
         <div class="container">
-            <div class="header">
-                <div class="title">选中数据</div>
-                <el-button type="primary" size="small" @click="goBack">返回主页</el-button>
+            <!-- 详细数据表格 -->
+            <div class="data-table">
+                <el-card>
+                    <el-table
+                        :data="tableData"
+                        style="width: 100%"
+                        border
+                        stripe>
+                        <el-table-column
+                            v-for="col in columns"
+                            :key="col"
+                            :prop="col"
+                            :label="col">
+                        </el-table-column>
+                    </el-table>
+                </el-card>
             </div>
-            
-            <el-table
-                :data="tableData"
-                style="width: 100%"
-                size="mini"
-                border
-                :cell-style="{ padding: '8px' }">
-                <el-table-column
-                    v-for="col in columns"
-                    :key="col"
-                    :prop="col"
-                    :label="col"
-                    :min-width="getColumnWidth(col)">
-                </el-table-column>
-            </el-table>
         </div>
     </div>
 
-    <!-- 引入 Vue 和 Element UI -->
-    <script src="//lib.baomitu.com/vue/2.7.14/vue.min.js"></script>
-    <script src="//lib.baomitu.com/element-ui/2.15.13/index.min.js"></script>
-    <script src="//lib.baomitu.com/element-ui/2.15.13/locale/zh-CN.min.js"></script>
-    <script>
-        ELEMENT.locale(ELEMENT.lang.zhCN)
-        
-        new Vue({
-            el: '#app',
-            delimiters: ['[[', ']]'],
-            data() {
-                let storedData;
-                try {
-                    // 尝试从localStorage获取数据
-                    storedData = localStorage.getItem('analysisData');
-                    console.log('从localStorage读取的原始数据:', storedData);
-                    
-                    if (!storedData) {
-                        // 如果localStorage没有数据，尝试从sessionStorage获取
-                        storedData = sessionStorage.getItem('analysisData');
-                        console.log('从sessionStorage读取的原始数据:', storedData);
-                    }
-                    
-                    if (storedData) {
-                        storedData = JSON.parse(storedData);
-                        console.log('解析后的数据:', storedData);
-                    } else {
-                        console.warn('没有找到存储的数据');
-                        storedData = {data: [], columns: []};
-                    }
-                } catch (error) {
-                    console.error('读取或解析数据时出错:', error);
-                    this.$message.error('数据加载失败: ' + error.message);
-                    storedData = {data: [], columns: []};
-                }
-                
-                return {
-                    tableData: storedData.data || [],
-                    columns: storedData.columns || [],
-                    dataSource: storedData.dataSource || 'case'
-                }
-            },
-            mounted() {
-                console.log('Vue实例已挂载');
-                console.log('表格数据:', this.tableData);
-                console.log('列信息:', this.columns);
-                
-                if (this.tableData.length === 0) {
-                    this.$message.warning('没有找到要分析的数据');
-                } else {
-                    this.$message.success(`成功加载 ${this.tableData.length} 条数据`);
-                }
-            },
-            methods: {
-                getColumnWidth(column) {
-                    if (column === '问题描述' || column === '答复详情' || 
-                        column === '原因和说明' || column === '原文文本') {
-                        return '400';
-                    }
-                    return '150';
-                },
-                goBack() {
-                    window.location.href = '/';
-                }
-            }
-        })
-    </script>
+    <!-- 使用国内CDN -->
+    <script src="https://lib.baomitu.com/vue/2.6.14/vue.min.js"></script>
+    <script src="https://lib.baomitu.com/element-ui/2.15.13/index.js"></script>
+    <script src="https://lib.baomitu.com/element-ui/2.15.13/locale/zh-CN.js"></script>
+    <script src="https://lib.baomitu.com/axios/1.5.0/axios.min.js"></script>
+
+    <!-- 引入拆分的JS文件 -->
+    <script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
 </body>
-</html> 
+</html>
