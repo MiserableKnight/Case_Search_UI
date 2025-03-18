@@ -275,9 +275,6 @@ const searchMethods = {
                 duration: 2000
             });
 
-            // 重新加载数据类型
-            await this.loadInitialDataTypes();
-
             // 重新获取数据源列信息
             await this.getDataSourceColumns();
 
@@ -307,16 +304,11 @@ const searchMethods = {
     async updateDataSource(newDataSource) {
         this.defaultSearch.dataSource = newDataSource;
 
-        // 清空之前的数据类型选择
-        this.defaultSearch.dataTypes = [];
-
         // 加载新数据源的列和数据类型
         await this.loadDataSourceColumns();
 
         // 重置表头和列显示控制
         this.initTableHeaders();
-
-        await this.loadInitialDataTypes();
 
         // 重置搜索表单
         this.resetForm();
