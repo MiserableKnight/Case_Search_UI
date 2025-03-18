@@ -108,4 +108,15 @@
     padding: 2px 8px;
     background-color: #f0f0f0;
     border-radius: 12px;
-} 
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.type-stat:hover {
+    background-color: #e0e0e0;
+}
+
+.type-stat.active {
+    background-color: #409EFF;
+    color: white;
+}

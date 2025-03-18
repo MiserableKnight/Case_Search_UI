@@ -55,10 +55,10 @@ const initialState = {
     newWord: '',
     selectedCategory: 'organizations',
     categories: [
-        'registration_numbers', 
-        'organizations', 
-        'aircraft', 
-        'locations', 
+        'registration_numbers',
+        'organizations',
+        'aircraft',
+        'locations',
         'other'
     ],
     activeCategory: 'organizations',
@@ -72,6 +72,7 @@ const initialState = {
     typeStatistics: {},
     selectedRows: [],
     lastClickedRowIndex: null,
+    selectedType: null,
     lastClickedRow: null,
     importDialogVisible: false,
     importSettings: {
@@ -79,7 +80,7 @@ const initialState = {
         previewData: null,
         uploadedFile: null
     }
-}; 
+};
 
 function getDataSourceColumns(source) {
     return new Promise((resolve, reject) => {
@@ -96,4 +97,4 @@ function getDataSourceColumns(source) {
                 reject(error);
             });
     });
-} 
+}

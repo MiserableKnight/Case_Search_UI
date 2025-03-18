@@ -6,7 +6,12 @@
             共找到 [[ total ]] 条结果
         </div>
         <div class="type-statistics">
-            <span v-for="(count, type) in typeStatistics" :key="type" class="type-stat">
+            <span
+                v-for="(count, type) in typeStatistics"
+                :key="type"
+                class="type-stat"
+                :class="{ 'active': selectedType === type }"
+                @click="filterByType(type)">
                 [[ type ]]: [[ count ]]
             </span>
         </div>
@@ -23,9 +28,9 @@
         <el-button type="primary" size="small" @click="exportToCsv" :disabled="!selectedRows.length">
             导出CSV
         </el-button>
-        <el-button 
-            size="small" 
-            type="primary" 
+        <el-button
+            size="small"
+            type="primary"
             @click="analyzeSelectedData"
             :disabled="!selectedRows.length">
             数据分析
@@ -35,7 +40,7 @@
     <!-- 结果表格 -->
     <el-table
         ref="dataTable"
-        :data="searchResults"
+        :data="filteredSearchResults"
         style="width: 100%"
         border
         stripe
@@ -59,4 +64,4 @@
             :min-width="getColumnMinWidth(col)">
         </el-table-column>
     </el-table>
-</div> 
+</div>
