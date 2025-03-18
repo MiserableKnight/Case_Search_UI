@@ -1,6 +1,6 @@
 /* 搜索相关样式 */
 .search-section {
-    margin-bottom: 20px;
+    margin-bottom: 5px;
     padding: 20px;
     background-color: white;
     border-radius: 4px;
@@ -180,27 +180,6 @@
     align-self: flex-end;
 }
 
-/* AI 总结区域 */
-.ai-summary {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: 100%;
-}
-
-.ai-summary .el-input {
-    flex: 1;
-}
-
-.ai-input {
-    height: 80px;
-}
-
-.ai-output {
-    flex: 1;
-    min-height: 120px;
-}
-
 /* 统计控制 */
 .statistics-controls {
     display: flex;
@@ -229,4 +208,14 @@
     width: 100%;
 }
 
-/* ... */ 
+/* 结果区域样式 */
+.result-section {
+    flex: 1;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-top: 5px;
+}
+
+/* ... */
