@@ -48,11 +48,15 @@ class ManualProcessor(DataImportProcessor):
 
         # 清洗机型数据
         if "机型" not in cleaned_df.columns:
-            cleaned_df["机型"] = "ARJ21"  # 默认机型
-        cleaned_df = self.clean_aircraft_type(cleaned_df)
+            logger.warning("导入数据中缺少'机型'列，将保留为空")
+            cleaned_df["机型"] = ""  # 不再默认为ARJ21
+        else:
+            cleaned_df = self.clean_aircraft_type(cleaned_df)
 
-        # 添加数据类型标记
-        cleaned_df["数据类型"] = "手册"
+        # 处理数据类型字段
+        if "数据类型" not in cleaned_df.columns:
+            logger.warning("导入数据中缺少'数据类型'列，将保留为空")
+            cleaned_df["数据类型"] = ""  # 不再硬编码为"手册"
 
         # 只保留需要的列
         for col in self.FINAL_COLUMNS:

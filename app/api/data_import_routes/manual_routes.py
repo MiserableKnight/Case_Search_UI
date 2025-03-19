@@ -22,5 +22,11 @@ def confirm_manual_import():
 
 @bp.route("/manual/manual_import", methods=["POST"])
 def manual_import_manual_data():
-    """处理手动输入的手册数据"""
+    """处理手动输入的手册答复数据"""
     return manual_routes.process_manual_import()
+
+
+@bp.route("/manual/preview", methods=["POST"])
+def preview_manual_data():
+    """预览手动输入的手册答复数据"""
+    return manual_routes.process_preview()

@@ -50,6 +50,12 @@ def analysis():
     return render_template("analysis.html")
 
 
+@bp.route("/data_import")
+def data_import():
+    """渲染数据导入页面"""
+    return render_template("data_import.html")
+
+
 def init_app(app):
     """初始化应用，注册蓝图"""
     # 注册主蓝图

@@ -78,8 +78,10 @@ class FaultReportProcessor(DataImportProcessor):
         # 删除空列
         cleaned_df = cleaned_df.dropna(axis=1, how="all")
 
-        # 添加数据类型标记
-        cleaned_df["数据类型"] = "故障报告"
+        # 处理数据类型字段
+        if "数据类型" not in cleaned_df.columns:
+            logger.warning("导入数据中缺少'数据类型'列，将保留为空")
+            cleaned_df["数据类型"] = ""  # 不再硬编码为"故障报告"
 
         # 清洗日期数据
         if "日期" in cleaned_df.columns:

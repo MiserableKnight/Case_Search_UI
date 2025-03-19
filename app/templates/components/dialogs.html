@@ -74,75 +74,74 @@
     </span>
 </el-dialog>
 
-<!-- AI分析结果弹窗 -->
-<el-dialog
-    title="AI分析结果"
-    :visible.sync="aiDialogVisible"
-    width="50%"
-    :close-on-click-modal="false"
-    :close-on-press-escape="false">
-    <div style="max-height: 60vh; overflow-y: auto; white-space: pre-wrap; user-select: text;">
-        [[ aiResult ]]
-    </div>
-    <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="aiDialogVisible = false">关闭</el-button>
-    </span>
-</el-dialog>
-
 <!-- 敏感词管理对话框 -->
 <el-dialog title="敏感词管理"
            :visible.sync="sensitiveWordDialogVisible"
-           width="525px"
-           style="margin-top: 5vh">
+           width="575px"
+           style="margin-top: 2vh">
     <div class="sensitive-word-manager">
         <!-- 添加新词区域 -->
-        <div class="add-word-section">
-            <el-form :inline="true">
-                <el-form-item label="新增敏感词">
-                    <el-input v-model="newWord" placeholder="输入敏感词" style="width: 160px"></el-input>
-                </el-form-item>
-                <el-form-item label="类别">
-                    <el-select v-model="selectedCategory" style="width: 160px">
-                        <el-option v-for="cat in categories"
-                                 :key="cat"
-                                 :label="categoryLabels[cat]"
-                                 :value="cat">
-                        </el-option>
-                    </el-select>
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" @click="addSensitiveWord">添加</el-button>
-                </el-form-item>
-            </el-form>
+        <div class="add-word-section" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <div style="white-space: nowrap; margin-right: 10px;">新增敏感词</div>
+            <el-input v-model="newWord" placeholder="输入敏感词" style="width: 160px; margin-right: 15px;"></el-input>
+
+            <el-select v-model="selectedCategory"
+                      style="width: 100px; margin-right: 15px;"
+                      popper-class="sensitive-word-select-dropdown"
+                      :popper-append-to-body="false">
+                <el-option v-for="cat in categories"
+                         :key="cat"
+                         :label="categoryLabels[cat]"
+                         :value="cat">
+                </el-option>
+            </el-select>
+
+            <el-button type="primary" @click="addSensitiveWord">添加</el-button>
+        </div>
+
+        <style>
+        .sensitive-word-select-dropdown {
+            width: auto !important;
+            min-width: 100px !important;
+            max-width: 150px !important;
+        }
+        </style>
+
+        <!-- 敏感词列表导航 -->
+        <div class="sensitive-word-tabs" style="margin-bottom: 5px;">
+            <el-tabs type="card" v-model="activeCategory">
+                <el-tab-pane :label="categoryLabels.registration_numbers" name="registration_numbers"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.organizations" name="organizations"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.aircraft" name="aircraft"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.locations" name="locations"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.other" name="other"></el-tab-pane>
+            </el-tabs>
         </div>
 
         <!-- 敏感词列表 -->
-        <div class="sensitive-word-list">
-            <el-tabs v-model="activeCategory">
-                <el-tab-pane v-for="cat in categories"
-                            :key="cat"
-                            :label="categoryLabels[cat]"
-                            :name="cat">
-                    <el-table :data="sensitiveWords[cat]"
-                             size="mini"
-                            max-height="200px"
-                            :cell-style="{ padding: '0px' }"
-                            :header-cell-style="{ padding: '2px' }"
-                            style="margin-bottom: 10px; font-size: 12px;">
-                        <el-table-column prop="word" label="敏感词"></el-table-column>
-                        <el-table-column width="60" align="center">
-                            <template slot-scope="scope">
-                                <el-button type="danger"
-                                         size="mini"
-                                         style="padding: 3px 6px; font-size: 11px;"
-                                         @click="removeSensitiveWord(scope.row.word, cat)">
-                                    删除
-                                </el-button>
-                            </template>
-                        </el-table-column>
-                    </el-table>
-                </el-tab-pane>
-            </el-tabs>
+        <div class="sensitive-word-list" style="max-height: 250px; overflow-y: auto; margin-top: 10px; border: 1px solid #EBEEF5; border-radius: 4px;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                <thead>
+                    <tr style="background-color: #F5F7FA; height: 36px;">
+                        <th style="padding-left: 15px; text-align: left; font-weight: normal;">敏感词</th>
+                        <th style="width: 80px; text-align: center; font-weight: normal;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(word, index) in sensitiveWords[activeCategory] || []" :key="index"
+                        style="border-bottom: 1px solid #EBEEF5; height: 36px;">
+                        <td style="padding-left: 15px; text-align: left;">[[ typeof word === 'object' ? word.word : word ]]</td>
+                        <td style="width: 80px; text-align: center;">
+                            <el-button type="danger"
+                                     size="mini"
+                                     style="padding: 3px 8px; font-size: 12px;"
+                                     @click="removeSensitiveWord(typeof word === 'object' ? word.word : word, activeCategory)">
+                                删除
+                            </el-button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </el-dialog>
@@ -151,7 +150,7 @@
 <el-dialog
     title="数据导入"
     :visible.sync="importDialogVisible"
-    width="500px"
+    width="80%"
     :close-on-click-modal="false"
     :close-on-press-escape="false">
     <div class="import-dialog-content">
@@ -196,7 +195,7 @@
                     <el-button
                         type="primary"
                         size="small"
-                        @click="showManualImportDialog"
+                        @click="goToDataImportPage"
                         style="width: 120px;">
                         手动导入<i class="el-icon-edit-outline el-icon--right"></i>
                     </el-button>
@@ -206,9 +205,10 @@
 
         <!-- 预览区域 -->
         <div v-if="importSettings.previewData" class="preview-area">
-            <el-card class="preview-info">
+            <!-- 数据统计信息 -->
+            <el-card class="preview-info" style="margin-bottom: 20px;">
                 <div slot="header">
-                    <span style="font-weight: bold">数据预览</span>
+                    <span style="font-weight: bold">数据统计</span>
                 </div>
                 <div class="preview-stats">
                     <p>原有数据：[[ importSettings.previewData.original_count ]] 条</p>
@@ -218,6 +218,31 @@
                     <p>变更后数据：[[ importSettings.previewData.final_count ]] 条</p>
                 </div>
             </el-card>
+
+            <!-- 数据表格预览 -->
+            <el-card class="preview-table">
+                <div slot="header">
+                    <span style="font-weight: bold">数据预览</span>
+                    <el-tooltip content="显示导入数据的前10条记录" placement="top">
+                        <i class="el-icon-info" style="margin-left: 5px;"></i>
+                    </el-tooltip>
+                </div>
+                <el-table
+                    :data="importSettings.previewData.preview_rows"
+                    style="width: 100%"
+                    max-height="400"
+                    border
+                    stripe>
+                    <el-table-column
+                        v-for="column in importSettings.previewData.columns"
+                        :key="column"
+                        :prop="column"
+                        :label="column"
+                        :min-width="120"
+                        show-overflow-tooltip>
+                    </el-table-column>
+                </el-table>
+            </el-card>
         </div>
     </div>
     <div slot="footer" class="dialog-footer">
@@ -226,88 +251,6 @@
             type="primary"
             @click="confirmImport"
             :disabled="!importSettings.previewData">
-            确认导入
-        </el-button>
-    </div>
-</el-dialog>
-
-<!-- 手动数据输入对话框 -->
-<el-dialog
-    title="手动导入数据"
-    :visible.sync="manualImportDialogVisible"
-    width="95%"
-    :close-on-click-modal="false"
-    :close-on-press-escape="false">
-    <div class="manual-import-content">
-        <el-alert
-            v-if="importSettings.dataSource"
-            type="info"
-            :title="`当前选择的数据源：${CONFIG.importDataSourceOptions[importSettings.dataSource]}`"
-            :closable="false"
-            show-icon
-            style="margin-bottom: 15px;">
-        </el-alert>
-
-        <!-- 表格数据输入区域 -->
-        <div v-if="columnHeaders.length > 0" class="manual-table-input">
-            <el-form ref="manualImportForm" :model="manualImportData" label-width="100px">
-                <div class="table-header" style="display: flex; margin-bottom: 10px; background-color: #f5f7fa; padding: 8px; border-radius: 4px;">
-                    <div v-for="(column, index) in columnHeaders" :key="index"
-                         :style="{
-                             'font-weight': 'bold',
-                             'text-align': 'center',
-                             'padding': '0 5px',
-                             'width': getColumnWidth(column)
-                         }">
-                        [[ column ]]
-                    </div>
-                    <div style="width: 50px;"></div> <!-- 操作列占位 -->
-                </div>
-
-                <div
-                    v-for="(row, rowIndex) in manualImportData.rows"
-                    :key="rowIndex"
-                    style="display: flex; margin-bottom: 5px; align-items: center;">
-                    <div v-for="(column, colIndex) in columnHeaders" :key="`${rowIndex}-${colIndex}`"
-                         :style="{
-                             'padding': '0 5px',
-                             'width': getColumnWidth(column)
-                         }">
-                        <el-input
-                            v-model="row[column]"
-                            size="small"
-                            placeholder="请输入"
-                            :type="getInputType(column)"
-                            :rows="getInputRows(column)">
-                        </el-input>
-                    </div>
-                    <div style="width: 50px; text-align: center;">
-                        <el-button
-                            type="danger"
-                            icon="el-icon-delete"
-                            circle
-                            size="mini"
-                            @click="removeRow(rowIndex)">
-                        </el-button>
-                    </div>
-                </div>
-
-                <div style="margin-top: 15px; text-align: center;">
-                    <el-button type="primary" @click="addRow" size="small">添加一行</el-button>
-                </div>
-            </el-form>
-        </div>
-
-        <div v-else class="no-columns-message" style="text-align: center; padding: 20px;">
-            请先选择数据源
-        </div>
-    </div>
-    <div slot="footer" class="dialog-footer">
-        <el-button @click="manualImportDialogVisible = false">取消</el-button>
-        <el-button
-            type="primary"
-            @click="submitManualImport"
-            :disabled="!manualImportData.rows.length">
             确认导入
         </el-button>
     </div>

@@ -24,3 +24,9 @@ def confirm_engineering_import():
 def manual_import_engineering_data():
     """处理手动输入的工程文件数据"""
     return engineering_routes.process_manual_import()
+
+
+@bp.route("/engineering/preview", methods=["POST"])
+def preview_engineering_data():
+    """预览手动输入的工程文件数据"""
+    return engineering_routes.process_preview()

@@ -24,6 +24,9 @@ class WordService:
         if file_path is None:
             # 使用配置中的路径
             file_path = current_app.config["FILE_CONFIG"]["SENSITIVE_WORDS_FILE"]
+
+        # 初始化敏感词管理器
+        self.word_manager = SensitiveWordManager(file_path)
         self.file_path = Path(file_path)
 
         # 定义类别

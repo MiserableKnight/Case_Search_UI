@@ -85,8 +85,10 @@ class RAndIRecordProcessor(DataImportProcessor):
         # 清洗运营人数据
         cleaned_df = self.clean_operator_names(cleaned_df)
 
-        # 添加数据类型标记
-        cleaned_df["数据类型"] = "部件拆换记录"
+        # 处理数据类型字段
+        if "数据类型" not in cleaned_df.columns:
+            logger.warning("导入数据中缺少'数据类型'列，将保留为空")
+            cleaned_df["数据类型"] = ""  # 不再硬编码为"部件拆换记录"
 
         # 只保留需要的列
         final_df = cleaned_df[self.FINAL_COLUMNS]

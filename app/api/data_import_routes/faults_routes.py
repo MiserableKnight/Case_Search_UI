@@ -26,3 +26,9 @@ def confirm_faults_import():
 def manual_import_faults_data():
     """处理手动输入的故障报告数据"""
     return faults_routes.process_manual_import()
+
+
+@bp.route("/faults/preview", methods=["POST"])
+def preview_faults_data():
+    """预览手动输入的故障报告数据"""
+    return faults_routes.process_preview()

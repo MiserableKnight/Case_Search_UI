@@ -35,3 +35,9 @@ def confirm_r_and_i_record_import():
 def manual_import_r_and_i_record_data():
     """处理手动输入的部件拆换记录数据"""
     return r_and_i_record_routes.process_manual_import()
+
+
+@bp.route("/r_and_i_record/preview", methods=["POST"])
+def preview_r_and_i_record_data():
+    """预览手动输入的部件拆换记录数据"""
+    return r_and_i_record_routes.process_preview()

@@ -78,6 +78,10 @@ def create_app(config_name="development"):
 
     app.config.from_object(config_by_name[config_name])
 
+    # 添加FILE_CONFIG和DATA_SOURCES到应用配置中
+    app.config["FILE_CONFIG"] = FILE_CONFIG
+    app.config["DATA_SOURCES"] = DATA_SOURCES
+
     # 启用CORS
     CORS(app)
 

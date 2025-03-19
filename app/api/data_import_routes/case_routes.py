@@ -24,3 +24,9 @@ def confirm_case_import():
 def manual_import_case_data():
     """处理手动输入的案例数据"""
     return case_routes.process_manual_import()
+
+
+@bp.route("/case/preview", methods=["POST"])
+def preview_case_data():
+    """预览手动输入的案例数据"""
+    return case_routes.process_preview()
