@@ -8,7 +8,7 @@
       exports: {}
     };
     factory(mod, mod.exports);
-    global.ELEMENT.lang = global.ELEMENT.lang || {}; 
+    global.ELEMENT.lang = global.ELEMENT.lang || {};
     global.ELEMENT.lang.zhCN = mod.exports;
   }
 })(this, function (module, exports) {

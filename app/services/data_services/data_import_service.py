@@ -2,11 +2,10 @@
 数据导入服务基类，为所有数据导入处理服务提供通用功能
 """
 
-import json
 import os
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
-from app.utils.file_handlers import UPLOAD_FOLDER
+import pandas as pd
 
 
 class DataImportService:
@@ -24,7 +23,9 @@ class DataImportService:
         """
         self.processor = processor_class(config)
 
-    def analyze_changes(self, temp_path: str) -> Tuple[bool, str, Dict[str, Any]]:
+    def analyze_changes(
+        self, temp_path: str
+    ) -> Tuple[bool, str, Optional[pd.DataFrame]]:
         """
         分析数据变化
 
@@ -35,9 +36,39 @@ class DataImportService:
             (success, message, combined_data): 分析结果
         """
         temp_processor = self.processor.__class__(temp_path)
-        return temp_processor.analyze_changes()
+        success, message = temp_processor.analyze_changes()
 
-    def save_changes(self, combined_data: Dict[str, Any]) -> Tuple[bool, str]:
+        # 如果分析成功，获取合并后的数据
+        combined_data = None
+        if success:
+            try:
+                # 尝试加载原始数据和上传数据来创建合并数据
+                # 这里需要访问处理器内部细节，不是很理想的做法
+                new_data = pd.read_excel(temp_path)
+                new_data = temp_processor.clean_data(new_data)
+
+                # 获取现有数据
+                if os.path.exists(temp_processor.data_path):
+                    existing_data = pd.read_parquet(temp_processor.data_path)
+                else:
+                    existing_data = pd.DataFrame(columns=temp_processor.FINAL_COLUMNS)
+
+                # 合并数据
+                combined_data = pd.concat([new_data, existing_data], ignore_index=True)
+
+                # 排序和去重
+                if hasattr(temp_processor, "date_column"):
+                    combined_data = combined_data.sort_values(
+                        temp_processor.date_column, ascending=False
+                    )
+                combined_data = combined_data.drop_duplicates(keep="first")
+            except Exception as e:
+                # 如果处理过程中出错，返回None
+                combined_data = None
+
+        return success, message, combined_data
+
+    def save_changes(self, combined_data: pd.DataFrame) -> Tuple[bool, str]:
         """
         保存数据变化
 
@@ -56,7 +87,8 @@ class DataImportService:
         Returns:
             列信息列表
         """
-        return self.processor.get_columns()
+        columns = self.processor.get_columns()
+        return cast(List[str], columns)
 
     def confirm_import(self, file_path: str) -> Tuple[bool, str]:
         """
@@ -75,7 +107,7 @@ class DataImportService:
 
             # 分析变化
             success, message, combined_data = self.analyze_changes(file_path)
-            if not success:
+            if not success or combined_data is None:
                 return False, message
 
             # 保存变化

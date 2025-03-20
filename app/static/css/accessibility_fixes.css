@@ -1,4 +1,4 @@
-/* 
+/*
  * 可访问性修复
  * 解决Element UI组件的可访问性问题
  */
@@ -19,4 +19,4 @@
 .el-radio:focus-within .el-radio__inner {
     border-color: #409EFF;
     box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.3);
-} 
+}

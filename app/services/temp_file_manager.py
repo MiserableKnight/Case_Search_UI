@@ -1,16 +1,14 @@
-import os
-import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, ClassVar, List, Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 
 class TempFileManager:
-    _instance = None
-    _scheduler = None
+    _instance: ClassVar[Optional["TempFileManager"]] = None
+    _scheduler: ClassVar[Optional[BackgroundScheduler]] = None
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "TempFileManager":
         if cls._instance is None:
@@ -33,20 +31,20 @@ class TempFileManager:
         self, cron_expression: str = "0 0 * * *"
     ) -> None:  # 默认每天凌晨执行
         """启动定时清理任务"""
-        if self._scheduler is None:
-            self._scheduler = BackgroundScheduler()
-            self._scheduler.add_job(
+        if TempFileManager._scheduler is None:
+            TempFileManager._scheduler = BackgroundScheduler()
+            TempFileManager._scheduler.add_job(
                 self.clean_old_files,
                 trigger=CronTrigger.from_crontab(cron_expression),
                 id="clean_temp_files",
             )
-            self._scheduler.start()
+            TempFileManager._scheduler.start()
 
     def stop_scheduler(self) -> None:
         """停止定时清理任务"""
-        if self._scheduler:
-            self._scheduler.shutdown()
-            self._scheduler = None
+        if TempFileManager._scheduler:
+            TempFileManager._scheduler.shutdown()
+            TempFileManager._scheduler = None
 
     def clean_old_files(self, days: int = 7) -> None:
         """清理指定天数前的临时文件"""

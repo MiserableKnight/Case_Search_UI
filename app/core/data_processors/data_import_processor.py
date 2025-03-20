@@ -1,7 +1,10 @@
+"""
+数据导入处理器模块，提供通用数据导入功能
+"""
+
 import logging
 import os
-from datetime import datetime
-from pathlib import Path
+from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type
 
 import pandas as pd
 from flask import current_app
@@ -10,22 +13,48 @@ logger = logging.getLogger(__name__)
 
 
 class DataImportProcessor:
-    _instances = {}
+    """数据导入处理器基类，提供通用数据导入和处理功能"""
 
-    def __new__(cls, file_path=None):
+    # 数据源到数据类型的映射
+    DATA_SOURCE_TYPE_MAP: ClassVar[Dict[str, str]] = {
+        "case": "服务请求",
+        "faults": "故障报告",
+        "r_and_i_record": "部件拆换记录",
+    }
+
+    # 基类中定义默认的必需列和最终列，子类可以覆盖
+    REQUIRED_COLUMNS: ClassVar[List[str]] = ["问题描述"]
+    FINAL_COLUMNS: ClassVar[List[str]] = ["问题描述", "数据类型"]
+
+    _instances: ClassVar[Dict[Type["DataImportProcessor"], "DataImportProcessor"]] = {}
+
+    def __new__(cls, file_path: Optional[str] = None) -> "DataImportProcessor":
+        """单例模式创建实例。
+
+        Args:
+            file_path: 数据文件路径
+
+        Returns:
+            DataImportProcessor实例
+        """
         if cls not in cls._instances:
             cls._instances[cls] = super().__new__(cls)
         return cls._instances[cls]
 
-    def __init__(self, file_path=None):
+    def __init__(self, file_path: Optional[str] = None) -> None:
+        """初始化数据导入处理器。
+
+        Args:
+            file_path: 数据文件路径
+        """
         # 确保初始化代码只运行一次
         if not hasattr(self, "_initialized"):
             self.__initialize()
             self._initialized = True
         self.file_path = file_path
 
-    def __initialize(self):
-        """私有初始化方法"""
+    def __initialize(self) -> None:
+        """私有初始化方法，设置数据路径和其他初始属性。"""
         # 从应用配置中获取数据路径
         try:
             # 尝试在当前应用上下文中获取配置
@@ -59,8 +88,18 @@ class DataImportProcessor:
         if not os.path.exists(self.data_path):
             logger.warning(f"数据文件不存在: {self.data_path}")
 
-    def validate_headers(self, df):
-        """验证数据表头是否符合要求"""
+    def validate_headers(self, df: pd.DataFrame) -> bool:
+        """验证数据表头是否符合要求。
+
+        Args:
+            df: 待验证的数据框
+
+        Returns:
+            验证通过返回True，否则抛出异常
+
+        Raises:
+            ValueError: 当缺少必需的列时
+        """
         current_columns = set(df.columns)
         required_columns = set(self.REQUIRED_COLUMNS)
         missing_columns = required_columns - current_columns
@@ -68,8 +107,18 @@ class DataImportProcessor:
             raise ValueError(f"缺少必需的列: {missing_columns}")
         return True
 
-    def clean_operator_names(self, df, column="运营人"):
-        """清洗运营人名称的通用方法"""
+    def clean_operator_names(
+        self, df: pd.DataFrame, column: str = "运营人"
+    ) -> pd.DataFrame:
+        """清洗运营人名称的通用方法。
+
+        Args:
+            df: 待处理的数据框
+            column: 运营人列名，默认为"运营人"
+
+        Returns:
+            清洗后的数据框
+        """
         replace_rules = [
             (["天骄", "天骄航空", "天骄航空有限公司"], "天骄"),
             (
@@ -139,16 +188,33 @@ class DataImportProcessor:
 
         return df_copy
 
-    def clean_aircraft_type(self, df, column="机型"):
-        """清洗机型数据的通用方法"""
+    def clean_aircraft_type(
+        self, df: pd.DataFrame, column: str = "机型"
+    ) -> pd.DataFrame:
+        """清洗机型数据的通用方法。
+
+        Args:
+            df: 待处理的数据框
+            column: 机型列名，默认为"机型"
+
+        Returns:
+            清洗后的数据框
+        """
         df_copy = df.copy()
         df_copy[column] = df_copy[column].fillna("无")
         df_copy[column] = df_copy[column].str.replace(r".*ARJ21.*", "ARJ21", regex=True)
         df_copy[column] = df_copy[column].str.replace(r".*C919.*", "C919", regex=True)
         return df_copy
 
-    def convert_date(self, date_str):
-        """转换日期格式的通用方法"""
+    def convert_date(self, date_str: Any) -> pd.Timestamp:
+        """转换日期格式的通用方法。
+
+        Args:
+            date_str: 日期字符串
+
+        Returns:
+            转换后的Timestamp对象
+        """
         if pd.isna(date_str):
             return pd.NaT
 
@@ -163,24 +229,40 @@ class DataImportProcessor:
         for fmt in formats:
             try:
                 return pd.to_datetime(date_str, format=fmt)
-            except:
+            except ValueError:
                 continue
 
         try:
             # 最后尝试让pandas自动识别格式
             return pd.to_datetime(date_str)
-        except:
+        except ValueError:
             logger.error(f"无法解析的日期格式: {date_str}")
             return pd.NaT
 
-    def analyze_changes(self):
-        """分析数据变化的通用方法"""
+    def analyze_changes(self) -> Tuple[bool, str]:
+        """分析数据变化的通用方法。
+
+        Returns:
+            (成功标志, 预览消息)
+        """
         try:
             # 读取并清洗新数据
             new_data = pd.read_excel(self.file_path)
             self.validate_headers(new_data)
             cleaned_new_data = self.clean_data(new_data)
-            logger.info("新数据清洗完成")
+
+            # 只有在数据类型字段为空时才设置默认值
+            if (
+                "数据类型" not in cleaned_new_data.columns
+                or cleaned_new_data["数据类型"].isna().all()
+            ):
+                data_type = self.DATA_SOURCE_TYPE_MAP.get(
+                    self.data_source_key, self.data_source_key
+                )
+                cleaned_new_data["数据类型"] = data_type
+                logger.info(f"设置默认数据类型为: {data_type}")
+            else:
+                logger.info("保留已设置的数据类型")
 
             # 读取现有数据
             original_count = 0
@@ -203,10 +285,15 @@ class DataImportProcessor:
             combined_data = pd.concat(
                 [cleaned_new_data, existing_data], ignore_index=True
             )
+            logger.info(f"合并后的数据量: {len(combined_data)} 条")
 
             # 按日期倒序排序并去重
             combined_data = combined_data.sort_values(self.date_column, ascending=False)
+            logger.info(f"排序后的数据量: {len(combined_data)} 条")
+
             combined_data = combined_data.drop_duplicates(keep="first")
+            logger.info(f"去重后的数据量: {len(combined_data)} 条")
+
             final_count = len(combined_data)
 
             # 计算实际新增的数据量
@@ -224,65 +311,87 @@ class DataImportProcessor:
                 f"是否确认更新数据？"
             )
 
-            return True, message, combined_data
-
+            return True, message
         except Exception as e:
-            logger.error(f"分析数据时出错: {str(e)}")
-            return False, f"数据分析失败: {str(e)}", None
+            logger.error(f"分析数据变化时出错: {str(e)}")
+            return False, f"分析数据失败: {str(e)}"
 
-    def save_changes(self, combined_data):
-        """保存确认后的数据的通用方法"""
+    def save_changes(self, combined_data: pd.DataFrame) -> Tuple[bool, str]:
+        """保存数据变更的通用方法。
+
+        Args:
+            combined_data: 合并后的数据框
+
+        Returns:
+            (成功标志, 消息)
+        """
         try:
-            if combined_data is None:
-                raise ValueError("没有可保存的数据")
+            # 确保目录存在
+            os.makedirs(os.path.dirname(self.data_path), exist_ok=True)
 
-            # 再次确保数据已全字段去重
-            combined_data = combined_data.drop_duplicates(keep="first")
-
-            # 保存合并后的数据
+            # 保存数据
             combined_data.to_parquet(self.data_path, index=False)
-            logger.info("数据更新成功")
-            return True, "数据更新成功！"
+            logger.info(f"已保存 {len(combined_data)} 条数据到 {self.data_path}")
+
+            return True, f"成功保存了 {len(combined_data)} 条数据"
         except Exception as e:
             logger.error(f"保存数据时出错: {str(e)}")
-            return False, f"数据保存失败: {str(e)}"
+            return False, f"保存数据失败: {str(e)}"
 
     @staticmethod
-    def validate_columns(columns):
-        """验证列名是否有效的通用方法"""
-        if not columns or not isinstance(columns, list):
-            return False
-        required_fields = {"问题描述"}  # 基类中定义最基本的必需字段
-        return all(field in columns for field in required_fields)
+    def validate_columns(columns: List[str]) -> bool:
+        """验证列名是否合法。
 
-    def get_columns(self):
-        """获取数据源的所有列的通用方法"""
-        try:
-            if os.path.exists(self.data_path):
-                df = pd.read_parquet(self.data_path)
-                return list(df.columns)
-            else:
-                return self.FINAL_COLUMNS
-        except Exception as e:
-            logger.error(f"获取列名时出错: {str(e)}")
+        Args:
+            columns: 列名列表
+
+        Returns:
+            验证结果
+        """
+        # TODO: 实现具体的列名验证逻辑
+        return len(columns) > 0
+
+    def get_columns(self) -> List[str]:
+        """获取数据源的列名列表。
+
+        Returns:
+            列名列表
+        """
+        if hasattr(self, "FINAL_COLUMNS"):
             return self.FINAL_COLUMNS
+        else:
+            # 尝试从数据文件中读取列名
+            if os.path.exists(self.data_path):
+                try:
+                    df = pd.read_parquet(self.data_path)
+                    return list(df.columns)
+                except Exception:
+                    return []
+            return []
 
-    # 以下属性和方法需要在子类中实现
     @property
-    def processor_name(self):
-        """处理器名称"""
-        raise NotImplementedError("子类必须实现processor_name属性")
+    def processor_name(self) -> str:
+        """获取处理器名称。"""
+        class_name = self.__class__.__name__
+        return class_name
 
     @property
-    def data_source_key(self):
-        """数据源键名"""
+    def data_source_key(self) -> str:
+        """获取数据源键名。"""
         raise NotImplementedError("子类必须实现data_source_key属性")
 
     @property
-    def date_column(self):
-        """日期列名"""
+    def date_column(self) -> str:
+        """获取日期列名。"""
         raise NotImplementedError("子类必须实现date_column属性")
 
-    def clean_data(self, df):
-        """数据清洗方法"""
+    def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """清洗数据的通用方法，子类应该重写此方法。
+
+        Args:
+            df: 待清洗的数据框
+
+        Returns:
+            清洗后的数据框
+        """
         raise NotImplementedError("子类必须实现clean_data方法")

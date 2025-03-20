@@ -46,7 +46,7 @@ Thumbs.db
 *.xls
 *.json
 *.parquet
-/data/
+data/
 
 # 环境文件
 .env
@@ -57,4 +57,4 @@ Thumbs.db
 
 # 系统文件
 .DS_Store
-Thumbs.db 
+Thumbs.db

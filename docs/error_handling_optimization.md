@@ -126,11 +126,11 @@ def example_route():
         data = request.get_json()
         if not data:
             raise BadRequestError('无效的请求数据')
-            
+
         # 业务逻辑...
-        
+
         return ApiResponse.success(data=result, message="操作成功")
-        
+
     except (BadRequestError, ValidationError) as e:
         # 这些错误会被全局错误处理器捕获
         raise
@@ -145,7 +145,7 @@ def example_route():
 def example_service_method(param):
     if not param:
         raise ValidationError("参数不能为空")
-        
+
     try:
         # 业务逻辑...
         return result
@@ -167,4 +167,4 @@ def example_service_method(param):
 1. 添加更多特定领域的异常类
 2. 实现更详细的错误代码系统
 3. 添加国际化支持，支持多语言错误消息
-4. 集成监控系统，跟踪错误发生频率和模式 
+4. 集成监控系统，跟踪错误发生频率和模式

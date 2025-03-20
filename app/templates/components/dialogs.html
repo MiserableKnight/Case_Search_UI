@@ -180,7 +180,8 @@
                     :on-success="handleUploadSuccess"
                     :on-error="handleUploadError"
                     :show-file-list="false"
-                    :multiple="false">
+                    :multiple="false"
+                    :http-request="customUploadRequest">
                     <i class="el-icon-upload"></i>
                     <div class="el-upload__text">
                         将文件拖到此处，或<em>点击选择文件</em>
@@ -189,17 +190,6 @@
                         支持上传 .xlsx, .xls 格式的文件
                     </div>
                 </el-upload>
-
-                <!-- 手动导入按钮 -->
-                <div style="text-align: center; margin-top: 15px;">
-                    <el-button
-                        type="primary"
-                        size="small"
-                        @click="goToDataImportPage"
-                        style="width: 120px;">
-                        手动导入<i class="el-icon-edit-outline el-icon--right"></i>
-                    </el-button>
-                </div>
             </div>
         </div>
 
@@ -211,37 +201,12 @@
                     <span style="font-weight: bold">数据统计</span>
                 </div>
                 <div class="preview-stats">
-                    <p>原有数据：[[ importSettings.previewData.original_count ]] 条</p>
                     <p>上传数据：[[ importSettings.previewData.uploaded_count ]] 条</p>
-                    <p>重复数据：[[ importSettings.previewData.duplicate_count ]] 条</p>
                     <p>实际新增：[[ importSettings.previewData.new_count ]] 条</p>
-                    <p>变更后数据：[[ importSettings.previewData.final_count ]] 条</p>
+                    <p>重复数据：[[ importSettings.previewData.uploaded_count - importSettings.previewData.new_count ]] 条</p>
+                    <p>原有数据：[[ importSettings.previewData.original_count ]] 条</p>
+                    <p>变更后数据：[[ importSettings.previewData.original_count + importSettings.previewData.new_count ]] 条</p>
                 </div>
-            </el-card>
-
-            <!-- 数据表格预览 -->
-            <el-card class="preview-table">
-                <div slot="header">
-                    <span style="font-weight: bold">数据预览</span>
-                    <el-tooltip content="显示导入数据的前10条记录" placement="top">
-                        <i class="el-icon-info" style="margin-left: 5px;"></i>
-                    </el-tooltip>
-                </div>
-                <el-table
-                    :data="importSettings.previewData.preview_rows"
-                    style="width: 100%"
-                    max-height="400"
-                    border
-                    stripe>
-                    <el-table-column
-                        v-for="column in importSettings.previewData.columns"
-                        :key="column"
-                        :prop="column"
-                        :label="column"
-                        :min-width="120"
-                        show-overflow-tooltip>
-                    </el-table-column>
-                </el-table>
             </el-card>
         </div>
     </div>
@@ -249,8 +214,7 @@
         <el-button @click="cancelImport">取消</el-button>
         <el-button
             type="primary"
-            @click="confirmImport"
-            :disabled="!importSettings.previewData">
+            @click="confirmImport">
             确认导入
         </el-button>
     </div>

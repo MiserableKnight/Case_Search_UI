@@ -92,15 +92,7 @@ new Vue({
             }
         },
         // 处理文件上传成功
-        handleUploadSuccess(response, file) {
-            if (response.status === 'success') {
-                this.$message.success('文件上传成功，请确认预览信息');
-                this.importSettings.previewData = response.preview;
-                this.importSettings.tempId = response.temp_id;
-            } else {
-                this.$message.error(response.message || '上传失败');
-            }
-        },
+        // 注释掉重复实现，使用import.js中的handleUploadSuccess方法
 
         // 处理手动导入数据
         async handleManualImport(data) {
@@ -113,7 +105,7 @@ new Vue({
                 if (response.data.status === 'success') {
                     this.$message.success('数据处理成功，请确认预览信息');
                     this.importSettings.previewData = response.data.data;
-                    this.importSettings.tempId = response.data.temp_id;
+                    this.importSettings.previewData.temp_id = response.data.temp_id;
                     this.importDialogVisible = true;
                 } else {
                     this.$message.error(response.data.message || '处理失败');

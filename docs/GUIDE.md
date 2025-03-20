@@ -23,7 +23,7 @@
 
    # 激活环境
    conda activate search
-   
+
    # 安装依赖
    pip install -r requirements.txt
    ```
@@ -132,4 +132,3 @@
 2. 注意数据安全，勿将敏感信息外传
 3. 遇到问题及时反馈给管理员
 4. 定期备份重要数据
-

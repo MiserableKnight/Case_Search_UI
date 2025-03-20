@@ -59,6 +59,7 @@ class RAndIRecordProcessor(DataImportProcessor):
 
     @property
     def data_source_key(self):
+        # 虽然数据类型是"部件拆换记录"，但实际存储在faults.parquet中
         return "faults"
 
     @property
@@ -85,10 +86,9 @@ class RAndIRecordProcessor(DataImportProcessor):
         # 清洗运营人数据
         cleaned_df = self.clean_operator_names(cleaned_df)
 
-        # 处理数据类型字段
-        if "数据类型" not in cleaned_df.columns:
-            logger.warning("导入数据中缺少'数据类型'列，将保留为空")
-            cleaned_df["数据类型"] = ""  # 不再硬编码为"部件拆换记录"
+        # 设置数据类型为"部件拆换记录"
+        cleaned_df["数据类型"] = "部件拆换记录"
+        logger.info("设置数据类型为: 部件拆换记录")
 
         # 只保留需要的列
         final_df = cleaned_df[self.FINAL_COLUMNS]

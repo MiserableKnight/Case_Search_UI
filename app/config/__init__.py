@@ -9,7 +9,7 @@ from app.config.production import ProductionConfig
 
 # 配置映射
 config_by_name = {
-    'default': DefaultConfig,
-    'development': DevelopmentConfig,
-    'production': ProductionConfig
-} 
+    "default": DefaultConfig,
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+}

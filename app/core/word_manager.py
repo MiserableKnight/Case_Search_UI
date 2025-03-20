@@ -30,20 +30,20 @@ class SensitiveWordManager:
             "other": "其他",
         }
 
+        # 初始化敏感词列表和排序列表
+        self.words: Dict[str, List[Dict[str, str]]] = {
+            "organizations": [],
+            "aircraft": [],
+            "locations": [],
+            "registration_numbers": [],
+            "other": [],
+        }
+        self.sorted_words: List[str] = []
+
         # 修改初始化顺序，确保文件存在后再加载
         if self._ensure_file_exists():
             self.load_words()
             self.sorted_words = self._create_sorted_list()
-        else:
-            # 如果文件创建失败，使用默认空数据
-            self.words: Dict[str, List[Dict[str, str]]] = {
-                "organizations": [],
-                "aircraft": [],
-                "locations": [],
-                "registration_numbers": [],
-                "other": [],
-            }
-            self.sorted_words: List[str] = []
 
     def _ensure_file_exists(self) -> bool:
         """确保敏感词文件存在，如果不存在则创建"""

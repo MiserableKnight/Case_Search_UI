@@ -1,8 +1,11 @@
+"""
+故障报告数据处理器模块，提供故障报告数据的导入和处理功能
+"""
+
 import logging
 import os
 import re
-from datetime import datetime
-from pathlib import Path
+from typing import ClassVar, List, Optional
 
 import pandas as pd
 from flask import current_app
@@ -13,8 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 class FaultReportProcessor(DataImportProcessor):
+    """故障报告数据处理器，处理故障报告的导入和转换"""
+
     # 必需的原始列
-    REQUIRED_COLUMNS = [
+    REQUIRED_COLUMNS: ClassVar[List[str]] = [
         "运营人",
         "机型",
         "系列",
@@ -39,7 +44,7 @@ class FaultReportProcessor(DataImportProcessor):
     ]
 
     # 最终需要保留的列
-    FINAL_COLUMNS = [
+    FINAL_COLUMNS: ClassVar[List[str]] = [
         "日期",
         "维修ATA",
         "问题描述",
@@ -56,19 +61,44 @@ class FaultReportProcessor(DataImportProcessor):
     ]
 
     @property
-    def processor_name(self):
+    def processor_name(self) -> str:
+        """获取处理器名称。
+
+        Returns:
+            处理器名称
+        """
         return "故障报告处理器"
 
     @property
-    def data_source_key(self):
+    def data_source_key(self) -> str:
+        """获取数据源键名。
+
+        Returns:
+            数据源键名
+        """
         return "faults"
 
     @property
-    def date_column(self):
+    def date_column(self) -> str:
+        """获取日期列名。
+
+        Returns:
+            日期列名
+        """
         return "日期"
 
-    def clean_data(self, df):
-        """清洗数据"""
+    def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """清洗故障报告数据。
+
+        Args:
+            df: 原始数据框
+
+        Returns:
+            清洗后的数据框
+
+        Raises:
+            ValueError: 当缺少必需的列时
+        """
         # 复制数据框以避免修改原始数据
         cleaned_df = df.copy()
 
@@ -78,10 +108,9 @@ class FaultReportProcessor(DataImportProcessor):
         # 删除空列
         cleaned_df = cleaned_df.dropna(axis=1, how="all")
 
-        # 处理数据类型字段
-        if "数据类型" not in cleaned_df.columns:
-            logger.warning("导入数据中缺少'数据类型'列，将保留为空")
-            cleaned_df["数据类型"] = ""  # 不再硬编码为"故障报告"
+        # 设置数据类型为"故障报告"
+        cleaned_df["数据类型"] = "故障报告"
+        logger.info("设置数据类型为: 故障报告")
 
         # 清洗日期数据
         if "日期" in cleaned_df.columns:
@@ -118,15 +147,25 @@ class FaultReportProcessor(DataImportProcessor):
         # 只保留需要的列
         try:
             final_df = cleaned_df[self.FINAL_COLUMNS]
-        except KeyError as e:
+        except KeyError:
             missing_cols = set(self.FINAL_COLUMNS) - set(cleaned_df.columns)
             logger.error(f"缺少必需的列: {missing_cols}")
             raise ValueError(f"缺少必需的列: {missing_cols}")
 
         return final_df
 
-    def validate_file_name(self, file_path):
-        """验证文件名是否符合要求"""
+    def validate_file_name(self, file_path: Optional[str]) -> bool:
+        """验证文件名是否符合要求。
+
+        Args:
+            file_path: 文件路径
+
+        Returns:
+            验证结果
+
+        Raises:
+            ValueError: 当文件名格式不正确时
+        """
         if file_path is None:
             return False
 
@@ -152,14 +191,19 @@ class FaultReportProcessor(DataImportProcessor):
                     return True
 
             raise ValueError(
-                f"文件名格式不正确，应为'故障报告_YYYYMMDD.xlsx'，其中YYYYMMDD为日期格式（如20250312），但得到的是'{filename}'"
+                "文件名格式不正确，应为'故障报告_YYYYMMDD.xlsx'，"
+                f"其中YYYYMMDD为日期格式（如20250312），但得到的是'{filename}'"
             )
 
         return True
 
 
-def load_fault_report_data():
-    """加载故障报告数据，用于应用初始化时"""
+def load_fault_report_data() -> bool:
+    """加载故障报告数据，用于应用初始化时。
+
+    Returns:
+        加载成功返回True，否则返回False
+    """
     try:
         # 此函数只作为占位符，实际操作由服务类完成
         return True
