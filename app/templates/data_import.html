@@ -16,6 +16,7 @@
             <el-card class="import-card">
                 <div slot="header" class="import-header">
                     <h2>数据导入</h2>
+                    <el-link icon="el-icon-back" href="{{ url_for('main.index') }}">返回主页</el-link>
                 </div>
                 <div class="import-content">
                     <!-- 数据源选择 -->
@@ -42,11 +43,10 @@
                             <!-- 表格头部 -->
                             <div class="table-header">
                                 <el-row :gutter="10">
-                                    <el-col :span="24 / columnHeaders.length" v-for="(col, index) in columnHeaders" :key="index">
+                                    <el-col v-for="(col, index) in columnHeaders"
+                                           :key="index"
+                                           :style="{ width: getColumnMinWidth(col) + 'px' }">
                                         <div class="header-cell">[[ col ]]</div>
-                                    </el-col>
-                                    <el-col :span="1">
-                                        <div class="header-cell">操作</div>
                                     </el-col>
                                 </el-row>
                             </div>
@@ -54,23 +54,16 @@
                             <!-- 表格内容 -->
                             <div class="table-body">
                                 <el-row :gutter="10" v-for="(row, rowIndex) in importData.rows" :key="rowIndex" class="data-row">
-                                    <el-col :span="24 / columnHeaders.length" v-for="(col, colIndex) in columnHeaders" :key="`${rowIndex}-${colIndex}`">
+                                    <el-col v-for="(col, colIndex) in columnHeaders"
+                                           :key="`${rowIndex}-${colIndex}`"
+                                           :style="{ width: getColumnMinWidth(col) + 'px' }">
                                         <el-input
                                             v-model="row[col]"
                                             :placeholder="`请输入${col}`"
-                                            size="medium"
                                             :type="getInputType(col)"
-                                            :rows="getInputRows(col)">
+                                            :rows="getInputRows(col)"
+                                            size="medium">
                                         </el-input>
-                                    </el-col>
-                                    <el-col :span="1">
-                                        <el-button
-                                            type="danger"
-                                            icon="el-icon-delete"
-                                            circle
-                                            size="small"
-                                            @click="removeRow(rowIndex)">
-                                        </el-button>
                                     </el-col>
                                 </el-row>
 
@@ -86,13 +79,14 @@
                     <div class="section action-section">
                         <el-button type="primary" @click="previewImport" :disabled="!canImport">导入预览</el-button>
                         <el-button type="success" @click="confirmImport" :disabled="!importPreview">确认导入</el-button>
+                        <el-button type="info" @click="cancelImport" :disabled="!importPreview">取消</el-button>
                     </div>
 
                     <!-- 预览结果区域 -->
                     <div class="section preview-section" v-if="importPreview">
                         <h3>导入预览</h3>
                         <!-- 数据统计信息 -->
-                        <el-card class="preview-info" style="margin-bottom: 20px;">
+                        <el-card class="preview-info">
                             <div class="preview-stats">
                                 <div class="stat-item">
                                     <div class="stat-label">原有数据：</div>
@@ -132,12 +126,12 @@
                                 border
                                 stripe>
                                 <el-table-column
-                                    v-for="column in importPreview.columns"
+                                    v-for="column in columnHeaders"
                                     :key="column"
                                     :prop="column"
                                     :label="column"
-                                    :min-width="120"
-                                    show-overflow-tooltip>
+                                    :min-width="getColumnMinWidth(column)"
+                                    :show-overflow-tooltip="false">
                                 </el-table-column>
                             </el-table>
                         </el-card>

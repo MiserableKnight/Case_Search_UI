@@ -10,15 +10,13 @@ new Vue({
     data: {
         // 数据源选项
         dataSourceOptions: {
-            case: '服务请求',
-            faults: '故障报告',
             engineering: '工程文件',
-            manual: '手册答复',
-            r_and_i_record: '部件拆换'
+            manual: '手册',
+
         },
         // 导入设置
         importSettings: {
-            dataSource: 'case' // 默认选择服务请求
+            dataSource: 'engineering' // 默认选择工程文件
         },
         // 列标题
         columnHeaders: [],
@@ -40,11 +38,47 @@ new Vue({
                    this.hasValidData();
         }
     },
-    created() {
-        // 页面创建时加载数据源列
-        this.loadColumns();
-    },
     methods: {
+        // 获取列最小宽度
+        getColumnMinWidth(column) {
+            // 根据列名设置不同的宽度
+            const widthMap = {
+                '序号': '40',
+                '日期': '100',
+                '申请时间': '100',
+                '问题描述': '300',
+                '排故措施': '300',
+                '答复详情': '300',
+                '标题': '200',
+                '版本号': '100',
+                '客户期望': '200',
+                'ATA': '80',
+                '机号/MSN': '120',
+                '运营人': '120',
+                '服务请求单编号': '150',
+                '机型': '100',
+                '数据类型': '100',
+                '原因和说明': '300',
+                '文件名称': '120',
+                '分类': '80',
+                'MSN有效性': '130',
+                '原文文本': '300',
+                '飞机序列号/注册号':'100',
+                '运营人': '100'
+            };
+            return widthMap[column] || '150';
+        },
+
+        // 获取输入类型
+        getInputType(column) {
+            return 'text';
+        },
+
+        // 获取输入行数
+        getInputRows(column) {
+            return 1;
+        },
+
         // 加载数据源列
         loadColumns() {
             this.loading = true;
@@ -135,25 +169,6 @@ new Vue({
             });
         },
 
-        // 获取输入类型
-        getInputType(column) {
-            // 针对大文本字段使用textarea
-            if (column.includes('描述') || column.includes('详情') || column.includes('措施') ||
-                column.includes('结果') || column.includes('原因') || column.includes('现象') ||
-                column.includes('原文文本')) {
-                return 'textarea';
-            }
-            return 'text';
-        },
-
-        // 获取输入行数
-        getInputRows(column) {
-            if (this.getInputType(column) === 'textarea') {
-                return 3;
-            }
-            return 1;
-        },
-
         // 导入预览
         previewImport() {
             if (!this.canImport) {
@@ -181,6 +196,7 @@ new Vue({
                 if (response.data.status === 'success') {
                     // 更新预览数据，包括统计信息和数据内容
                     this.importPreview = {
+                        temp_id: response.data.temp_id,  // 确保保存临时文件ID
                         ...response.data.preview,
                         preview_rows: validRows,  // 直接使用过滤后的有效行作为预览数据
                         columns: this.columnHeaders  // 使用当前的列头作为预览列
@@ -229,7 +245,19 @@ new Vue({
             .finally(() => {
                 this.loading = false;
             });
+        },
+
+        cancelImport() {
+            this.importPreview = null;
+            this.$message({
+                message: '已取消导入预览',
+                type: 'info'
+            });
         }
+    },
+    created() {
+        // 页面创建时加载数据源列
+        this.loadColumns();
     },
     watch: {
         // 监听数据源变化

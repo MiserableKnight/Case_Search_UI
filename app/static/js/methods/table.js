@@ -25,7 +25,7 @@ const tableMethods = {
             }
             return '120';
         }
-        
+
         if (this.defaultSearch.dataSource === 'engineering') {
             if (column === '原因和说明' || column === '原文文本') {
                 return '400';
@@ -42,10 +42,10 @@ const tableMethods = {
                 return '400';
             } else if (column === '相似度') {
                 return '80';
-            } 
+            }
             return '100';
         }
-        
+
         if (column === '相似度') {
             return '80';
         } else if (column === '问题描述' || column === '答复详情') {
@@ -69,20 +69,20 @@ const tableMethods = {
         if (column.type === 'selection') {
             return;
         }
-        
+
         // 获取表格引用
         const table = this.$refs.dataTable;
-        
+
         // 如果按住Shift键
         if (event.shiftKey && this.lastClickedRow) {
             // 找到当前行和上次点击行的索引
             const currentIndex = this.searchResults.indexOf(row);
             const lastIndex = this.searchResults.indexOf(this.lastClickedRow);
-            
+
             // 确定范围的起始和结束索引
             const startIndex = Math.min(currentIndex, lastIndex);
             const endIndex = Math.max(currentIndex, lastIndex);
-            
+
             // 选择范围内的所有行
             for (let i = startIndex; i <= endIndex; i++) {
                 table.toggleRowSelection(this.searchResults[i], true);
@@ -91,7 +91,7 @@ const tableMethods = {
             // 普通点击，切换当前行的选择状态
             table.toggleRowSelection(row);
         }
-        
+
         // 记录最后点击的行，用于Shift+点击功能
         this.lastClickedRow = row;
     },
@@ -117,17 +117,17 @@ const tableMethods = {
             columns: this.visibleColumns,
             dataSource: this.defaultSearch.dataSource
         };
-        
+
         try {
             console.log('准备传递的数据:', analysisData);
             console.log('数据大小:', JSON.stringify(analysisData).length, 'bytes');
-            
+
             // 存储数据到localStorage和sessionStorage
             localStorage.setItem('analysisData', JSON.stringify(analysisData));
             sessionStorage.setItem('analysisData', JSON.stringify(analysisData));
-            
+
             console.log('数据已成功存储到localStorage和sessionStorage');
-            
+
             // 打开分析页面
             window.open('/analysis', '_blank');
         } catch (error) {
@@ -142,7 +142,7 @@ const tableMethods = {
                 this.$message.warning('没有可脱敏的搜索结果');
                 return;
             }
-            
+
             // 根据数据源确定需要脱敏的字段
             let fieldsToAnonymize;
             if (this.defaultSearch.dataSource === 'engineering') {
@@ -152,7 +152,7 @@ const tableMethods = {
             } else {
                 fieldsToAnonymize = ['标题', '问题描述', '答复详情', '客户期望', '机号/MSN', '运营人'];
             }
-            
+
             fetch('/api/anonymize', {
                 method: 'POST',
                 headers: {
@@ -186,14 +186,14 @@ const tableMethods = {
             this.$message.warning('请先选择要导出的数据');
             return;
         }
-        
+
         const visibleCols = this.visibleColumns;
-        
+
         let csvContent = '\uFEFF';  // 添加BOM标记以支持中文
-        
+
         // 添加表头
         csvContent += visibleCols.join(',') + '\n';
-        
+
         // 只导出选中的行
         this.selectedRows.forEach(row => {
             const rowData = visibleCols.map(col => {
@@ -207,30 +207,30 @@ const tableMethods = {
             });
             csvContent += rowData.join(',') + '\n';
         });
-        
+
         // 创建并下载文件
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = `搜索结果_${new Date().toLocaleString()}.csv`;
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         this.$message.success(`成功导出 ${this.selectedRows.length} 条记录`);
     },
-    
+
     // 检查选中的行数据
     checkSelectedRows() {
         if (!this.selectedRows.length) {
             this.$message.warning('没有选中的行');
             return;
         }
-        
+
         console.log('选中的行数量:', this.selectedRows.length);
         console.log('选中的行数据:', this.selectedRows);
-        
+
         // 测试localStorage存储
         try {
             const testData = {
@@ -238,21 +238,21 @@ const tableMethods = {
                 columns: this.visibleColumns,
                 dataSource: this.defaultSearch.dataSource
             };
-            
+
             const jsonString = JSON.stringify(testData);
             console.log('JSON字符串长度:', jsonString.length);
-            
+
             // 尝试存储到localStorage
             localStorage.setItem('testData', jsonString);
             console.log('测试数据已存储到localStorage');
-            
+
             // 读取并验证
             const storedData = JSON.parse(localStorage.getItem('testData'));
             console.log('从localStorage读取的测试数据:', storedData);
-            
+
             // 清理测试数据
             localStorage.removeItem('testData');
-            
+
             this.$message.success(`已选中 ${this.selectedRows.length} 行数据，详情请查看控制台`);
         } catch (error) {
             console.error('测试localStorage存储时出错:', error);
@@ -263,12 +263,12 @@ const tableMethods = {
     initTableHeaders() {
         // 修复这里的问题：确保不会错误地添加"相似度"列到普通搜索结果中
         let headers = [];
-        
+
         // 根据当前数据源设置表头
         if (this.defaultSearch.dataSource) {
             try {
                 headers = this.getHeadersForDataSource(this.defaultSearch.dataSource);
-                
+
                 // 只有在相似度搜索模式下才添加相似度列
                 if (this.searchMode === 'similarity' && !headers.includes('相似度')) {
                     headers.push('相似度');
@@ -279,10 +279,10 @@ const tableMethods = {
                 headers = this.getDefaultHeaders(this.defaultSearch.dataSource);
             }
         }
-        
+
         // 更新表头
         this.tableHeaders = headers;
-        
+
         // 确保列显示控制内容不会被错误修改
         this.updateColumnDisplayControls();
     },
@@ -308,16 +308,16 @@ const tableMethods = {
     getDefaultHeaders(dataSource) {
         // 根据数据源返回默认表头
         const defaultHeaders = {
-            'case': ['序号', '故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情', 
+            'case': ['序号', '故障发生日期', '申请时间', '标题', '版本号', '问题描述', '答复详情',
                     '客户期望', 'ATA', '机号/MSN', '运营人', '服务请求单编号', '机型', '数据类型'],
-            'engineering': ['序号', '发布时间', '文件名称', '原因和说明', '文件类型', 'MSN有效性', 
+            'engineering': ['序号', '发布时间', '文件名称', '原因和说明', '数据类型', 'MSN有效性',
                            '原文文本', '机型', '数据类型'],
             'manual': ['序号', '申请时间', '问题描述', '答复详情', '飞机序列号/注册号/运营人',
                       '机型', '数据类型'],
             'faults': ['序号', '日期', '问题描述', '排故措施', '运营人', '飞机序列号', '机号',
                       '机型', '数据类型']
         };
-        
+
         return defaultHeaders[dataSource] || [];
     },
 
@@ -330,7 +330,7 @@ const tableMethods = {
             }
             return [...this.dataSourceColumns[dataSource]];
         }
-        
+
         // 如果无法获取，则返回默认表头
         return this.getDefaultHeaders(dataSource);
     },
@@ -341,4 +341,4 @@ const tableMethods = {
         this.searchMessage = '';
         this.initTableHeaders(); // 重新初始化表头
     }
-}; 
+};
