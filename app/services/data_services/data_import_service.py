@@ -3,6 +3,7 @@
 """
 
 import os
+import re
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 import pandas as pd
@@ -110,8 +111,12 @@ class DataImportService:
             if not success or combined_data is None:
                 return False, message
 
+            # 从预览消息中提取新增数量
+            new_count_match = re.search(r"实际新增：(\d+)\s*条", message)
+            new_count = int(new_count_match.group(1)) if new_count_match else 0
+
             # 保存变化
-            return self.save_changes(combined_data)
+            return self.processor.save_changes(combined_data, new_count)
 
         except Exception as e:
             return False, f"导入失败: {str(e)}"

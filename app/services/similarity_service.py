@@ -75,10 +75,10 @@ class SimilarityService:
             raise ValidationError("必须指定至少一个比较列")
 
         try:
-            # 直接使用 TextSimilarityCalculator 实例方法
-            calculator = TextSimilarityCalculator()
-            # 确保方法接收正确的参数类型
-            return calculator.calculate_batch_similarity(query_text, text_list, columns)
+            # 直接使用 TextSimilarityCalculator 类方法
+            return TextSimilarityCalculator.calculate_similarity(
+                query_text, text_list, columns
+            )
         except Exception as e:
             logger.error(f"批量计算相似度时出错: {str(e)}")
             raise ServiceError(f"批量计算相似度失败: {str(e)}")

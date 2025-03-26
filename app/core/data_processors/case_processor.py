@@ -120,8 +120,10 @@ class CaseProcessor(DataImportProcessor):
 
         # 处理数据类型字段
         if "数据类型" not in cleaned_df.columns:
-            logger.warning("导入数据中缺少'数据类型'列，将保留为空")
-            cleaned_df["数据类型"] = ""  # 不再硬编码为"服务请求"
+            logger.info("导入数据中缺少'数据类型'列，将设置为默认值'服务请求'")
+            cleaned_df["数据类型"] = self.DATA_SOURCE_TYPE_MAP.get(
+                self.data_source_key, "服务请求"
+            )
 
         # 删除答复详情为"无"的记录
         cleaned_df = cleaned_df[cleaned_df["答复详情"] != "无"]

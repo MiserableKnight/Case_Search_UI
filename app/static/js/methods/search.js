@@ -193,21 +193,32 @@ const searchMethods = {
             console.log('开始相似度搜索，搜索文本:', this.contentSearch.text);
             console.log('搜索列:', this.contentSearch.selectedColumns);
 
+            // 如果没有搜索结果，使用空数组而不是null
+            const requestData = {
+                text: this.contentSearch.text,
+                columns: this.contentSearch.selectedColumns,
+                results: this.searchResults && this.searchResults.length > 0 ? this.searchResults : []
+            };
+
+            console.log('发送相似度搜索请求:', requestData);
+
             const response = await fetch('/api/similarity', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    text: this.contentSearch.text,
-                    columns: this.contentSearch.selectedColumns,
-                    results: this.searchResults.length > 0 ? this.searchResults : null
-                })
+                body: JSON.stringify(requestData)
             });
 
             console.log('相似度搜索响应状态:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`服务器错误 (${response.status}): ${errorText}`);
+            }
+
             const result = await response.json();
-            console.log('相似度搜索响应结果:', result.status);
+            console.log('相似度搜索响应结果:', result);
 
             if (result.status === 'success') {
                 // 更新搜索结果

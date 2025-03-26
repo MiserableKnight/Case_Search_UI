@@ -316,11 +316,14 @@ class DataImportProcessor:
             logger.error(f"分析数据变化时出错: {str(e)}")
             return False, f"分析数据失败: {str(e)}"
 
-    def save_changes(self, combined_data: pd.DataFrame) -> Tuple[bool, str]:
+    def save_changes(
+        self, combined_data: pd.DataFrame, new_count: int
+    ) -> Tuple[bool, str]:
         """保存数据变更的通用方法。
 
         Args:
             combined_data: 合并后的数据框
+            new_count: 新增的数据条数
 
         Returns:
             (成功标志, 消息)
@@ -331,9 +334,11 @@ class DataImportProcessor:
 
             # 保存数据
             combined_data.to_parquet(self.data_path, index=False)
-            logger.info(f"已保存 {len(combined_data)} 条数据到 {self.data_path}")
+            logger.info(
+                f"已保存 {len(combined_data)} 条数据到 {self.data_path}，其中新增 {new_count} 条"
+            )
 
-            return True, f"成功保存了 {len(combined_data)} 条数据"
+            return True, f"成功导入 {new_count} 条数据"
         except Exception as e:
             logger.error(f"保存数据时出错: {str(e)}")
             return False, f"保存数据失败: {str(e)}"
