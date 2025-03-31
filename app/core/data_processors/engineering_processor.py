@@ -57,6 +57,10 @@ class EngineeringProcessor(DataImportProcessor):
         cleaned_df["发布时间"] = cleaned_df["发布时间"].apply(self.convert_date)
         cleaned_df["发布时间"] = cleaned_df["发布时间"].dt.strftime("%Y-%m-%d")
 
+        # 确保MSN有效性列为字符串类型
+        if "MSN有效性" in cleaned_df.columns:
+            cleaned_df["MSN有效性"] = cleaned_df["MSN有效性"].astype(str)
+
         # 清洗机型数据
         if "机型" not in cleaned_df.columns:
             logger.warning("导入数据中缺少'机型'列，将保留为空")

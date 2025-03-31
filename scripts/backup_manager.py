@@ -44,11 +44,13 @@ setup_console()
 class BackupManager:
     """备份管理器类，负责数据的备份、清理和记录管理。"""
 
-    def __init__(self, source_dir: str = "data", backup_root: str = "data/backup_data"):
+    def __init__(
+        self, source_dir: str = "data/raw", backup_root: str = "data/backup_data"
+    ):
         """初始化备份管理器。
 
         Args:
-            source_dir: 需要备份的源目录路径
+            source_dir: 需要备份的源目录路径（默认为data/raw目录）
             backup_root: 备份文件存储的根目录路径
         """
         self.source_dir = Path(source_dir)
@@ -118,35 +120,14 @@ class BackupManager:
         Returns:
             int: 备份的文件/目录数量
         """
-
-        def ignore_backup_dir(src: str, names: List[str]) -> Set[str]:
-            """定义要忽略的文件和目录。
-
-            Args:
-                src: 源路径
-                names: 文件和目录名列表
-
-            Returns:
-                Set[str]: 要忽略的文件和目录名集合
-            """
-            paths_to_ignore = []
-            for name in names:
-                path = os.path.join(src, name)
-                if "backup_data" in path:
-                    paths_to_ignore.append(name)
-            return set(paths_to_ignore)
-
         backup_count = 0
         for item in self.source_dir.iterdir():
-            if item.name != "backup_data":
-                if item.is_dir():
-                    shutil.copytree(
-                        item, backup_dir / item.name, ignore=ignore_backup_dir
-                    )
-                    backup_count += 1
-                else:
-                    shutil.copy2(item, backup_dir / item.name)
-                    backup_count += 1
+            if item.is_dir():
+                shutil.copytree(item, backup_dir / item.name)
+                backup_count += 1
+            else:
+                shutil.copy2(item, backup_dir / item.name)
+                backup_count += 1
 
         return backup_count
 
