@@ -71,6 +71,8 @@ const initialState = {
     selectedType: null,
     lastClickedRow: null,
     importDialogVisible: false,
+    showResultConfirmDialog: false,
+    resultConfirmed: false,
     importSettings: {
         dataSource: 'case',
         previewData: null,

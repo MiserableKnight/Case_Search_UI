@@ -140,10 +140,17 @@ const searchMethods = {
                 this.searchResults = result.data || [];
                 this.total = result.total || 0;
 
+                // 如果结果数量超过500，显示确认对话框
+                if (this.total > 500) {
+                    this.showResultConfirmDialog = true;
+                    this.resultConfirmed = false;
+                } else {
+                    this.showResultConfirmDialog = false;
+                    this.resultConfirmed = true;
+                }
+
                 // 计算数据类型统计
                 this.calculateTypeStatistics();
-
-                // 如果结果为空，不再显示弹窗提示，只依靠页面上的无数据提示区域
             } else {
                 // 处理错误
                 this.$message.error(result.message || '搜索失败');
@@ -453,5 +460,18 @@ const searchMethods = {
     async refreshData() {
         // 直接调用resetForm方法来刷新数据
         await this.resetForm();
+    },
+
+    // 添加处理结果确认的方法
+    handleResultConfirm() {
+        this.resultConfirmed = true;
+        this.showResultConfirmDialog = false;
+    },
+
+    handleResultCancel() {
+        this.searchResults = [];
+        this.total = 0;
+        this.showResultConfirmDialog = false;
+        this.resultConfirmed = false;
     }
 };
