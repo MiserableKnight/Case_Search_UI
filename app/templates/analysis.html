@@ -25,7 +25,8 @@
                             v-for="col in columns"
                             :key="col"
                             :prop="col"
-                            :label="col">
+                            :label="col"
+                            :min-width="getColumnMinWidth(col)">
                         </el-table-column>
                     </el-table>
                 </el-card>
