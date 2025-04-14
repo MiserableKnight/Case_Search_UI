@@ -47,7 +47,8 @@
         stripe
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
-        :row-class-name="getRowClass">
+        :row-class-name="getRowClass"
+        @sort-change="handleSortChange">
         <el-table-column
             type="selection"
             width="55">
@@ -62,7 +63,8 @@
             :key="col"
             :prop="col"
             :label="col"
-            :min-width="getColumnMinWidth(col)">
+            :min-width="getColumnMinWidth(col)"
+            :sortable="defaultSearch.dataSource === 'faults' && col === '日期' ? 'custom' : false">
         </el-table-column>
     </el-table>
 

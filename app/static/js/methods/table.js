@@ -340,5 +340,28 @@ const tableMethods = {
         this.searchResults = [];
         this.searchMessage = '';
         this.initTableHeaders(); // 重新初始化表头
+    },
+
+    handleSortChange({ column, prop, order }) {
+        if (this.defaultSearch.dataSource === 'faults' && prop === '日期') {
+            // 创建一个新的数组以避免直接修改原数组
+            const sortedResults = [...this.searchResults];
+
+            // 根据排序方向对结果进行排序
+            sortedResults.sort((a, b) => {
+                const timeA = new Date(a['日期']);
+                const timeB = new Date(b['日期']);
+
+                if (order === 'ascending') {
+                    return timeA - timeB;
+                } else if (order === 'descending') {
+                    return timeB - timeA;
+                }
+                return 0;
+            });
+
+            // 更新搜索结果
+            this.searchResults = sortedResults;
+        }
     }
 };
