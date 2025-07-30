@@ -1,0 +1,82 @@
+<!-- 结果区域 -->
+<div class="result-section">
+    <!-- 结果统计信息 -->
+    <div class="result-count-container" v-if="searchResults.length">
+        <div class="total-count">
+            共找到 [[ total ]] 条结果
+        </div>
+        <div class="type-statistics">
+            <span
+                v-for="(count, type) in typeStatistics"
+                :key="type"
+                class="type-stat"
+                :class="{ 'active': selectedType === type }"
+                @click="filterByType(type)">
+                [[ type ]]: [[ count ]]
+            </span>
+        </div>
+    </div>
+
+    <!-- 表格控制区 -->
+    <div class="column-control">
+        <el-button size="small" @click="showColumnDialog">
+            列显示控制<i class="el-icon-setting el-icon--right"></i>
+        </el-button>
+        <el-button type="warning" size="small" @click="anonymizeResults">
+            脱敏显示
+        </el-button>
+        <el-button type="primary" size="small" @click="exportToCsv" :disabled="!selectedRows.length">
+            导出CSV
+        </el-button>
+        <el-button
+            size="small"
+            type="primary"
+            @click="analyzeSelectedData"
+            :disabled="!selectedRows.length">
+            数据分析
+        </el-button>
+    </div>
+
+    <!-- 结果表格 -->
+    <el-table
+        v-if="!showResultConfirmDialog || resultConfirmed"
+        ref="dataTable"
+        :data="filteredSearchResults"
+        style="width: 100%"
+        border
+        stripe
+        @selection-change="handleSelectionChange"
+        @row-click="handleRowClick"
+        :row-class-name="getRowClass"
+        @sort-change="handleSortChange">
+        <el-table-column
+            type="selection"
+            width="55">
+        </el-table-column>
+        <el-table-column
+            prop="序号"
+            label="序号"
+            width="60">
+        </el-table-column>
+        <el-table-column
+            v-for="col in visibleColumns"
+            :key="col"
+            :prop="col"
+            :label="col"
+            :min-width="getColumnMinWidth(col)"
+            :sortable="defaultSearch.dataSource === 'faults' && col === '日期' ? 'custom' : false">
+        </el-table-column>
+    </el-table>
+
+    <!-- 结果确认对话框 -->
+    <el-dialog
+        title="搜索结果提醒"
+        :visible.sync="showResultConfirmDialog"
+        width="30%">
+        <span>当前搜索结果共有 [[ total ]] 条记录，数据量较大可能会影响浏览器性能，是否继续显示？</span>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="handleResultCancel">取 消</el-button>
+            <el-button type="primary" @click="handleResultConfirm">确 定</el-button>
+        </span>
+    </el-dialog>
+</div>

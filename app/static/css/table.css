@@ -1,0 +1,122 @@
+/* 表格相关样式 */
+.el-table {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.el-table__body tr:hover > td {
+    background-color: #e6f1fc !important;
+}
+
+.el-table__body tr.selected-row td {
+    background-color: #e6f1fc !important;
+}
+
+.el-table th {
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.el-table td {
+    padding: 2px 4px;
+    font-size: 12px;
+    vertical-align: top !important;
+}
+
+.el-table .cell {
+    line-height: 18px;
+    white-space: pre-wrap !important;
+    height: auto !important;
+    word-break: break-all;
+    padding-top: 4px !important;
+}
+
+.narrow-column {
+    width: auto !important;
+    min-width: 50px !important;
+}
+
+/* 表格容器 */
+.el-table__body-wrapper {
+    overflow-y: auto;
+}
+
+/* 结果区域样式 */
+.result-section {
+    flex: 1;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+/* 结果信息样式 */
+.result-info {
+    margin: 10px 0;
+    color: #606266;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* 列控制区域 */
+.column-control {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.column-control .el-dropdown {
+    margin-right: 10px;
+}
+
+/* 列下拉项样式 */
+.column-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+}
+
+.column-dropdown-item .el-checkbox {
+    margin-right: 0;
+}
+
+/* 结果计数容器 */
+.result-count-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.total-count {
+    margin-right: 15px;
+}
+
+/* 类型统计样式 */
+.type-statistics {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: #666;
+}
+
+.type-stat {
+    margin-right: 15px;
+    padding: 2px 8px;
+    background-color: #f0f0f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.type-stat:hover {
+    background-color: #e0e0e0;
+}
+
+.type-stat.active {
+    background-color: #409EFF;
+    color: white;
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面</title>
+    <!-- 使用国内CDN -->
+    <link rel="stylesheet" href="https://lib.baomitu.com/element-ui/2.15.13/theme-chalk/index.css">
+</head>
+<body>
+    <div id="app">
+        <h1>测试页面</h1>
+        <p>当前数据源: [[ dataSource ]]</p>
+        <button @click="testClick">测试按钮</button>
+    </div>
+
+    <!-- 使用国内CDN -->
+    <script src="https://lib.baomitu.com/vue/2.6.14/vue.js"></script>
+    <script src="https://lib.baomitu.com/element-ui/2.15.13/index.js"></script>
+    <script src="https://lib.baomitu.com/element-ui/2.15.13/locale/zh-CN.js"></script>
+
+    <script>
+        // 设置Element UI语言
+        ELEMENT.locale(ELEMENT.lang.zhCN)
+
+        // 创建Vue实例
+        new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data() {
+                return {
+                    dataSource: 'test'
+                }
+            },
+            methods: {
+                testClick() {
+                    console.log('按钮被点击');
+                    alert('测试成功！');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

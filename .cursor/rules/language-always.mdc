@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 强制使用中文回复
+globs:
+alwaysApply: true
+---
+
+Always respond in 中文
+

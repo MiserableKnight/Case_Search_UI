@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据导入</title>
+    <!-- 使用国内CDN -->
+    <link rel="stylesheet" href="https://lib.baomitu.com/element-ui/2.15.13/theme-chalk/index.css">
+    <!-- 引入拆分的CSS文件 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/data_import.css') }}">
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <el-card class="import-card">
+                <div slot="header" class="import-header">
+                    <h2>数据导入</h2>
+                    <el-link icon="el-icon-back" href="{{ url_for('main.index') }}">返回主页</el-link>
+                </div>
+                <div class="import-content">
+                    <!-- 数据源选择 -->
+                    <div class="section data-source-section">
+                        <h3>选择数据源</h3>
+                        <el-radio-group v-model="importSettings.dataSource">
+                            <div class="radio-options">
+                                <el-radio v-for="(label, value) in dataSourceOptions"
+                                        :key="value"
+                                        :label="value">
+                                    [[ label ]]
+                                </el-radio>
+                            </div>
+                        </el-radio-group>
+                    </div>
+
+                    <!-- 数据输入表单 -->
+                    <div class="section data-input-section">
+                        <h3>数据输入</h3>
+                        <div v-if="columnHeaders.length === 0" class="empty-state">
+                            请先选择数据源
+                        </div>
+                        <div v-else class="data-table">
+                            <!-- 表格头部 -->
+                            <div class="table-header">
+                                <el-row :gutter="10">
+                                    <el-col v-for="(col, index) in columnHeaders"
+                                           :key="index"
+                                           :style="{ width: getColumnMinWidth(col) + 'px' }">
+                                        <div class="header-cell">[[ col ]]</div>
+                                    </el-col>
+                                </el-row>
+                            </div>
+
+                            <!-- 表格内容 -->
+                            <div class="table-body">
+                                <el-row :gutter="10" v-for="(row, rowIndex) in importData.rows" :key="rowIndex" class="data-row">
+                                    <el-col v-for="(col, colIndex) in columnHeaders"
+                                           :key="`${rowIndex}-${colIndex}`"
+                                           :style="{ width: getColumnMinWidth(col) + 'px' }">
+                                        <el-input
+                                            v-model="row[col]"
+                                            :placeholder="`请输入${col}`"
+                                            :type="getInputType(col)"
+                                            :rows="getInputRows(col)"
+                                            size="medium">
+                                        </el-input>
+                                    </el-col>
+                                </el-row>
+
+                                <!-- 添加行按钮 -->
+                                <div class="add-row">
+                                    <el-button type="primary" icon="el-icon-plus" @click="addRow">添加行</el-button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="section action-section">
+                        <el-button type="primary" @click="previewImport" :disabled="!canImport">导入预览</el-button>
+                        <el-button type="success" @click="confirmImport" :disabled="!importPreview">确认导入</el-button>
+                        <el-button type="info" @click="cancelImport" :disabled="!importPreview">取消</el-button>
+                    </div>
+
+                    <!-- 预览结果区域 -->
+                    <div class="section preview-section" v-if="importPreview">
+                        <h3>导入预览</h3>
+                        <!-- 数据统计信息 -->
+                        <el-card class="preview-info">
+                            <div class="preview-stats">
+                                <div class="stat-item">
+                                    <div class="stat-label">原有数据：</div>
+                                    <div class="stat-value">[[ importPreview.original_count ]] 条</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">上传数据：</div>
+                                    <div class="stat-value">[[ importPreview.uploaded_count ]] 条</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">重复数据：</div>
+                                    <div class="stat-value">[[ importPreview.duplicate_count ]] 条</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">实际新增：</div>
+                                    <div class="stat-value">[[ importPreview.new_count ]] 条</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">变更后数据：</div>
+                                    <div class="stat-value">[[ importPreview.final_count ]] 条</div>
+                                </div>
+                            </div>
+                        </el-card>
+
+                        <!-- 数据表格预览 -->
+                        <el-card class="preview-table">
+                            <div slot="header">
+                                <span style="font-weight: bold">数据内容预览</span>
+                                <el-tooltip content="显示导入数据的前10条记录" placement="top">
+                                    <i class="el-icon-info" style="margin-left: 5px;"></i>
+                                </el-tooltip>
+                            </div>
+                            <el-table
+                                :data="importPreview.preview_rows"
+                                style="width: 100%"
+                                max-height="400"
+                                border
+                                stripe>
+                                <el-table-column
+                                    v-for="column in columnHeaders"
+                                    :key="column"
+                                    :prop="column"
+                                    :label="column"
+                                    :min-width="getColumnMinWidth(column)"
+                                    :show-overflow-tooltip="false">
+                                </el-table-column>
+                            </el-table>
+                        </el-card>
+                    </div>
+                </div>
+            </el-card>
+        </div>
+    </div>
+
+    <!-- 使用国内CDN -->
+    <script src="https://lib.baomitu.com/vue/2.6.14/vue.min.js"></script>
+    <script src="https://lib.baomitu.com/element-ui/2.15.13/index.js"></script>
+    <script src="https://lib.baomitu.com/element-ui/2.15.13/locale/zh-CN.js"></script>
+    <script src="https://lib.baomitu.com/axios/1.5.0/axios.min.js"></script>
+
+    <!-- 引入拆分的JS文件 -->
+    <script src="{{ url_for('static', filename='js/data_import.js') }}"></script>
+</body>
+</html>

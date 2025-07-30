@@ -1,0 +1,53 @@
+/* 基础样式 */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f5f7fa;
+}
+.container {
+    max-width: 100%;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #303133;
+}
+
+/* 多选标签的样式 */
+.el-select__tags {
+    max-width: calc(100% - 30px);
+}
+
+.el-select__tags-text {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Element UI 组件通用样式覆盖 */
+.el-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.el-radio {
+    height: 24px;
+    line-height: 24px;
+    margin-right: 0;
+}
+
+.el-select {
+    width: 170px;
+    order: -1;
+}
+
+.el-input {
+    width: 270px;
+}
+/* ... */

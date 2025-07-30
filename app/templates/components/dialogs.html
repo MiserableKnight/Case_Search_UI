@@ -1,0 +1,222 @@
+<!-- 列显示控制对话框 -->
+<el-dialog title="列显示控制" :visible.sync="columnDialogVisible" width="300px">
+    <div style="max-height: 400px; overflow-y: auto;">
+        <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
+            <el-checkbox
+                v-model="selectAll"
+                @change="handleSelectAllChange">
+                全选
+            </el-checkbox>
+        </div>
+        <el-checkbox-group v-model="selectedColumns" @change="handleSelectedChanged">
+            <div v-for="col in columns" :key="col" style="margin-bottom: 10px;">
+                <el-checkbox :label="col">[[ col ]]</el-checkbox>
+            </div>
+        </el-checkbox-group>
+    </div>
+    <span slot="footer" class="dialog-footer">
+        <el-button @click="columnDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="applyColumnSettings">确定</el-button>
+    </span>
+</el-dialog>
+
+<!-- 搜索范围设置对话框 -->
+<el-dialog title="搜索范围设置" :visible.sync="searchColumnsDialogVisible" width="300px">
+    <div style="max-height: 400px; overflow-y: auto;">
+        <el-checkbox-group v-model="contentSearch.selectedColumns">
+            <div v-for="col in searchableColumns[defaultSearch.dataSource]" :key="col" style="margin-bottom: 10px;">
+                <el-checkbox :label="col">[[ col ]]</el-checkbox>
+            </div>
+        </el-checkbox-group>
+    </div>
+    <span slot="footer" class="dialog-footer">
+        <el-button @click="searchColumnsDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="applySearchColumnSettings">确定</el-button>
+    </span>
+</el-dialog>
+
+<!-- 数据源选择对话框 -->
+<el-dialog title="选择数据源" :visible.sync="dataSourceDialogVisible" width="300px">
+    <div style="max-height: 400px; overflow-y: auto;">
+        <el-radio-group v-model="defaultSearch.dataSource">
+            <div v-for="(label, value) in dataSourceOptions" :key="value" style="margin-bottom: 10px;">
+                <el-radio :label="value">
+                    [[ label ]]
+                </el-radio>
+            </div>
+        </el-radio-group>
+    </div>
+    <span slot="footer" class="dialog-footer">
+        <el-button @click="dataSourceDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="applyDataSourceSettings">确定</el-button>
+    </span>
+</el-dialog>
+
+<!-- 机型选择对话框 -->
+<el-dialog title="选择机型" :visible.sync="aircraftTypesDialogVisible" width="300px">
+    <div style="max-height: 400px; overflow-y: auto;">
+        <div style="margin-bottom: 15px; border-bottom: 1px solid #EBEEF5; padding-bottom: 10px;">
+            <el-checkbox
+                v-model="selectAllAircraftTypes"
+                @change="handleSelectAllAircraftTypes">
+                全选
+            </el-checkbox>
+        </div>
+        <el-checkbox-group v-model="defaultSearch.aircraftTypes">
+            <div v-for="type in aircraftTypeOptions" :key="type" style="margin-bottom: 10px;">
+                <el-checkbox :label="type">[[ type ]]</el-checkbox>
+            </div>
+        </el-checkbox-group>
+    </div>
+    <span slot="footer" class="dialog-footer">
+        <el-button @click="aircraftTypesDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="applyAircraftTypesSettings">确定</el-button>
+    </span>
+</el-dialog>
+
+<!-- 敏感词管理对话框 -->
+<el-dialog title="敏感词管理"
+           :visible.sync="sensitiveWordDialogVisible"
+           width="575px"
+           style="margin-top: 2vh">
+    <div class="sensitive-word-manager">
+        <!-- 添加新词区域 -->
+        <div class="add-word-section" style="display: flex; align-items: center; margin-bottom: 10px;">
+            <div style="white-space: nowrap; margin-right: 10px;">新增敏感词</div>
+            <el-input v-model="newWord" placeholder="输入敏感词" style="width: 160px; margin-right: 15px;"></el-input>
+
+            <el-select v-model="selectedCategory"
+                      style="width: 100px; margin-right: 15px;"
+                      popper-class="sensitive-word-select-dropdown"
+                      :popper-append-to-body="false">
+                <el-option v-for="cat in categories"
+                         :key="cat"
+                         :label="categoryLabels[cat]"
+                         :value="cat">
+                </el-option>
+            </el-select>
+
+            <el-button type="primary" @click="addSensitiveWord">添加</el-button>
+        </div>
+
+        <style>
+        .sensitive-word-select-dropdown {
+            width: auto !important;
+            min-width: 100px !important;
+            max-width: 150px !important;
+        }
+        </style>
+
+        <!-- 敏感词列表导航 -->
+        <div class="sensitive-word-tabs" style="margin-bottom: 5px;">
+            <el-tabs type="card" v-model="activeCategory">
+                <el-tab-pane :label="categoryLabels.registration_numbers" name="registration_numbers"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.organizations" name="organizations"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.aircraft" name="aircraft"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.locations" name="locations"></el-tab-pane>
+                <el-tab-pane :label="categoryLabels.other" name="other"></el-tab-pane>
+            </el-tabs>
+        </div>
+
+        <!-- 敏感词列表 -->
+        <div class="sensitive-word-list" style="max-height: 250px; overflow-y: auto; margin-top: 10px; border: 1px solid #EBEEF5; border-radius: 4px;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                <thead>
+                    <tr style="background-color: #F5F7FA; height: 36px;">
+                        <th style="padding-left: 15px; text-align: left; font-weight: normal;">敏感词</th>
+                        <th style="width: 80px; text-align: center; font-weight: normal;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(word, index) in sensitiveWords[activeCategory] || []" :key="index"
+                        style="border-bottom: 1px solid #EBEEF5; height: 36px;">
+                        <td style="padding-left: 15px; text-align: left;">[[ typeof word === 'object' ? word.word : word ]]</td>
+                        <td style="width: 80px; text-align: center;">
+                            <el-button type="danger"
+                                     size="mini"
+                                     style="padding: 3px 8px; font-size: 12px;"
+                                     @click="removeSensitiveWord(typeof word === 'object' ? word.word : word, activeCategory)">
+                                删除
+                            </el-button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</el-dialog>
+
+<!-- 数据导入对话框 -->
+<el-dialog
+    title="数据导入"
+    :visible.sync="importDialogVisible"
+    width="30%"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false">
+    <div class="import-dialog-content">
+        <div class="import-header" style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <!-- 数据源选择 -->
+            <div class="import-source-select" style="flex: 1; padding: 10px; border: 1px solid #DCDFE6; border-radius: 4px;">
+                <div style="font-weight: bold; margin-bottom: 10px;">选择数据源</div>
+                <el-radio-group v-model="importSettings.dataSource">
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <el-radio v-for="(label, value) in CONFIG.importDataSourceOptions"
+                                 :key="value"
+                                 :label="value">
+                            [[ label ]]
+                        </el-radio>
+                    </div>
+                </el-radio-group>
+            </div>
+
+            <!-- 文件上传区域 -->
+            <div class="upload-section" style="flex: 1.5;">
+                <el-upload
+                    class="upload-area"
+                    drag
+                    :action="'/api/import/' + importSettings.dataSource + '/import'"
+                    :data="{ dataSource: importSettings.dataSource }"
+                    :before-upload="handleBeforeUpload"
+                    :on-success="handleUploadSuccess"
+                    :on-error="handleUploadError"
+                    :show-file-list="false"
+                    :multiple="false"
+                    :http-request="customUploadRequest">
+                    <i class="el-icon-upload"></i>
+                    <div class="el-upload__text">
+                        将文件拖到此处，或<em>点击选择文件</em>
+                    </div>
+                    <div class="el-upload__tip" slot="tip">
+                        支持上传 .xlsx, .xls 格式的文件
+                    </div>
+                </el-upload>
+            </div>
+        </div>
+
+        <!-- 预览区域 -->
+        <div v-if="importSettings.previewData" class="preview-area">
+            <!-- 数据统计信息 -->
+            <el-card class="preview-info" style="margin-bottom: 20px;">
+                <div slot="header">
+                    <span style="font-weight: bold">数据统计</span>
+                </div>
+                <div class="preview-stats">
+                    <p>上传数据：[[ importSettings.previewData.uploaded_count ]] 条</p>
+                    <p>实际新增：[[ importSettings.previewData.new_count ]] 条</p>
+                    <p>重复数据：[[ importSettings.previewData.uploaded_count - importSettings.previewData.new_count ]] 条</p>
+                    <p>原有数据：[[ importSettings.previewData.original_count ]] 条</p>
+                    <p>变更后数据：[[ importSettings.previewData.original_count + importSettings.previewData.new_count ]] 条</p>
+                </div>
+            </el-card>
+        </div>
+    </div>
+    <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelImport">取消</el-button>
+        <el-button type="info" @click="goToDataImportPage">手动导入</el-button>
+        <el-button
+            type="primary"
+            @click="confirmImport">
+            确认导入
+        </el-button>
+    </div>
+</el-dialog>

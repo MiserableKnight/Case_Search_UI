@@ -1,0 +1,72 @@
+/* 数据分析页面样式 */
+.analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.analysis-header h2 {
+    margin: 0;
+    color: #303133;
+}
+
+/* 数据概览卡片样式 */
+.data-overview {
+    margin-bottom: 20px;
+}
+
+.overview-card {
+    background-color: #fff;
+}
+
+.overview-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.overview-item {
+    display: flex;
+    align-items: center;
+}
+
+.overview-item .label {
+    color: #606266;
+    margin-right: 8px;
+}
+
+.overview-item .value {
+    color: #303133;
+    font-weight: 500;
+}
+
+/* 图表区域样式 */
+.charts-container {
+    margin-bottom: 20px;
+}
+
+.chart-card {
+    margin-bottom: 20px;
+}
+
+.chart {
+    height: 400px;
+    width: 100%;
+}
+
+/* 数据表格样式 */
+.data-table {
+    margin-bottom: 20px;
+}
+
+/* 响应式布局 */
+@media screen and (max-width: 768px) {
+    .el-col {
+        width: 100% !important;
+    }
+
+    .chart {
+        height: 300px;
+    }
+}

@@ -1,0 +1,22 @@
+/*
+ * 可访问性修复
+ * 解决Element UI组件的可访问性问题
+ */
+
+/* 修复radio按钮的aria-hidden警告 */
+.el-radio__original {
+    /* 使用opacity: 0代替aria-hidden属性 */
+    opacity: 0 !important;
+    position: absolute;
+    z-index: -1;
+    /* 移除可能导致警告的属性 */
+    &[aria-hidden="true"] {
+        aria-hidden: unset !important;
+    }
+}
+
+/* 确保焦点状态正确显示 */
+.el-radio:focus-within .el-radio__inner {
+    border-color: #409EFF;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.3);
+}
