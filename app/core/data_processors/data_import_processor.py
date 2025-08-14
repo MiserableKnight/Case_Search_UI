@@ -4,6 +4,7 @@
 
 import logging
 import os
+import re
 from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type
 
 import pandas as pd
@@ -88,6 +89,64 @@ class DataImportProcessor:
         if not os.path.exists(self.data_path):
             logger.warning(f"数据文件不存在: {self.data_path}")
 
+    def clean_column_name(self, column_name: str) -> str:
+        """清理列名中的Unicode控制字符和不可见字符
+        
+        Args:
+            column_name: 原始列名
+            
+        Returns:
+            清理后的列名
+        """
+        if not isinstance(column_name, str):
+            return column_name
+        
+        # 移除各种Unicode控制字符和不可见字符
+        cleaned = re.sub(r'[\u200b\u200c\u200d\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2060\u2061\u2062\u2063\u2064\u2065\u2066\u2067\u2068\u2069\u206a\u206b\u206c\u206d\u206e\u206f\ufeff\u00ad\u034f\u2028\u2029\u202f\u205f\u00a0]', '', column_name)
+        # 移除首尾空白字符
+        cleaned = cleaned.strip()
+        return cleaned
+
+    def clean_cell_content(self, content: Any) -> Any:
+        """清理单元格内容中的Unicode控制字符和不可见字符
+        
+        Args:
+            content: 单元格内容
+            
+        Returns:
+            清理后的内容
+        """
+        if pd.isna(content):
+            return content
+        
+        if not isinstance(content, str):
+            return content
+        
+        # 移除各种Unicode控制字符和不可见字符（与列名清理使用相同的模式）
+        cleaned = re.sub(r'[\u200b\u200c\u200d\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2060\u2061\u2062\u2063\u2064\u2065\u2066\u2067\u2068\u2069\u206a\u206b\u206c\u206d\u206e\u206f\ufeff\u00ad\u034f\u2028\u2029\u202f\u205f\u00a0]', '', content)
+        # 移除首尾空白字符
+        cleaned = cleaned.strip()
+        return cleaned
+
+    def clean_all_string_cells(self, df: pd.DataFrame) -> pd.DataFrame:
+        """清理DataFrame中所有字符串类型的单元格
+        
+        Args:
+            df: 待清理的数据框
+            
+        Returns:
+            清理后的数据框
+        """
+        cleaned_df = df.copy()
+        
+        for col in cleaned_df.columns:
+            # 只处理字符串类型的列
+            if cleaned_df[col].dtype == 'object':
+                logger.info(f"清理列 '{col}' 中的Unicode控制字符")
+                cleaned_df[col] = cleaned_df[col].apply(self.clean_cell_content)
+        
+        return cleaned_df
+
     def validate_headers(self, df: pd.DataFrame) -> bool:
         """验证数据表头是否符合要求。
 
@@ -100,7 +159,12 @@ class DataImportProcessor:
         Raises:
             ValueError: 当缺少必需的列时
         """
-        current_columns = set(df.columns)
+        # 清理DataFrame的列名
+        cleaned_columns = [self.clean_column_name(col) for col in df.columns]
+        df_cleaned = df.copy()
+        df_cleaned.columns = cleaned_columns
+        
+        current_columns = set(df_cleaned.columns)
         required_columns = set(self.REQUIRED_COLUMNS)
         missing_columns = required_columns - current_columns
         if missing_columns:
@@ -218,12 +282,27 @@ class DataImportProcessor:
         if pd.isna(date_str):
             return pd.NaT
 
+        # 首先处理字符串类型
+        if isinstance(date_str, str):
+            # 移除字符串前后的空白字符和Unicode控制字符
+            date_str = self.clean_column_name(date_str).strip()
+            
+            # 处理"2025/08/01 21 40"格式，将空格分隔的时间替换为冒号分隔
+            # 使用更灵活的正则表达式，允许前后有控制字符
+            if re.match(r'.*\d{4}/\d{2}/\d{2}\s+\d{2}\s+\d{2}.*', date_str):
+                # 提取核心日期时间部分
+                clean_match = re.search(r'(\d{4}/\d{2}/\d{2})\s+(\d{2})\s+(\d{2})', date_str)
+                if clean_match:
+                    date_str = f"{clean_match.group(1)} {clean_match.group(2)}:{clean_match.group(3)}"
+                    logger.debug(f"日期格式标准化: {date_str}")
+
         formats = [
             "%Y-%m-%d",
             "%Y/%m/%d %H:%M:%S",
             "%Y/%m/%d %H:%M",
-            "%Y/%m/%d %H %M",
             "%Y/%m/%d",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
         ]
 
         for fmt in formats:
@@ -236,7 +315,7 @@ class DataImportProcessor:
             # 最后尝试让pandas自动识别格式
             return pd.to_datetime(date_str)
         except ValueError:
-            logger.error(f"无法解析的日期格式: {date_str}")
+            logger.error(f"无法解析的日期格式: {repr(date_str)}")
             return pd.NaT
 
     def analyze_changes(self) -> Tuple[bool, str]:
@@ -248,8 +327,14 @@ class DataImportProcessor:
         try:
             # 读取并清洗新数据
             new_data = pd.read_excel(self.file_path)
+            # 首先清理列名
+            cleaned_columns = [self.clean_column_name(col) for col in new_data.columns]
+            new_data.columns = cleaned_columns
             self.validate_headers(new_data)
-            cleaned_new_data = self.clean_data(new_data)
+            # 清理所有字符串单元格中的Unicode控制字符
+            cleaned_new_data = self.clean_all_string_cells(new_data)
+            # 执行特定数据源的清洗
+            cleaned_new_data = self.clean_data(cleaned_new_data)
 
             # 只有在数据类型字段为空时才设置默认值
             if (

@@ -102,8 +102,7 @@ class FaultReportProcessor(DataImportProcessor):
         # 复制数据框以避免修改原始数据
         cleaned_df = df.copy()
 
-        # 验证表头
-        self.validate_headers(cleaned_df)
+        # 注意：列名清理和验证已经在基类的analyze_changes方法中完成
 
         # 删除空列
         cleaned_df = cleaned_df.dropna(axis=1, how="all")

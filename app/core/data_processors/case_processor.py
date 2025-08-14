@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -89,10 +90,14 @@ class CaseProcessor(DataImportProcessor):
     def date_column(self):
         return "申请时间"
 
+    # 基类已经实现了Unicode字符处理功能，无需重写
+
     def clean_data(self, df):
         """清洗数据"""
         # 复制数据框以避免修改原始数据
         cleaned_df = df.copy()
+        
+        # 注意：列名清理已经在基类的analyze_changes方法中完成
 
         # 清洗日期数据
         date_columns = ["故障发生日期", "申请时间"]
@@ -107,7 +112,17 @@ class CaseProcessor(DataImportProcessor):
         cleaned_df = self.clean_operator_names(cleaned_df)
 
         # 清洗机号数据
-        cleaned_df["机号/MSN"] = cleaned_df["飞机序列号/注册号"]  # 重命名列
+        # 确保列名经过Unicode清理后能正确映射
+        cleaned_columns = [self.clean_column_name(col) for col in cleaned_df.columns]
+        cleaned_df.columns = cleaned_columns
+        
+        # 将清理后的"飞机序列号/注册号"列重命名为"机号/MSN"
+        if "飞机序列号/注册号" in cleaned_df.columns:
+            cleaned_df["机号/MSN"] = cleaned_df["飞机序列号/注册号"]
+            # 删除原始列
+            cleaned_df = cleaned_df.drop("飞机序列号/注册号", axis=1)
+        
+        # 清洗机号数据
         cleaned_df["机号/MSN"] = cleaned_df["机号/MSN"].str.replace(
             "all", "ALL", case=True
         )
@@ -119,11 +134,17 @@ class CaseProcessor(DataImportProcessor):
         cleaned_df["ATA"] = cleaned_df["ATA"].astype(str)
 
         # 处理数据类型字段
-        if "数据类型" not in cleaned_df.columns:
-            logger.info("导入数据中缺少'数据类型'列，将设置为默认值'服务请求'")
+        # 确保数据类型设置为"服务请求"
+        if "数据类型" not in cleaned_df.columns or cleaned_df["数据类型"].isna().all():
+            logger.info("设置数据类型为'服务请求'")
             cleaned_df["数据类型"] = self.DATA_SOURCE_TYPE_MAP.get(
                 self.data_source_key, "服务请求"
             )
+        else:
+            # 如果数据类型列存在但值不正确，则覆盖为"服务请求"
+            if not cleaned_df["数据类型"].isin(["服务请求"]).all():
+                logger.info("修正数据类型为'服务请求'")
+                cleaned_df["数据类型"] = "服务请求"
 
         # 删除答复详情为"无"的记录
         cleaned_df = cleaned_df[cleaned_df["答复详情"] != "无"]
