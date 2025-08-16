@@ -6,8 +6,12 @@ import logging
 import os
 from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type
 
+import re
+
 import pandas as pd
 from flask import current_app
+
+from app.utils.unicode_cleaner import UnicodeCleaner
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +56,7 @@ class DataImportProcessor:
             self.__initialize()
             self._initialized = True
         self.file_path = file_path
+        self.unicode_cleaner = UnicodeCleaner()
 
     def __initialize(self) -> None:
         """私有初始化方法，设置数据路径和其他初始属性。"""
@@ -207,40 +212,52 @@ class DataImportProcessor:
         return df_copy
 
     def convert_date(self, date_str: Any) -> pd.Timestamp:
-        """转换日期格式的通用方法。
-
-        Args:
-            date_str: 日期字符串
-
-        Returns:
-            转换后的Timestamp对象
+        """
+        转换日期格式的通用方法。
+        增强了对特定格式和脏数据的处理能力。
         """
         if pd.isna(date_str):
             return pd.NaT
 
+        # 确保输入是字符串并进行初步清理
+        cleaned_str = self.unicode_cleaner.clean_text(str(date_str))
+
+        # 优先使用正则表达式提取 YYYY/MM/DD 或 YYYY-MM-DD 格式
+        match = re.match(r"(\d{4}[/-]\d{1,2}[/-]\d{1,2})", cleaned_str)
+        if match:
+            try:
+                return pd.to_datetime(match.group(1))
+            except ValueError:
+                pass  # 如果正则提取的部分也无法解析，则继续尝试后续方法
+
+        # 定义多种可能的日期时间格式
         formats = [
             "%Y-%m-%d",
             "%Y/%m/%d %H:%M:%S",
             "%Y/%m/%d %H:%M",
-            "%Y/%m/%d %H %M",
+            "%Y/%m/%d %H %M",  # 支持 "YYYY/MM/DD HH MM" 格式
             "%Y/%m/%d",
         ]
 
+        # 遍历格式列表进行尝试
         for fmt in formats:
             try:
-                return pd.to_datetime(date_str, format=fmt)
+                return pd.to_datetime(cleaned_str, format=fmt)
             except ValueError:
                 continue
 
+        # 最后尝试让pandas自动识别格式
         try:
-            # 最后尝试让pandas自动识别格式
-            return pd.to_datetime(date_str)
+            return pd.to_datetime(cleaned_str)
         except ValueError:
             logger.error(f"无法解析的日期格式: {date_str}")
             return pd.NaT
 
-    def analyze_changes(self) -> Tuple[bool, str]:
+    def analyze_changes(self, enable_unicode_cleaning: bool = True) -> Tuple[bool, str]:
         """分析数据变化的通用方法。
+
+        Args:
+            enable_unicode_cleaning: 是否启用Unicode字符清洗
 
         Returns:
             (成功标志, 预览消息)
@@ -248,6 +265,23 @@ class DataImportProcessor:
         try:
             # 读取并清洗新数据
             new_data = pd.read_excel(self.file_path)
+
+            # 清洗列名
+            cleaned_columns = [self.unicode_cleaner.clean_text(col) for col in new_data.columns]
+            new_data.columns = cleaned_columns
+            logger.info(f"清洗后的列名: {new_data.columns.tolist()}")
+            
+            # Unicode字符清洗（可选）
+            if enable_unicode_cleaning:
+                logger.info("开始Unicode字符清洗...")
+                pollution_analysis = self.unicode_cleaner.analyze_file_pollution(self.file_path)
+                if pollution_analysis.get("needs_cleaning", False):
+                    logger.info(f"检测到Unicode字符污染: {pollution_analysis}")
+                    new_data = self.unicode_cleaner.clean_dataframe(new_data)
+                    logger.info("Unicode字符清洗完成")
+                else:
+                    logger.info("未检测到Unicode字符污染，跳过清洗")
+            
             self.validate_headers(new_data)
             cleaned_new_data = self.clean_data(new_data)
 
@@ -281,6 +315,12 @@ class DataImportProcessor:
             uploaded_count = len(cleaned_new_data)
             logger.info(f"上传文件包含数据: {uploaded_count} 条")
 
+            # --- 在合并前，只对新数据进行最终的标准化，确保空值处理一致 ---
+            for col in self.FINAL_COLUMNS:
+                # 统一处理新数据中对象/字符串列的空值
+                if col in cleaned_new_data.columns and cleaned_new_data[col].dtype == 'object':
+                    cleaned_new_data[col] = cleaned_new_data[col].fillna('')
+            
             # 合并数据
             combined_data = pd.concat(
                 [cleaned_new_data, existing_data], ignore_index=True

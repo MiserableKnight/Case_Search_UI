@@ -87,10 +87,10 @@ class BaseDataImportRoutes:
                         f,
                     )
 
-                # 分析数据变化
+                # 分析数据变化（启用Unicode清洗）
                 self.processor = self.service_class()
                 success, message, combined_data = self.processor.analyze_changes(
-                    excel_path
+                    excel_path, enable_unicode_cleaning=True
                 )
 
                 if not success:
@@ -196,10 +196,10 @@ class BaseDataImportRoutes:
                         f,
                     )
 
-                # 分析数据变化
+                # 分析数据变化（启用Unicode清洗）
                 self.processor = self.service_class()
                 success, message, combined_data = self.processor.analyze_changes(
-                    excel_path
+                    excel_path, enable_unicode_cleaning=True
                 )
 
                 if not success:
@@ -419,10 +419,10 @@ class BaseDataImportRoutes:
                         f,
                     )
 
-                # 分析数据变化
+                # 分析数据变化（启用Unicode清洗）
                 self.processor = self.service_class()
                 success, message, combined_data = self.processor.analyze_changes(
-                    excel_path
+                    excel_path, enable_unicode_cleaning=True
                 )
                 logger.info(f"预览分析结果: success={success}, message={message}")
 

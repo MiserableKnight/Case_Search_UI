@@ -34,7 +34,6 @@ DATA_CONFIG = {
 # 文件配置
 FILE_CONFIG = {
     "UPLOAD_FOLDER": DATA_CONFIG["temp_dir"],
-    "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,  # 16MB max-limit
     "SENSITIVE_WORDS_FILE": os.path.join(
         DATA_CONFIG["raw_dir"], "sensitive_words.json"
     ),
@@ -77,6 +76,9 @@ def create_app(config_name="development"):
     from app.config import config_by_name
 
     app.config.from_object(config_by_name[config_name])
+
+    # 设置上传文件大小限制为128MB
+    app.config["MAX_CONTENT_LENGTH"] = 128 * 1024 * 1024
 
     # 添加FILE_CONFIG和DATA_SOURCES到应用配置中
     app.config["FILE_CONFIG"] = FILE_CONFIG
