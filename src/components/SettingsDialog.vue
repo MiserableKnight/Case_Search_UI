@@ -53,7 +53,7 @@ export default {
       dialogVisible: this.visible,
       tempDataSource: '',
       tempAircraftTypes: [],
-      aircraftTypeOptions: ["ARJ21", "C919", "其他", "无"],
+      aircraftTypeOptions: ["ARJ21", "C919", "无"],
       selectAll: false,
     };
   },

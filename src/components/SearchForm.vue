@@ -8,9 +8,9 @@
           <div class="search-content">
             <div class="search-inputs">
               <el-input v-model="level.keywords" placeholder="请输入关键字"></el-input>
-              <el-select v-model="level.column_name" multiple collapse-tags placeholder="选择搜索列" @change="handleColumnSelectChange($event, level)">
+              <el-select v-model="level.column_name" multiple collapse-tags placeholder="选择搜索列" @change="handleColumnSelectChange($event, level, idx)" @focus="storeOldSelection(level.column_name, idx)">
                 <el-option key="__select_all__" label="全选" value="__select_all__"></el-option>
-                <el-option v-for="col in store.columns" :key="col" :label="col" :value="col"></el-option>
+                <el-option v-for="col in store.allColumns" :key="col" :label="col" :value="col"></el-option>
               </el-select>
             </div>
             <div class="search-controls">
@@ -122,11 +122,19 @@ export default {
   components: {
     SettingsDialog,
   },
+  data() {
+    return {
+      oldSelections: {},
+    };
+  },
   setup() {
     const store = useSearchStore();
     return { store };
   },
   methods: {
+    storeOldSelection(selection, idx) {
+      this.oldSelections[idx] = [...(selection || [])];
+    },
     openImportDialog() {
       this.store.openImportDialog();
     },
@@ -157,27 +165,28 @@ export default {
       // When resetting, we just re-trigger the logic for the current data source
       this.store.changeDataSource(this.store.dataSource);
     },
-    handleColumnSelectChange(currentSelected, level) {
-      const allColumns = this.store.columns;
-      const oldSelected = level.column_name || [];
+    handleColumnSelectChange(currentSelected, level, idx) {
+      const oldSelected = this.oldSelections[idx] || [];
+      const allColumns = this.store.allColumns;
 
-      // Check if the 'Select All' option's state was toggled by the user's click
-      const selectAllToggled = oldSelected.includes('__select_all__') !== currentSelected.includes('__select_all__');
+      // Check if the "Select All" option was clicked by the user
+      const selectAllClicked = currentSelected.includes('__select_all__') !== oldSelected.includes('__select_all__');
 
-      if (selectAllToggled) {
-        // If 'Select All' was toggled, either select all or deselect all
+      if (selectAllClicked) {
         if (currentSelected.includes('__select_all__')) {
+          // If "Select All" is now selected, select all columns
           level.column_name = ['__select_all__', ...allColumns];
         } else {
+          // If "Select All" is now deselected, clear all selections
           level.column_name = [];
         }
       } else {
-        // If an individual option was toggled
+        // If an individual option was changed, update the "Select All" status
         if (currentSelected.length === allColumns.length) {
-          // If all individual options are selected, also select the 'Select All' option
+          // If all columns are selected, also select "Select All"
           level.column_name = ['__select_all__', ...currentSelected];
         } else {
-          // Otherwise, ensure the 'Select All' option is not selected
+          // Otherwise, just keep the current selection and remove "Select All" if it's there
           level.column_name = currentSelected.filter(c => c !== '__select_all__');
         }
       }

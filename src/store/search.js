@@ -40,7 +40,7 @@ export const useSearchStore = defineStore('search', {
     loading: false,
     dataSources: Object.entries(CONFIG.dataSourceOptions).map(([value, label]) => ({ value, label })),
     isImportDialogVisible: false, // Controls the visibility of the import dialog
-    aircraftTypes: [], // To hold selected aircraft types
+    aircraftTypes: ['ARJ21', '无'], // To hold selected aircraft types
     similaritySearchText: '', // For the similarity search textarea
     similaritySearchColumns: [], // Columns for similarity search
     isSettingsDialogVisible: false,
@@ -74,7 +74,8 @@ export const useSearchStore = defineStore('search', {
       } catch (error) {
         console.error(`Error fetching columns for ${dataSource}:`, error);
         // Fallback to default visible columns if API fails
-        this.allColumns = CONFIG.defaultVisibleColumns[dataSource] || [];
+        const mockColumns = ['标题', '问题描述', '答复详情', '客户期望', '机号/MSN', '运营人'];
+        this.allColumns = mockColumns;
         this.columnVisible = this.allColumns.reduce((acc, col) => {
             acc[col] = true; // Make all fallback columns visible
             return acc;
