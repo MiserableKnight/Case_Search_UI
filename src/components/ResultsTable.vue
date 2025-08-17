@@ -36,8 +36,10 @@
     </el-table>
 
     <!-- 列显示控制对话框 -->
-    <el-dialog title="列显示控制" :visible.sync="columnDialogVisible" width="30%">
+    <el-dialog title="列显示控制" :visible.sync="columnDialogVisible" width="30%" custom-class="column-control-dialog">
       <!-- This now iterates over ALL columns from the search result -->
+      <el-checkbox :value="isAllVisible" @change="handleSelectAllVisible">全选</el-checkbox>
+      <hr>
       <el-checkbox-group v-model="visibleColumnsProxy">
         <el-checkbox v-for="col in store.allColumns" :key="col" :label="col"></el-checkbox>
       </el-checkbox-group>
@@ -78,11 +80,21 @@ export default {
           this.store.columnVisible[col] = newVisibleColumns.includes(col);
         }
       }
+    },
+    isAllVisible() {
+      return this.store.allColumns.length > 0 && this.visibleColumnsProxy.length === this.store.allColumns.length;
     }
   },
   methods: {
     handleSelectionChange(selection) {
       this.selectedRows = selection;
+    },
+    handleSelectAllVisible(value) {
+      if (value) {
+        this.visibleColumnsProxy = this.store.allColumns;
+      } else {
+        this.visibleColumnsProxy = [];
+      }
     },
   },
 };
@@ -215,5 +227,10 @@ export default {
 .el-pagination {
   margin-top: 20px;
   text-align: right;
+}
+
+.column-control-dialog .el-checkbox-group {
+  display: flex;
+  flex-direction: column;
 }
 </style>

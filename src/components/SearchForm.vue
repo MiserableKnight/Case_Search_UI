@@ -40,15 +40,25 @@
       </div>
     </div>
 
-    <!-- 按内容搜索 (Simplified for now) -->
+    <!-- 按内容搜索 -->
     <div class="search-block similarity-search">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <div class="block-title" style="margin-bottom: 0;">按相似度搜索</div>
+            <el-button type="primary" size="small" @click="showSearchColumnsDialog">
+                搜索范围设置<i class="el-icon-setting el-icon--right"></i>
+            </el-button>
         </div>
         <div class="content-search">
-            <el-input type="textarea" :rows="8" placeholder="请输入要搜索的内容"></el-input>
+            <el-input
+                type="textarea"
+                :rows="8"
+                placeholder="请输入要搜索的内容"
+                v-model="store.similaritySearchText">
+            </el-input>
             <div style="text-align: right;">
-                <el-button type="primary">开始搜索</el-button>
+                <el-button type="primary" @click="handleSimilaritySearch" :disabled="!store.similaritySearchColumns.length">
+                    开始搜索
+                </el-button>
             </div>
         </div>
     </div>
@@ -60,30 +70,83 @@
             <div class="default-search-controls">
                 <div class="control-item">
                     <span class="control-label">数据源：</span>
-                    <el-select v-model="store.dataSource" @change="handleDataSourceChange">
-                      <el-option v-for="source in store.dataSources" :key="source.value" :label="source.label" :value="source.value"></el-option>
-                    </el-select>
+                    <el-button
+                        type="primary"
+                        size="small"
+                        @click="showDataSourceDialog"
+                        style="width: 120px">
+                        {{ store.dataSourceLabel }}
+                    </el-button>
+                </div>
+                <div class="control-item">
+                    <span class="control-label">机型：</span>
+                    <el-button
+                        type="primary"
+                        size="small"
+                        @click="showAircraftTypesDialog"
+                        style="width: 120px">
+                        {{ store.aircraftTypes.length ? `已选${store.aircraftTypes.length}项` : '请选择' }}
+                    </el-button>
+                </div>
+                <div class="control-item">
+                    <span class="control-label">敏感词：</span>
+                    <el-button
+                        type="primary"
+                        size="small"
+                        @click="showSensitiveWordDialog"
+                        style="width: 120px">
+                        管理敏感词<i class="el-icon-edit el-icon--right"></i>
+                    </el-button>
                 </div>
                 <div class="control-item">
                     <span class="control-label">数据导入：</span>
-                    <el-button type="primary" size="small" style="width: 120px;">导入数据<i class="el-icon-upload el-icon--right"></i></el-button>
+                    <el-button type="primary" size="small" style="width: 120px;" @click="openImportDialog">导入数据<i class="el-icon-upload el-icon--right"></i></el-button>
                 </div>
             </div>
         </div>
     </div>
+
+    <settings-dialog
+      :visible.sync="store.isSettingsDialogVisible"
+      :mode="store.settingsDialogMode"
+    ></settings-dialog>
   </div>
 </template>
 
 <script>
 import { useSearchStore } from '../store/search';
+import SettingsDialog from './SettingsDialog.vue';
 
 export default {
   name: 'SearchForm',
+  components: {
+    SettingsDialog,
+  },
   setup() {
     const store = useSearchStore();
     return { store };
   },
   methods: {
+    openImportDialog() {
+      this.store.openImportDialog();
+    },
+    showDataSourceDialog() {
+      this.store.openSettingsDialog('dataSource');
+    },
+    showAircraftTypesDialog() {
+      this.store.openSettingsDialog('aircraftTypes');
+    },
+    showSensitiveWordDialog() {
+      // TODO: Implement sensitive word dialog
+      console.log('showSensitiveWordDialog');
+    },
+    handleSimilaritySearch() {
+      this.store.performSimilaritySearch();
+    },
+    showSearchColumnsDialog() {
+      // TODO: Implement search columns dialog
+      console.log('showSearchColumnsDialog');
+    },
     handleDataSourceChange(dataSource) {
       this.store.changeDataSource(dataSource);
     },
@@ -94,13 +157,29 @@ export default {
       // When resetting, we just re-trigger the logic for the current data source
       this.store.changeDataSource(this.store.dataSource);
     },
-    handleColumnSelectChange(selected, level) {
-      const allColumns = this.store.columns.map(c => c); // Create a copy
-      if (selected.includes('__select_all__')) {
-        level.column_name = allColumns;
-      } else if (selected.length === allColumns.length - 1 && !selected.includes('__select_all__')) {
-        // This logic handles the case where user deselects 'Select All'
-        // It might need adjustment based on exact UX requirements
+    handleColumnSelectChange(currentSelected, level) {
+      const allColumns = this.store.columns;
+      const oldSelected = level.column_name || [];
+
+      // Check if the 'Select All' option's state was toggled by the user's click
+      const selectAllToggled = oldSelected.includes('__select_all__') !== currentSelected.includes('__select_all__');
+
+      if (selectAllToggled) {
+        // If 'Select All' was toggled, either select all or deselect all
+        if (currentSelected.includes('__select_all__')) {
+          level.column_name = ['__select_all__', ...allColumns];
+        } else {
+          level.column_name = [];
+        }
+      } else {
+        // If an individual option was toggled
+        if (currentSelected.length === allColumns.length) {
+          // If all individual options are selected, also select the 'Select All' option
+          level.column_name = ['__select_all__', ...currentSelected];
+        } else {
+          // Otherwise, ensure the 'Select All' option is not selected
+          level.column_name = currentSelected.filter(c => c !== '__select_all__');
+        }
       }
     }
   },

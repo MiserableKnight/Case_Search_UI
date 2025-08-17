@@ -16,6 +16,9 @@
         <results-table :results="store.searchResults" :visible-columns="store.visibleColumns" :loading="store.loading"></results-table>
       </el-main>
     </el-container>
+
+    <!-- Import Dialog -->
+    <import-dialog v-if="store.isImportDialogVisible"></import-dialog>
   </div>
 </template>
 
@@ -23,6 +26,7 @@
 import { onMounted } from 'vue';
 import SearchForm from './components/SearchForm.vue';
 import ResultsTable from './components/ResultsTable.vue';
+import ImportDialog from './components/ImportDialog.vue'; // Import the dialog
 import { useSearchStore } from './store/search';
 
 export default {
@@ -30,13 +34,14 @@ export default {
   components: {
     SearchForm,
     ResultsTable,
+    ImportDialog, // Register the dialog
   },
   setup() {
     const store = useSearchStore();
 
     // Fetch initial column data when the app is mounted
     onMounted(() => {
-      store.fetchAllColumnsForDataSource('case'); // 'case' is the default
+      store.initialize();
     });
 
     return { store };

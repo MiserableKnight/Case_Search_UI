@@ -33,20 +33,26 @@ export const useSearchStore = defineStore('search', {
     ],
     searchResults: [],
     // `columns` will now hold the searchable columns for the selected data source
-    columns: CONFIG.searchableColumns.case,
+    columns: [],
     // `columnVisible` will be initialized with default visible columns
-    columnVisible: CONFIG.defaultVisibleColumns.case.reduce((acc, col) => {
-        acc[col] = true;
-        return acc;
-    }, {}),
+    columnVisible: {},
     allColumns: [], // To store all possible columns for visibility control
     loading: false,
     dataSources: Object.entries(CONFIG.dataSourceOptions).map(([value, label]) => ({ value, label })),
+    isImportDialogVisible: false, // Controls the visibility of the import dialog
+    aircraftTypes: [], // To hold selected aircraft types
+    similaritySearchText: '', // For the similarity search textarea
+    similaritySearchColumns: [], // Columns for similarity search
+    isSettingsDialogVisible: false,
+    settingsDialogMode: 'dataSource', // 'dataSource' or 'aircraftTypes'
   }),
   getters: {
     visibleColumns: (state) => {
       if (!state.allColumns.length) return [];
       return state.allColumns.filter(col => state.columnVisible[col]);
+    },
+    dataSourceLabel: (state) => {
+      return CONFIG.dataSourceOptions[state.dataSource] || '选择数据源';
     },
   },
   actions: {
@@ -79,21 +85,23 @@ export const useSearchStore = defineStore('search', {
     // This action now uses the exact configuration and fetches all columns
     async changeDataSource(dataSource) {
       this.dataSource = dataSource;
-      this.columns = CONFIG.searchableColumns[dataSource] || [];
       
       // Fetch all columns for the new data source
       await this.fetchAllColumnsForDataSource(dataSource);
       
+      // After fetching, update columns and reset search levels
+      this.columns = this.allColumns; // Use all fetched columns as searchable
+      
       // Reset search levels
       this.searchLevels = [
-        { keywords: '', column_name: [CONFIG.searchableColumns[dataSource][1]], logic: 'and', negative_filtering: false },
+        { keywords: '', column_name: [], logic: 'and', negative_filtering: false },
       ];
       
       // Reset search results
       this.searchResults = [];
     },
     addSearchLevel() {
-      this.searchLevels.push({ keywords: '', column_name: [CONFIG.searchableColumns[this.dataSource][1]], logic: 'and', negative_filtering: false });
+      this.searchLevels.push({ keywords: '', column_name: [], logic: 'and', negative_filtering: false });
     },
     removeSearchLevel(index) {
       if (this.searchLevels.length > 1) {
@@ -103,19 +111,22 @@ export const useSearchStore = defineStore('search', {
     async performSearch() {
       this.loading = true;
       try {
-        // Corrected the API endpoint from /api/similarity/search to /api/similarity_search
-        const response = await axios.post('/api/similarity_search', {
-          text: this.searchLevels.map(l => l.keywords).join(' '), // Combine keywords for similarity search
-          dataSource: this.dataSource,
-          columns: this.columns, // Use searchable columns
-          limit: 50,
-        });
+        const searchPayload = {
+          data_source: this.dataSource,
+          search_levels: this.searchLevels.map(level => ({
+            ...level,
+            column_name: level.column_name.filter(c => c !== '__select_all__')
+          })),
+          aircraft_types: this.aircraftTypes,
+        };
+        const response = await axios.post('/api/search', searchPayload);
         this.searchResults = response.data.data;
       } catch (error) {
         console.error('An error occurred during search:', error);
+        // Mock data for frontend testing
         this.searchResults = [
-            { '申请时间': '2025-08-17', '问题描述': '复刻的模拟数据-问题1', '答复详情': '这是详细的答复内容', '机号/MSN': 'B-1234', '运营人': '东方航空', '相似度': '98.76%' },
-            { '申请时间': '2025-08-16', '问题描述': '复刻的模拟数据-问题2', '答复详情': '这是另一个答复', '机号/MSN': 'B-5678', '运营人': '南方航空', '相似度': '87.65%' },
+            { '申请时间': '2025-08-17', '问题描述': '复刻的模拟数据-问题1', '答复详情': '这是详细的答复内容', '机号/MSN': 'B-1234', '运营人': '东方航空' },
+            { '申请时间': '2025-08-16', '问题描述': '复刻的模拟数据-问题2', '答复详情': '这是另一个答复', '机号/MSN': 'B-5678', '运营人': '南方航空' },
         ];
       } finally {
         // If allColumns is empty after a search (e.g., initial load failed),
@@ -131,6 +142,51 @@ export const useSearchStore = defineStore('search', {
             return acc;
           }, {});
         }
+        this.loading = false;
+      }
+    },
+    openImportDialog() {
+      this.isImportDialogVisible = true;
+    },
+    closeImportDialog() {
+      this.isImportDialogVisible = false;
+    },
+    openSettingsDialog(mode) {
+      this.settingsDialogMode = mode;
+      this.isSettingsDialogVisible = true;
+    },
+    setAircraftTypes(types) {
+      this.aircraftTypes = types;
+    },
+    // Action to initialize the store with default data source columns
+    async initialize() {
+        await this.changeDataSource(this.dataSource);
+    },
+    async performSimilaritySearch() {
+      if (!this.similaritySearchText.trim()) {
+        console.warn('Similarity search text is empty.');
+        return;
+      }
+      this.loading = true;
+      try {
+        const searchPayload = {
+          data_source: this.dataSource,
+          text: this.similaritySearchText,
+          // selected_columns: this.similaritySearchColumns, // TODO: Implement column selection
+          aircraft_types: this.aircraftTypes,
+        };
+        console.log('Performing similarity search with payload:', searchPayload);
+        // const response = await axios.post('/api/similarity_search', searchPayload);
+        // this.searchResults = response.data.data;
+        
+        // Mock response for now
+        this.searchResults = [
+            { '申请时间': '2025-08-17', '问题描述': '相似度搜索结果-问题1', '答复详情': '这是相似的答复内容', '机号/MSN': 'B-1234', '运营人': '东方航空' },
+        ];
+
+      } catch (error) {
+        console.error('An error occurred during similarity search:', error);
+      } finally {
         this.loading = false;
       }
     },
