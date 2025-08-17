@@ -29,7 +29,7 @@ h1 {
     text-overflow: ellipsis;
 }
 
-/* Element UI 组件通用样式覆盖 */
+/* Element Plus 组件通用样式覆盖 */
 .el-radio-group {
     display: flex;
     flex-direction: column;
@@ -37,8 +37,8 @@ h1 {
 }
 
 .el-radio {
-    height: 24px;
-    line-height: 24px;
+    height: 32px;
+    line-height: 32px;
     margin-right: 0;
 }
 
@@ -49,5 +49,39 @@ h1 {
 
 .el-input {
     width: 270px;
+}
+
+/* 覆盖Element Plus的默认尺寸，匹配原始Element UI */
+.el-button {
+    height: 36px !important;
+    padding: 0 19px !important;
+    font-size: 14px !important;
+    border-radius: 4px !important;
+}
+
+.el-button--small {
+    height: 32px !important;
+    padding: 0 15px !important;
+    font-size: 13px !important;
+    border-radius: 3px !important;
+}
+
+.el-input__inner {
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 14px !important;
+    border-radius: 4px !important;
+}
+
+.el-select .el-input__inner {
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 14px !important;
+}
+
+.el-textarea__inner {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    border-radius: 4px !important;
 }
 /* ... */
