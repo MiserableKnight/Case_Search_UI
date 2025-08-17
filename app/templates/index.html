@@ -1,46 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>历史问题查询系统</title>
-    <!-- 使用国内CDN -->
-    <link rel="stylesheet" href="https://lib.baomitu.com/element-ui/2.15.13/theme-chalk/index.css">
-    <!-- 引入拆分的CSS文件 -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/search.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/table.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dialog.css') }}">
-    <!-- 可访问性修复 -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility_fixes.css') }}">
+    <title>智能案例查询系统</title>
 </head>
 <body>
-    <div id="app">
-        <div class="container">
-            <!-- 搜索区域 -->
-            {% include 'components/search_section.html' %}
-
-            <!-- 结果区域 -->
-            {% include 'components/result_section.html' %}
-
-            <!-- 对话框区域 -->
-            {% include 'components/dialogs.html' %}
-        </div>
-    </div>
-
-    <!-- 使用国内CDN -->
-    <script src="https://lib.baomitu.com/vue/2.6.14/vue.min.js"></script>
-    <script src="https://lib.baomitu.com/element-ui/2.15.13/index.js"></script>
-    <script src="https://lib.baomitu.com/element-ui/2.15.13/locale/zh-CN.js"></script>
-    <script src="https://lib.baomitu.com/axios/1.5.0/axios.min.js"></script>
-
-    <!-- 引入拆分的JS文件 -->
-    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/data.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/methods/search.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/methods/table.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/methods/dialog.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/methods/import.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <div id="app"></div>
+    <script type="module" src="/static/dist/assets/main.js"></script>
 </body>
 </html>
