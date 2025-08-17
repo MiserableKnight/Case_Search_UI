@@ -1,5 +1,5 @@
 <template>
-  <el-dialog title="手动导入数据" :visible.sync="dialogVisible" width="80%" @close="handleClose">
+  <el-dialog title="手动导入数据" v-model="dialogVisible" width="80%" @close="handleClose">
     <div class="import-dialog-content">
       <!-- Step 1: Data Entry -->
       <div v-if="!importPreview">
@@ -18,12 +18,12 @@
 
         <el-table :data="importData" border style="width: 100%" v-loading="loading">
           <el-table-column v-for="header in columnHeaders" :key="header" :prop="header" :label="header">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-input v-model="scope.row[header]" size="small"></el-input>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="80">
-            <template slot-scope="scope">
+            <template #default="scope">
               <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeRow(scope.$index)"></el-button>
             </template>
           </el-table-column>
@@ -41,7 +41,8 @@
       </div>
     </div>
 
-    <span slot="footer" class="dialog-footer">
+    <template #footer>
+      <span class="dialog-footer">
       <!-- Footer for Step 1 -->
       <div v-if="!importPreview">
         <el-button @click="handleClose">取 消</el-button>
@@ -53,10 +54,12 @@
         <el-button type="success" @click="confirmImport" :loading="loading">确认导入</el-button>
       </div>
     </span>
+    </template>
   </el-dialog>
 </template>
 
 <script>
+import { ref, computed, onMounted, watch } from 'vue';
 import { useSearchStore } from '../store/search';
 import axios from 'axios';
 
@@ -64,180 +67,202 @@ export default {
   name: 'ImportDialog',
   setup() {
     const store = useSearchStore();
-    return { store };
-  },
-  data() {
-    return {
-      loading: false,
-      selectedDataSource: '', // Default data source
-      availableDataSources: {},
-      columnHeaders: [],
-      importData: [],
-      importPreview: null,
-    };
-  },
-  computed: {
-    dialogVisible: {
+    
+    const loading = ref(false);
+    const selectedDataSource = ref('');
+    const availableDataSources = ref({});
+    const columnHeaders = ref([]);
+    const importData = ref([]);
+    const importPreview = ref(null);
+    
+    const dialogVisible = computed({
       get() {
-        return this.store.isImportDialogVisible;
+        return store.isImportDialogVisible;
       },
       set(value) {
         if (!value) {
-          this.store.closeImportDialog();
+          store.closeImportDialog();
         }
       }
-    },
-    canPreview() {
-      return this.importData.some(row => 
-        this.columnHeaders.some(header => row[header] && row[header].trim() !== '')
+    });
+    
+    const canPreview = computed(() => {
+      return importData.value.some(row => 
+        columnHeaders.value.some(header => row[header] && row[header].trim() !== '')
       );
-    }
-  },
-  methods: {
-    async fetchAvailableDataSources() {
-      this.loading = true;
+    });
+
+    const fetchAvailableDataSources = async () => {
+      loading.value = true;
       try {
         const response = await axios.get('/api/data_source_columns');
         if (response.data.status === 'success') {
-          this.availableDataSources = response.data.columns;
+          availableDataSources.value = response.data.columns;
           const sources = Object.keys(response.data.columns);
           if (sources.length > 0) {
-            // Set default selection and fetch its columns
-            this.selectedDataSource = sources[0];
-            this.handleDataSourceChange(this.selectedDataSource);
+            selectedDataSource.value = sources[0];
+            handleDataSourceChange(selectedDataSource.value);
           }
         } else {
-          this.$message.error('加载数据源失败: ' + response.data.message);
+          ElMessage.error('加载数据源失败: ' + response.data.message);
         }
       } catch (error) {
-        this.$message.error('加载数据源时发生错误');
+        ElMessage.error('加载数据源时发生错误');
         console.error(error);
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    async fetchColumnsForDataSource(dataSource) {
-        if (!dataSource) return;
-        this.loading = true;
-        try {
-            const response = await axios.get(`/api/data_columns?source=${dataSource}`);
-            if (response.data.success) {
-                this.columnHeaders = response.data.columns;
-                this.resetTable();
-            } else {
-                this.$message.error('获取列信息失败: ' + response.data.message);
-                this.columnHeaders = []; // Clear headers on failure
-            }
-        } catch (error) {
-            this.$message.error('获取列信息时发生错误');
-            this.columnHeaders = []; // Clear headers on error
-            console.error(error);
-        } finally {
-            this.loading = false;
+    };
+
+    const fetchColumnsForDataSource = async (dataSource) => {
+      if (!dataSource) return;
+      loading.value = true;
+      try {
+        const response = await axios.get(`/api/data_columns?source=${dataSource}`);
+        if (response.data.success) {
+          columnHeaders.value = response.data.columns;
+          resetTable();
+        } else {
+          ElMessage.error('获取列信息失败: ' + response.data.message);
+          columnHeaders.value = [];
         }
-    },
-    handleDataSourceChange(dataSource) {
-      this.fetchColumnsForDataSource(dataSource);
-    },
-    resetTable() {
-      this.importData = [];
-      this.addRow();
-    },
-    addRow() {
-      const newRow = {};
-      this.columnHeaders.forEach(col => {
-        this.$set(newRow, col, '');
-      });
-      this.importData.push(newRow);
-    },
-    removeRow(index) {
-      this.importData.splice(index, 1);
-      if (this.importData.length === 0) {
-        this.addRow();
+      } catch (error) {
+        ElMessage.error('获取列信息时发生错误');
+        columnHeaders.value = [];
+        console.error(error);
+      } finally {
+        loading.value = false;
       }
-    },
-    async previewImport() {
-      if (!this.canPreview) {
-        this.$message.warning('请输入有效数据后再预览');
+    };
+
+    const handleDataSourceChange = (dataSource) => {
+      fetchColumnsForDataSource(dataSource);
+    };
+
+    const resetTable = () => {
+      importData.value = [];
+      addRow();
+    };
+
+    const addRow = () => {
+      const newRow = {};
+      columnHeaders.value.forEach(col => {
+        newRow[col] = '';
+      });
+      importData.value.push(newRow);
+    };
+
+    const removeRow = (index) => {
+      importData.value.splice(index, 1);
+      if (importData.value.length === 0) {
+        addRow();
+      }
+    };
+
+    const previewImport = async () => {
+      if (!canPreview.value) {
+        ElMessage.warning('请输入有效数据后再预览');
         return;
       }
-      this.loading = true;
-      const validRows = this.importData.filter(row => 
-        this.columnHeaders.some(header => row[header] && row[header].trim() !== '')
+      loading.value = true;
+      const validRows = importData.value.filter(row => 
+        columnHeaders.value.some(header => row[header] && row[header].trim() !== '')
       );
 
       try {
-        const response = await axios.post(`/api/import/${this.selectedDataSource}/preview`, {
+        const response = await axios.post(`/api/import/${selectedDataSource.value}/preview`, {
           data: validRows,
-          dataSource: this.selectedDataSource
+          dataSource: selectedDataSource.value
         });
         if (response.data.status === 'success') {
-          this.importPreview = {
+          importPreview.value = {
             ...response.data.preview,
             temp_id: response.data.temp_id,
             preview_rows: validRows,
-            columns: this.columnHeaders
+            columns: columnHeaders.value
           };
-          this.$message.success('预览成功');
+          ElMessage.success('预览成功');
         } else {
-          this.$message.error('预览失败: ' + response.data.message);
+          ElMessage.error('预览失败: ' + response.data.message);
         }
       } catch (error) {
-        this.$message.error('预览时发生错误');
+        ElMessage.error('预览时发生错误');
         console.error(error);
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    async confirmImport() {
-      if (!this.importPreview || !this.importPreview.temp_id) {
-        this.$message.warning('没有可确认的预览数据');
+    };
+
+    const confirmImport = async () => {
+      if (!importPreview.value || !importPreview.value.temp_id) {
+        ElMessage.warning('没有可确认的预览数据');
         return;
       }
-      this.loading = true;
+      loading.value = true;
       try {
-        const response = await axios.post(`/api/import/${this.selectedDataSource}/confirm`, {
-          temp_id: this.importPreview.temp_id,
-          dataSource: this.selectedDataSource
+        const response = await axios.post(`/api/import/${selectedDataSource.value}/confirm`, {
+          temp_id: importPreview.value.temp_id,
+          dataSource: selectedDataSource.value
         });
         if (response.data.status === 'success') {
-          this.$message.success('导入成功！');
-          this.handleClose(); // Close dialog on success
+          ElMessage.success('导入成功！');
+          handleClose();
         } else {
-          this.$message.error('导入失败: ' + response.data.message);
+          ElMessage.error('导入失败: ' + response.data.message);
         }
       } catch (error) {
-        this.$message.error('确认导入时发生错误');
+        ElMessage.error('确认导入时发生错误');
         console.error(error);
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    cancelImport() {
-      this.importPreview = null;
-    },
-    handleClose() {
-      this.store.closeImportDialog();
-      // Reset state
-      this.importPreview = null;
-      this.columnHeaders = [];
-      this.importData = [];
-      this.selectedDataSource = '';
-      this.availableDataSources = {};
-    }
-  },
-  mounted() {
-    // Fetch available data sources when component is first mounted
-    this.fetchAvailableDataSources();
-  },
-  watch: {
-    // Watch for the dialog becoming visible to load initial data if it hasn't been loaded
-    dialogVisible(newValue) {
-      if (newValue && Object.keys(this.availableDataSources).length === 0) {
-        this.fetchAvailableDataSources();
+    };
+
+    const cancelImport = () => {
+      importPreview.value = null;
+    };
+
+    const handleClose = () => {
+      store.closeImportDialog();
+      importPreview.value = null;
+      columnHeaders.value = [];
+      importData.value = [];
+      selectedDataSource.value = '';
+      availableDataSources.value = {};
+    };
+
+    onMounted(() => {
+      fetchAvailableDataSources();
+    });
+
+    watch(dialogVisible, (newValue) => {
+      if (newValue && Object.keys(availableDataSources.value).length === 0) {
+        fetchAvailableDataSources();
       }
-    }
-  }
+    });
+
+    return {
+      store,
+      loading,
+      selectedDataSource,
+      availableDataSources,
+      columnHeaders,
+      importData,
+      importPreview,
+      dialogVisible,
+      canPreview,
+      fetchAvailableDataSources,
+      fetchColumnsForDataSource,
+      handleDataSourceChange,
+      resetTable,
+      addRow,
+      removeRow,
+      previewImport,
+      confirmImport,
+      cancelImport,
+      handleClose,
+    };
+  },
 };
 </script>
 

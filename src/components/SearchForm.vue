@@ -110,21 +110,36 @@
       :visible.sync="store.isSettingsDialogVisible"
       :mode="store.settingsDialogMode"
     ></settings-dialog>
+    
+    
+    <search-scope-dialog
+      :visible.sync="isSearchScopeDialogVisible"
+    ></search-scope-dialog>
+    
+    <enhanced-import-dialog
+      :visible.sync="isEnhancedImportDialogVisible"
+    ></enhanced-import-dialog>
   </div>
 </template>
 
 <script>
 import { useSearchStore } from '../store/search';
 import SettingsDialog from './SettingsDialog.vue';
+import SearchScopeDialog from './SearchScopeDialog.vue';
+import EnhancedImportDialog from './EnhancedImportDialog.vue';
 
 export default {
   name: 'SearchForm',
   components: {
     SettingsDialog,
+    SearchScopeDialog,
+    EnhancedImportDialog,
   },
   data() {
     return {
       oldSelections: {},
+      isSearchScopeDialogVisible: false,
+      isEnhancedImportDialogVisible: false,
     };
   },
   setup() {
@@ -136,7 +151,7 @@ export default {
       this.oldSelections[idx] = [...(selection || [])];
     },
     openImportDialog() {
-      this.store.openImportDialog();
+      this.isEnhancedImportDialogVisible = true;
     },
     showDataSourceDialog() {
       this.store.openSettingsDialog('dataSource');
@@ -145,15 +160,13 @@ export default {
       this.store.openSettingsDialog('aircraftTypes');
     },
     showSensitiveWordDialog() {
-      // TODO: Implement sensitive word dialog
-      console.log('showSensitiveWordDialog');
+      this.store.openSettingsDialog('sensitiveWords');
     },
     handleSimilaritySearch() {
       this.store.performSimilaritySearch();
     },
     showSearchColumnsDialog() {
-      // TODO: Implement search columns dialog
-      console.log('showSearchColumnsDialog');
+      this.isSearchScopeDialogVisible = true;
     },
     handleDataSourceChange(dataSource) {
       this.store.changeDataSource(dataSource);

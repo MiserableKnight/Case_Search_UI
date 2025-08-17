@@ -1,0 +1,436 @@
+/* Element Plus 样式覆盖 - 匹配原始 Element UI 的字体和按钮大小 */
+
+/* 全局字体大小调整 */
+:root {
+  --el-font-size-base: 14px;
+  --el-font-size-small: 13px;
+  --el-font-size-large: 16px;
+}
+
+/* 按钮尺寸调整 - 匹配原始Element UI的默认尺寸 */
+.el-button {
+  height: 36px;
+  padding: 0 19px;
+  font-size: 14px;
+  border-radius: 4px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.el-button--small {
+  height: 32px;
+  padding: 0 15px;
+  font-size: 13px;
+  border-radius: 3px;
+}
+
+.el-button--large {
+  height: 40px;
+  padding: 0 20px;
+  font-size: 16px;
+  border-radius: 4px;
+}
+
+/* 确保按钮文字垂直居中 */
+.el-button span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* 输入框尺寸调整 - 匹配原始Element UI的默认尺寸 */
+.el-input {
+  --el-input-height: 36px;
+}
+
+.el-input__inner {
+  height: 36px;
+  line-height: 36px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+.el-input--small .el-input__inner {
+  height: 32px;
+  line-height: 32px;
+  font-size: 13px;
+}
+
+/* 选择器尺寸调整 */
+.el-select {
+  --el-select-input-height: 36px;
+}
+
+.el-select .el-input__inner {
+  height: 36px;
+  line-height: 36px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+.el-select--small .el-input__inner {
+  height: 32px;
+  line-height: 32px;
+  font-size: 13px;
+}
+
+/* 文本域尺寸调整 */
+.el-textarea__inner {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 表格样式调整 */
+.el-table {
+  font-size: 13px;
+}
+
+.el-table th {
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.el-table td {
+  font-size: 12px;
+  padding: 6px 0;
+}
+
+.el-table .cell {
+  line-height: 18px;
+  padding: 4px;
+}
+
+/* 对话框样式调整 */
+.el-dialog {
+  border-radius: 4px;
+}
+
+.el-dialog__header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #EBEEF5;
+}
+
+.el-dialog__title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.el-dialog__body {
+  padding: 20px;
+  font-size: 14px;
+}
+
+.el-dialog__footer {
+  padding: 15px 20px;
+  border-top: 1px solid #EBEEF5;
+}
+
+/* 单选框和复选框样式调整 */
+.el-radio {
+  height: 32px;
+  line-height: 32px;
+  margin-right: 30px;
+}
+
+.el-radio__label {
+  font-size: 14px;
+}
+
+.el-checkbox {
+  height: 32px;
+  line-height: 32px;
+  margin-right: 30px;
+}
+
+.el-checkbox__label {
+  font-size: 14px;
+}
+
+/* 标签页样式调整 */
+.el-tabs__item {
+  height: 40px;
+  line-height: 40px;
+  font-size: 14px;
+  padding: 0 20px;
+}
+
+/* 开关样式调整 */
+.el-switch {
+  height: 20px;
+}
+
+/* 分页样式调整 */
+.el-pagination {
+  font-size: 14px;
+}
+
+.el-pagination button {
+  min-height: 32px;
+}
+
+.el-pager li {
+  height: 32px;
+  line-height: 32px;
+  font-size: 14px;
+}
+
+/* 下拉菜单样式调整 */
+.el-dropdown-menu__item {
+  font-size: 14px;
+  line-height: 32px;
+  padding: 0 16px;
+}
+
+/* 消息提示样式调整 */
+.el-message {
+  font-size: 14px;
+}
+
+/* 表单项样式调整 */
+.el-form-item__label {
+  font-size: 14px;
+  line-height: 32px;
+}
+
+.el-form-item__content {
+  font-size: 14px;
+  line-height: 32px;
+}
+
+/* 标签样式调整 */
+.el-tag {
+  height: 24px;
+  line-height: 22px;
+  font-size: 12px;
+  padding: 0 8px;
+}
+
+/* 徽章样式调整 */
+.el-badge {
+  font-size: 12px;
+}
+
+/* 警告样式调整 */
+.el-alert {
+  font-size: 14px;
+  padding: 8px 16px;
+}
+
+/* 卡片样式调整 */
+.el-card {
+  border-radius: 4px;
+}
+
+.el-card__header {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+  padding: 15px 20px;
+  border-bottom: 1px solid #EBEEF5;
+}
+
+/* 树形控件样式调整 */
+.el-tree {
+  font-size: 14px;
+}
+
+.el-tree-node__label {
+  font-size: 14px;
+}
+
+/* 时间选择器样式调整 */
+.el-date-editor.el-input {
+  width: 220px;
+}
+
+.el-date-editor.el-input__inner {
+  font-size: 14px;
+}
+
+/* 数字输入框样式调整 */
+.el-input-number {
+  width: 150px;
+}
+
+.el-input-number__decrease,
+.el-input-number__increase {
+  height: 30px;
+  line-height: 30px;
+  width: 32px;
+}
+
+.el-input-number .el-input__inner {
+  height: 32px;
+  line-height: 32px;
+  font-size: 14px;
+}
+
+/* 滑块样式调整 */
+.el-slider {
+  height: 32px;
+}
+
+/* 颜色选择器样式调整 */
+.el-color-picker {
+  height: 32px;
+  width: 32px;
+}
+
+/* 评分样式调整 */
+.el-rate {
+  height: 32px;
+}
+
+/* 穿梭框样式调整 */
+.el-transfer {
+  font-size: 14px;
+}
+
+/* 上传组件样式调整 */
+.el-upload {
+  font-size: 14px;
+}
+
+/* 菜单样式调整 */
+.el-menu {
+  font-size: 14px;
+}
+
+.el-menu-item {
+  height: 56px;
+  line-height: 56px;
+  font-size: 14px;
+}
+
+/* 页眉页脚样式调整 */
+.el-header {
+  font-size: 14px;
+}
+
+.el-footer {
+  font-size: 14px;
+}
+
+/* 布局样式调整 */
+.el-main {
+  font-size: 14px;
+}
+
+/* 图标样式调整 */
+.el-icon {
+  font-size: 14px;
+}
+
+/* 步骤条样式调整 */
+.el-step__title {
+  font-size: 14px;
+}
+
+.el-step__description {
+  font-size: 12px;
+}
+
+/* 时间线样式调整 */
+.el-timeline-item__timestamp {
+  font-size: 12px;
+}
+
+/* 折叠面板样式调整 */
+.el-collapse-item__header {
+  font-size: 14px;
+  height: 48px;
+  line-height: 48px;
+}
+
+/* 标记样式调整 */
+.el-badge__content {
+  font-size: 12px;
+  height: 18px;
+  line-height: 18px;
+  padding: 0 6px;
+}
+
+/* 加载样式调整 */
+.el-loading-text {
+  font-size: 14px;
+}
+
+/* 结果统计样式调整 */
+.result-count-container {
+  font-size: 14px;
+  color: #606266;
+}
+
+.type-statistics {
+  font-size: 14px;
+}
+
+.type-stat {
+  font-size: 14px;
+}
+
+/* 搜索表单样式调整 */
+.search-section {
+  font-size: 14px;
+}
+
+.block-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.control-label {
+  font-size: 14px;
+  color: #606266;
+}
+
+.switch-label {
+  font-size: 13px;
+  color: #606266;
+}
+
+/* 对话框内容样式调整 */
+.dialog-content {
+  font-size: 14px;
+}
+
+.radio-item,
+.checkbox-item {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* 表格操作按钮样式调整 */
+.column-control .el-button {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* 全局字体设置 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #303133;
+}
+
+/* 确保所有文本元素使用一致的字体大小 */
+h1, h2, h3, h4, h5, h6 {
+  font-size: 1em;
+  font-weight: bold;
+}
+
+h1 { font-size: 24px; }
+h2 { font-size: 20px; }
+h3 { font-size: 18px; }
+h4 { font-size: 16px; }
+h5 { font-size: 14px; }
+h6 { font-size: 12px; }
+
+p, span, div, label {
+  font-size: inherit;
+}

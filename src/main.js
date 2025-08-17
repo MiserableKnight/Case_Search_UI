@@ -1,22 +1,15 @@
-import Vue from 'vue';
-import { createPinia, PiniaVuePlugin } from 'pinia';
-import ElementUI from 'element-ui';
-import 'element-ui/lib/theme-chalk/index.css';
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import ElementPlus from 'element-plus';
+import 'element-plus/dist/index.css';
 import '../app/static/css/main.css'; // Import main styles
+import './styles/element-plus-overrides.css'; // Import Element Plus style overrides
 import App from './App.vue';
-import { useSearchStore } from './store/search';
 
-Vue.use(PiniaVuePlugin);
-Vue.use(ElementUI);
-
+const app = createApp(App);
 const pinia = createPinia();
 
-// Initialize the search store
-const searchStore = useSearchStore(pinia);
-searchStore.initialize();
+app.use(pinia);
+app.use(ElementPlus);
 
-new Vue({
-  el: '#app',
-  pinia,
-  render: h => h(App)
-});
+app.mount('#app');

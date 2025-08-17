@@ -18,7 +18,7 @@
     </el-container>
 
     <!-- Import Dialog -->
-    <import-dialog v-if="store.isImportDialogVisible"></import-dialog>
+    <enhanced-import-dialog v-if="store.isImportDialogVisible"></enhanced-import-dialog>
   </div>
 </template>
 
@@ -26,7 +26,7 @@
 import { onMounted } from 'vue';
 import SearchForm from './components/SearchForm.vue';
 import ResultsTable from './components/ResultsTable.vue';
-import ImportDialog from './components/ImportDialog.vue'; // Import the dialog
+import EnhancedImportDialog from './components/EnhancedImportDialog.vue'; // Import the dialog
 import { useSearchStore } from './store/search';
 
 export default {
@@ -34,7 +34,7 @@ export default {
   components: {
     SearchForm,
     ResultsTable,
-    ImportDialog, // Register the dialog
+    EnhancedImportDialog, // Register the dialog
   },
   setup() {
     const store = useSearchStore();

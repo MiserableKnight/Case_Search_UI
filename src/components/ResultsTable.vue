@@ -5,6 +5,16 @@
       <div class="total-count">
         共找到 {{ store.searchResults.length }} 条结果
       </div>
+      <div class="type-statistics">
+        <div 
+          v-for="(count, type) in typeStatistics" 
+          :key="type"
+          class="type-stat"
+          :class="{ active: selectedType === type }"
+          @click="filterByType(type)">
+          {{ getTypeLabel(type) }}: {{ count }}
+        </div>
+      </div>
     </div>
 
     <!-- 表格控制区 -->
@@ -20,7 +30,7 @@
     <!-- 结果表格 -->
     <el-table
       ref="dataTable"
-      :data="store.searchResults"
+      :data="filteredResults"
       style="width: 100%"
       border
       stripe
@@ -36,27 +46,22 @@
     </el-table>
 
     <!-- 列显示控制对话框 -->
-    <el-dialog title="列显示控制" :visible.sync="columnDialogVisible" width="30%" custom-class="column-control-dialog">
-      <!-- This now iterates over ALL columns from the search result -->
-      <el-checkbox :value="isAllVisible" @change="handleSelectAllVisible">全选</el-checkbox>
-      <hr>
-      <el-checkbox-group v-model="visibleColumnsProxy">
-        <el-checkbox v-for="col in store.allColumns" :key="col" :label="col"></el-checkbox>
-      </el-checkbox-group>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="columnDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="columnDialogVisible = false">确 定</el-button>
-      </span>
-    </el-dialog>
+    <column-display-dialog
+      :visible.sync="columnDialogVisible"
+    ></column-display-dialog>
   </div>
 </template>
 
 <script>
 import { useSearchStore } from '../store/search';
 import { computed } from 'vue';
+import ColumnDisplayDialog from './ColumnDisplayDialog.vue';
 
 export default {
   name: 'ResultsTable',
+  components: {
+    ColumnDisplayDialog,
+  },
   setup() {
     const store = useSearchStore();
     return { store };
@@ -65,35 +70,47 @@ export default {
     return {
       selectedRows: [],
       columnDialogVisible: false,
+      selectedType: null,
     };
   },
   computed: {
-    // This proxy now correctly interacts with `allColumns` and `columnVisible`
-    visibleColumnsProxy: {
-      get() {
-        // It should reflect the visible columns based on `allColumns`
-        return this.store.allColumns.filter(col => this.store.columnVisible[col]);
-      },
-      set(newVisibleColumns) {
-        // When the user makes changes, update the visibility of each column
-        for (const col of this.store.allColumns) {
-          this.store.columnVisible[col] = newVisibleColumns.includes(col);
-        }
-      }
+    typeStatistics() {
+      const stats = {};
+      this.store.searchResults.forEach(result => {
+        const type = result['数据类型'] || result['数据源'] || '其他';
+        stats[type] = (stats[type] || 0) + 1;
+      });
+      return stats;
     },
-    isAllVisible() {
-      return this.store.allColumns.length > 0 && this.visibleColumnsProxy.length === this.store.allColumns.length;
+    filteredResults() {
+      if (!this.selectedType) {
+        return this.store.searchResults;
+      }
+      return this.store.searchResults.filter(result => {
+        const type = result['数据类型'] || result['数据源'] || '其他';
+        return type === this.selectedType;
+      });
     }
   },
   methods: {
     handleSelectionChange(selection) {
       this.selectedRows = selection;
     },
-    handleSelectAllVisible(value) {
-      if (value) {
-        this.visibleColumnsProxy = this.store.allColumns;
+    getTypeLabel(type) {
+      const labels = {
+        'case': '快响信息',
+        'engineering': '工程文件',
+        'manual': '手册',
+        'faults': '故障报告',
+        'r_and_i_record': '部件拆换记录'
+      };
+      return labels[type] || type;
+    },
+    filterByType(type) {
+      if (this.selectedType === type) {
+        this.selectedType = null;
       } else {
-        this.visibleColumnsProxy = [];
+        this.selectedType = type;
       }
     },
   },
