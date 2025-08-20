@@ -215,11 +215,15 @@ class BackupManager:
         try:
             records = self._load_backup_records()
 
+            # 获取当前数据大小
+            current_size = self.get_current_data_size()
+
             # 添加新的备份记录
             new_record = {
                 "timestamp": datetime.datetime.now().isoformat(),
                 "backup_path": backup_path,
                 "status": "success",
+                "data_size": current_size,
             }
 
             records.append(new_record)
@@ -230,6 +234,120 @@ class BackupManager:
 
         except Exception as e:
             self.logger.error(f"更新备份记录时发生错误: {str(e)}")
+
+    def get_directory_size_safe(self, directory: Path) -> int:
+        """安全计算目录大小，只访问文件元数据，不读取文件内容。
+
+        Args:
+            directory: 要计算大小的目录路径
+
+        Returns:
+            int: 目录总大小（字节）
+        """
+        total_size = 0
+        try:
+            for item in directory.rglob('*'):
+                if item.is_file():
+                    try:
+                        # 只获取文件大小，不读取内容
+                        total_size += item.stat().st_size
+                    except (PermissionError, OSError):
+                        # 如果遇到权限问题或文件不可访问，跳过该文件
+                        self.logger.warning(f"无法访问文件大小: {item}")
+                        continue
+        except (PermissionError, OSError):
+            self.logger.warning(f"无法访问目录: {directory}")
+        
+        return total_size
+
+    def get_current_data_size(self) -> int:
+        """获取当前数据目录的总大小。
+
+        Returns:
+            int: 数据目录总大小（字节）
+        """
+        return self.get_directory_size_safe(self.source_dir)
+
+    def get_last_backup_size(self) -> int:
+        """获取最后一次备份时的数据大小。
+
+        Returns:
+            int: 最后一次备份时的数据大小（字节），如果没有记录则返回0
+        """
+        try:
+            records = self._load_backup_records()
+            if not records:
+                return 0
+            
+            # 查找最新的成功备份记录
+            for record in reversed(records):
+                if record.get("status") == "success" and "data_size" in record:
+                    return int(record["data_size"])
+            
+            return 0
+        except Exception as e:
+            self.logger.error(f"获取上次备份大小失败: {str(e)}")
+            return 0
+
+    def should_backup_based_on_size(self, min_interval_days: int = 1) -> bool:
+        """基于数据大小变化判断是否需要备份。
+
+        Args:
+            min_interval_days: 最小备份间隔天数，避免频繁备份
+
+        Returns:
+            bool: 如果需要备份返回True，否则返回False
+        """
+        try:
+            # 获取当前数据大小
+            current_size = self.get_current_data_size()
+            
+            # 如果数据目录为空，不备份
+            if current_size == 0:
+                self.logger.info("数据目录为空，跳过备份")
+                return False
+            
+            # 获取上次备份大小
+            last_backup_size = self.get_last_backup_size()
+            
+            # 如果没有备份记录，执行备份
+            if last_backup_size == 0:
+                self.logger.info("首次备份，开始执行")
+                return True
+            
+            # 检查大小是否有变化
+            size_changed = current_size != last_backup_size
+            
+            # 检查备份间隔
+            interval_reached = False
+            records = self._load_backup_records()
+            if records:
+                last_backup_time = None
+                for record in reversed(records):
+                    if record.get("status") == "success":
+                        last_backup_time = datetime.datetime.fromisoformat(record["timestamp"])
+                        break
+                
+                if last_backup_time:
+                    days_since_last = (datetime.datetime.now() - last_backup_time).days
+                    if days_since_last >= min_interval_days:
+                        interval_reached = True
+                        self.logger.info(f"距离上次备份已{days_since_last}天，达到最小间隔要求")
+            
+            # 使用OR逻辑：大小变化或间隔达到都触发备份
+            if size_changed:
+                self.logger.info(f"数据大小有变化（上次: {last_backup_size:,}字节, 当前: {current_size:,}字节），需要备份")
+                return True
+            elif interval_reached:
+                self.logger.info(f"数据大小无变化但已达到最小备份间隔{min_interval_days}天，执行备份")
+                return True
+            else:
+                self.logger.info(f"数据大小无变化（{current_size:,}字节）且未达到最小备份间隔，跳过备份")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"检查备份条件失败: {str(e)}")
+            return False
 
     def _load_backup_records(self) -> List[Dict[str, Any]]:
         """加载备份记录。
@@ -245,6 +363,45 @@ class BackupManager:
         except Exception as e:
             self.logger.error(f"加载备份记录时发生错误: {str(e)}")
             return []
+
+
+def smart_backup_check(min_interval_days: int = 1) -> bool:
+    """智能备份检查，基于数据大小变化决定是否需要备份。
+
+    Args:
+        min_interval_days: 最小备份间隔天数
+
+    Returns:
+        bool: 如果执行了备份返回True，否则返回False
+    """
+    try:
+        backup_manager = BackupManager()
+        
+        # 检查是否需要备份
+        if backup_manager.should_backup_based_on_size(min_interval_days):
+            print("\n检测到数据变化，开始执行备份...")
+            
+            if backup_manager.create_backup():
+                backup_manager.cleanup_old_backups()
+                
+                # 显示完成信息
+                current_time = datetime.datetime.now()
+                current_size = backup_manager.get_current_data_size()
+                print(f"\n备份完成！")
+                print(f"完成时间：{current_time.strftime('%Y年%m月%d日 %H:%M:%S')}")
+                print(f"数据大小：{current_size:,} 字节")
+                print(f"备份目录：{backup_manager.backup_root.absolute()}")
+                return True
+            else:
+                print("\n备份失败！请查看日志了解详细信息。")
+                return False
+        else:
+            print("\n数据无变化或间隔时间过短，跳过备份。")
+            return False
+            
+    except Exception as e:
+        print(f"\n备份检查发生错误：{str(e)}")
+        return False
 
 
 def main() -> None:
