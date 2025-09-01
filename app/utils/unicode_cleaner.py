@@ -7,6 +7,8 @@ import re
 import logging
 from typing import Any, Union
 
+import pandas as pd
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,7 +37,8 @@ class UnicodeCleaner:
         Returns:
             str: 清洗后的文本
         """
-        if text is None:
+        # 检查是否为空值（包括pandas和numpy的各种空值类型）
+        if text is None or pd.isna(text):
             return ""
         
         # 转换为字符串
