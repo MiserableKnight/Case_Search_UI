@@ -315,11 +315,17 @@ class DataImportProcessor:
             uploaded_count = len(cleaned_new_data)
             logger.info(f"上传文件包含数据: {uploaded_count} 条")
 
-            # --- 在合并前，只对新数据进行最终的标准化，确保空值处理一致 ---
+            # --- 在合并前，对新数据和现有数据进行统一的标准化，确保数据一致性 ---
+            # 对新数据进行标准化处理
             for col in self.FINAL_COLUMNS:
-                # 统一处理新数据中对象/字符串列的空值
                 if col in cleaned_new_data.columns and cleaned_new_data[col].dtype == 'object':
                     cleaned_new_data[col] = cleaned_new_data[col].fillna('')
+            
+            # 对现有数据进行同样的标准化处理
+            if not existing_data.empty:
+                for col in self.FINAL_COLUMNS:
+                    if col in existing_data.columns and existing_data[col].dtype == 'object':
+                        existing_data[col] = existing_data[col].fillna('')
             
             # 合并数据
             combined_data = pd.concat(
@@ -328,9 +334,11 @@ class DataImportProcessor:
             logger.info(f"合并后的数据量: {len(combined_data)} 条")
 
             # 按日期倒序排序并去重
-            combined_data = combined_data.sort_values(self.date_column, ascending=False)
+            if self.date_column in combined_data.columns:
+                combined_data = combined_data.sort_values(self.date_column, ascending=False)
             logger.info(f"排序后的数据量: {len(combined_data)} 条")
 
+            # 按日期倒序排序并去重
             combined_data = combined_data.drop_duplicates(keep="first")
             logger.info(f"去重后的数据量: {len(combined_data)} 条")
 
@@ -340,12 +348,17 @@ class DataImportProcessor:
             actual_new_count = final_count - original_count
             logger.info(f"实际新增数据: {actual_new_count} 条")
 
+            # 计算重复数据量（上传数据中与现有数据重复的部分）
+            # 重复数据 = 上传数据 - 实际新增数据
+            duplicate_count = uploaded_count - actual_new_count
+            logger.info(f"重复数据: {duplicate_count} 条")
+
             # 构建预览消息
             message = (
                 f"数据变更预览：\n"
                 f"原有数据：{original_count} 条\n"
                 f"上传数据：{uploaded_count} 条\n"
-                f"重复数据：{uploaded_count - actual_new_count} 条\n"
+                f"重复数据：{duplicate_count} 条\n"
                 f"实际新增：{actual_new_count} 条\n"
                 f"变更后数据：{final_count} 条\n\n"
                 f"是否确认更新数据？"
