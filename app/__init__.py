@@ -22,21 +22,15 @@ from app.services.temp_file_manager import TempFileManager
 # 配置数据目录
 DATA_CONFIG = {
     "data_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
-    "temp_dir": os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "data", "temp"
-    ),
-    "processed_dir": os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "data", "processed"
-    ),
+    "temp_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "temp"),
+    "processed_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "processed"),
     "raw_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "raw"),
 }
 
 # 文件配置
 FILE_CONFIG = {
     "UPLOAD_FOLDER": DATA_CONFIG["temp_dir"],
-    "SENSITIVE_WORDS_FILE": os.path.join(
-        DATA_CONFIG["raw_dir"], "sensitive_words.json"
-    ),
+    "SENSITIVE_WORDS_FILE": os.path.join(DATA_CONFIG["raw_dir"], "sensitive_words.json"),
 }
 
 # 数据源配置
@@ -140,7 +134,7 @@ def create_app(config_name="development"):
                 else:
                     return None
             return data_frames[source]
-        except Exception as e:
+        except Exception:
             return None
 
     # 将 load_data_source 函数添加到应用上下文中
@@ -225,9 +219,7 @@ def create_app(config_name="development"):
 
     @app.after_request
     def add_security_headers(response):
-        response.headers["Content-Security-Policy"] = app.config[
-            "CONTENT_SECURITY_POLICY"
-        ]
+        response.headers["Content-Security-Policy"] = app.config["CONTENT_SECURITY_POLICY"]
         return response
 
     # 在应用关闭时停止调度器

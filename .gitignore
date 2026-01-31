@@ -19,8 +19,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.ruff_cache/
 
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/
@@ -58,7 +60,8 @@ data/
 # 系统文件
 .DS_Store
 Thumbs.db
-/search/
+# 旧的虚拟环境（已删除）
+search/
 
 # Node.js
 node_modules/

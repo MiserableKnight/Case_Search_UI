@@ -5,10 +5,9 @@
 import logging
 import os
 import re
-from typing import ClassVar, List, Optional
+from typing import ClassVar
 
 import pandas as pd
-from flask import current_app
 
 from .data_import_processor import DataImportProcessor
 
@@ -19,7 +18,7 @@ class FaultReportProcessor(DataImportProcessor):
     """故障报告数据处理器，处理故障报告的导入和转换"""
 
     # 必需的原始列
-    REQUIRED_COLUMNS: ClassVar[List[str]] = [
+    REQUIRED_COLUMNS: ClassVar[list[str]] = [
         "运营人",
         "机型",
         "系列",
@@ -44,7 +43,7 @@ class FaultReportProcessor(DataImportProcessor):
     ]
 
     # 最终需要保留的列
-    FINAL_COLUMNS: ClassVar[List[str]] = [
+    FINAL_COLUMNS: ClassVar[list[str]] = [
         "日期",
         "维修ATA",
         "问题描述",
@@ -154,7 +153,7 @@ class FaultReportProcessor(DataImportProcessor):
 
         return final_df
 
-    def validate_file_name(self, file_path: Optional[str]) -> bool:
+    def validate_file_name(self, file_path: str | None) -> bool:
         """验证文件名是否符合要求。
 
         Args:
@@ -175,9 +174,7 @@ class FaultReportProcessor(DataImportProcessor):
         pattern = r"^故障报告_\d{8}.*\.xlsx$"
         if not re.match(pattern, filename):
             # 检查是否是临时文件名格式（UUID_原始文件名）
-            uuid_pattern = (
-                r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_(.*)$"
-            )
+            uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_(.*)$"
             uuid_match = re.match(uuid_pattern, filename)
 
             if uuid_match:

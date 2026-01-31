@@ -5,4 +5,4 @@
 from typing import List
 
 # 导出所有核心功能
-__all__: List[str] = []
+__all__: list[str] = []

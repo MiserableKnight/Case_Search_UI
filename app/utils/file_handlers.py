@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import uuid
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from werkzeug.utils import secure_filename
 
@@ -31,8 +31,8 @@ def allowed_file(filename: str) -> bool:
 
 
 def save_temp_file(
-    file: Any, data_source: str, custom_filename: Optional[str] = None
-) -> Tuple[str, str]:
+    file: Any, data_source: str, custom_filename: str | None = None
+) -> tuple[str, str]:
     """保存上传的临时文件"""
     temp_id = str(uuid.uuid4())
     filename = custom_filename or secure_filename(file.filename)
@@ -47,9 +47,7 @@ def save_temp_file(
         raise
 
 
-def save_temp_info(
-    temp_id: str, temp_path: str, data_source: str, processor_type: str
-) -> None:
+def save_temp_info(temp_id: str, temp_path: str, data_source: str, processor_type: str) -> None:
     """保存临时文件信息"""
     try:
         temp_info = {
@@ -69,7 +67,7 @@ def save_temp_info(
         raise
 
 
-def parse_preview_message(message: str) -> Optional[Dict[str, int]]:
+def parse_preview_message(message: str) -> dict[str, int] | None:
     """从预览消息中解析数据统计信息"""
     try:
         stats = {

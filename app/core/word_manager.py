@@ -2,27 +2,26 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 from flask import current_app
 
 
 class SensitiveWordManager:
-    def __init__(self, file_path: Optional[str] = None) -> None:
+    def __init__(self, file_path: str | None = None) -> None:
         if file_path is None:
             # 使用配置中的路径
             file_path = current_app.config["FILE_CONFIG"]["SENSITIVE_WORDS_FILE"]
         self.file_path = Path(file_path)
 
         # 定义类别
-        self.categories: List[str] = [
+        self.categories: list[str] = [
             "organizations",
             "aircraft",
             "locations",
             "registration_numbers",
             "other",
         ]
-        self.category_labels: Dict[str, str] = {
+        self.category_labels: dict[str, str] = {
             "organizations": "组织机构",
             "aircraft": "设备型号",
             "locations": "地点",
@@ -31,14 +30,14 @@ class SensitiveWordManager:
         }
 
         # 初始化敏感词列表和排序列表
-        self.words: Dict[str, List[Dict[str, str]]] = {
+        self.words: dict[str, list[dict[str, str]]] = {
             "organizations": [],
             "aircraft": [],
             "locations": [],
             "registration_numbers": [],
             "other": [],
         }
-        self.sorted_words: List[str] = []
+        self.sorted_words: list[str] = []
 
         # 修改初始化顺序，确保文件存在后再加载
         if self._ensure_file_exists():
@@ -53,7 +52,7 @@ class SensitiveWordManager:
                 self.file_path.parent.mkdir(parents=True, exist_ok=True)
 
                 # 创建初始文件
-                initial_data: Dict[str, List[Dict[str, str]]] = {
+                initial_data: dict[str, list[dict[str, str]]] = {
                     "organizations": [],
                     "aircraft": [],
                     "locations": [],
@@ -65,13 +64,13 @@ class SensitiveWordManager:
                 return True
 
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def load_words(self) -> None:
         try:
             if os.path.exists(self.file_path):
-                with open(self.file_path, "r", encoding="utf-8") as f:
+                with open(self.file_path, encoding="utf-8") as f:
                     self.words = json.load(f)
             else:
                 # 保持与 categories 相同的顺序
@@ -94,7 +93,7 @@ class SensitiveWordManager:
                 "other": [],
             }
 
-    def _create_sorted_list(self) -> List[str]:
+    def _create_sorted_list(self) -> list[str]:
         """创建按长度排序的敏感词列表"""
         all_words = []
         for category, words in self.words.items():
@@ -103,18 +102,18 @@ class SensitiveWordManager:
         # 按长度降序排序
         return sorted(all_words, key=len, reverse=True)
 
-    def get_all_words(self) -> Dict[str, List[Dict[str, str]]]:
+    def get_all_words(self) -> dict[str, list[dict[str, str]]]:
         """获取所有敏感词，按照预定义顺序返回"""
         ordered_words = {}
         for category in self.categories:  # self.categories 已经定义了正确的顺序
             ordered_words[category] = self.words.get(category, [])
         return ordered_words
 
-    def get_sorted_words(self) -> List[str]:
+    def get_sorted_words(self) -> list[str]:
         """获取按长度排序的敏感词列表"""
         return self.sorted_words
 
-    def add_word(self, word: str, category: str) -> Tuple[bool, str]:
+    def add_word(self, word: str, category: str) -> tuple[bool, str]:
         """添加敏感词"""
         if not word or not word.strip():
             return False, "敏感词不能为空"
@@ -144,7 +143,7 @@ class SensitiveWordManager:
         else:
             return False, "保存敏感词失败"
 
-    def remove_word(self, word: str, category: str) -> Tuple[bool, str]:
+    def remove_word(self, word: str, category: str) -> tuple[bool, str]:
         """删除敏感词"""
         if category not in self.words:
             return False, f"类别 '{category}' 不存在"
@@ -170,7 +169,7 @@ class SensitiveWordManager:
         else:
             return False, "保存敏感词失败"
 
-    def get_words_by_category(self, category: str) -> List[Dict[str, str]]:
+    def get_words_by_category(self, category: str) -> list[dict[str, str]]:
         """获取指定类别的敏感词"""
         try:
             self.load_words()

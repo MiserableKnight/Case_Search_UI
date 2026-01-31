@@ -3,15 +3,13 @@
 定义自定义异常类和错误代码
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AppError(Exception):
     """应用基础异常类"""
 
-    def __init__(
-        self, message: str, code: int = 400, details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str, code: int = 400, details: Any | None = None) -> None:
         self.message = message
         self.code = code
         self.details = details
@@ -22,45 +20,35 @@ class AppError(Exception):
 class BadRequestError(AppError):
     """请求参数错误"""
 
-    def __init__(
-        self, message: str = "请求参数错误", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "请求参数错误", details: Any | None = None) -> None:
         super().__init__(message, 400, details)
 
 
 class ValidationError(AppError):
     """数据验证错误"""
 
-    def __init__(
-        self, message: str = "数据验证失败", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "数据验证失败", details: Any | None = None) -> None:
         super().__init__(message, 400, details)
 
 
 class AuthorizationError(AppError):
     """授权错误"""
 
-    def __init__(
-        self, message: str = "授权失败", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "授权失败", details: Any | None = None) -> None:
         super().__init__(message, 401, details)
 
 
 class ForbiddenError(AppError):
     """禁止访问错误"""
 
-    def __init__(
-        self, message: str = "禁止访问", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "禁止访问", details: Any | None = None) -> None:
         super().__init__(message, 403, details)
 
 
 class NotFoundError(AppError):
     """资源不存在错误"""
 
-    def __init__(
-        self, message: str = "资源不存在", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "资源不存在", details: Any | None = None) -> None:
         super().__init__(message, 404, details)
 
 
@@ -68,41 +56,33 @@ class NotFoundError(AppError):
 class InternalError(AppError):
     """内部服务器错误"""
 
-    def __init__(
-        self, message: str = "内部服务器错误", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "内部服务器错误", details: Any | None = None) -> None:
         super().__init__(message, 500, details)
 
 
 class DatabaseError(AppError):
     """数据库错误"""
 
-    def __init__(
-        self, message: str = "数据库操作失败", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "数据库操作失败", details: Any | None = None) -> None:
         super().__init__(message, 500, details)
 
 
 class ServiceError(AppError):
     """服务调用错误"""
 
-    def __init__(
-        self, message: str = "服务调用失败", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "服务调用失败", details: Any | None = None) -> None:
         super().__init__(message, 500, details)
 
 
 class FileOperationError(AppError):
     """文件操作错误"""
 
-    def __init__(
-        self, message: str = "文件操作失败", details: Optional[Any] = None
-    ) -> None:
+    def __init__(self, message: str = "文件操作失败", details: Any | None = None) -> None:
         super().__init__(message, 500, details)
 
 
 # 错误代码映射
-ERROR_CODES: Dict[int, str] = {
+ERROR_CODES: dict[int, str] = {
     # 客户端错误 (400-499)
     400: "请求参数错误",
     401: "未授权",

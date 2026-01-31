@@ -4,7 +4,7 @@
 
 import os
 import re
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, cast
 
 import pandas as pd
 
@@ -12,9 +12,7 @@ import pandas as pd
 class DataImportService:
     """数据导入服务基类，包含所有数据导入处理服务的通用方法"""
 
-    def __init__(
-        self, processor_class: Type[Any], config: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def __init__(self, processor_class: type[Any], config: dict[str, Any] | None = None) -> None:
         """
         初始化数据导入服务
 
@@ -26,7 +24,7 @@ class DataImportService:
 
     def analyze_changes(
         self, temp_path: str, enable_unicode_cleaning: bool = True
-    ) -> Tuple[bool, str, Optional[pd.DataFrame]]:
+    ) -> tuple[bool, str, pd.DataFrame | None]:
         """
         分析数据变化
 
@@ -38,7 +36,9 @@ class DataImportService:
             (success, message, combined_data): 分析结果
         """
         temp_processor = self.processor.__class__(temp_path)
-        success, message = temp_processor.analyze_changes(enable_unicode_cleaning=enable_unicode_cleaning)
+        success, message = temp_processor.analyze_changes(
+            enable_unicode_cleaning=enable_unicode_cleaning
+        )
 
         # 如果分析成功，获取合并后的数据
         combined_data = None
@@ -47,14 +47,16 @@ class DataImportService:
                 # 尝试加载原始数据和上传数据来创建合并数据
                 # 这里需要访问处理器内部细节，不是很理想的做法
                 new_data = pd.read_excel(temp_path)
-                
+
                 # 清洗列名，确保与处理器中的逻辑一致
-                cleaned_columns = [temp_processor.unicode_cleaner.clean_text(col) for col in new_data.columns]
+                cleaned_columns = [
+                    temp_processor.unicode_cleaner.clean_text(col) for col in new_data.columns
+                ]
                 new_data.columns = cleaned_columns
 
                 # 补上缺失的数据内容清洗步骤
                 new_data = temp_processor.unicode_cleaner.clean_dataframe(new_data)
-                
+
                 new_data = temp_processor.clean_data(new_data)
 
                 # 获取现有数据
@@ -72,13 +74,13 @@ class DataImportService:
                         temp_processor.date_column, ascending=False
                     )
                 combined_data = combined_data.drop_duplicates(keep="first")
-            except Exception as e:
+            except Exception:
                 # 如果处理过程中出错，返回None
                 combined_data = None
 
         return success, message, combined_data
 
-    def save_changes(self, combined_data: pd.DataFrame) -> Tuple[bool, str]:
+    def save_changes(self, combined_data: pd.DataFrame) -> tuple[bool, str]:
         """
         保存数据变化
 
@@ -90,7 +92,7 @@ class DataImportService:
         """
         return self.processor.save_changes(combined_data)
 
-    def get_columns(self) -> List[str]:
+    def get_columns(self) -> list[str]:
         """
         获取数据的列信息
 
@@ -98,9 +100,9 @@ class DataImportService:
             列信息列表
         """
         columns = self.processor.get_columns()
-        return cast(List[str], columns)
+        return cast(list[str], columns)
 
-    def confirm_import(self, file_path: str) -> Tuple[bool, str]:
+    def confirm_import(self, file_path: str) -> tuple[bool, str]:
         """
         确认导入数据
 

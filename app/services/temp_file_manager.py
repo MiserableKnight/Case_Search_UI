@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, ClassVar, List, Optional
+from typing import Any, ClassVar, Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -8,7 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 class TempFileManager:
     _instance: ClassVar[Optional["TempFileManager"]] = None
-    _scheduler: ClassVar[Optional[BackgroundScheduler]] = None
+    _scheduler: ClassVar[BackgroundScheduler | None] = None
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "TempFileManager":
         if cls._instance is None:
@@ -18,7 +18,7 @@ class TempFileManager:
     def __init__(self, base_dir: str = "data/temp") -> None:
         if not hasattr(self, "initialized"):
             self.base_dir = Path(base_dir)
-            self.categories: List[str] = ["search", "process", "export"]
+            self.categories: list[str] = ["search", "process", "export"]
             self._init_dirs()
             self.initialized = True
 
@@ -27,9 +27,7 @@ class TempFileManager:
         for category in self.categories:
             (self.base_dir / category).mkdir(parents=True, exist_ok=True)
 
-    def start_scheduler(
-        self, cron_expression: str = "0 0 * * *"
-    ) -> None:  # 默认每天凌晨执行
+    def start_scheduler(self, cron_expression: str = "0 0 * * *") -> None:  # 默认每天凌晨执行
         """启动定时清理任务"""
         if TempFileManager._scheduler is None:
             TempFileManager._scheduler = BackgroundScheduler()

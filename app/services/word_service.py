@@ -3,7 +3,6 @@
 """
 
 import json
-import os
 from pathlib import Path
 
 from flask import current_app
@@ -121,7 +120,7 @@ class WordService:
         return True
 
     def load_words(self):
-        with open(self.file_path, "r", encoding="utf-8") as f:
+        with open(self.file_path, encoding="utf-8") as f:
             self.words = json.load(f)
 
     def _create_sorted_list(self):

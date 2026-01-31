@@ -28,25 +28,54 @@ Case Search UI 是一个基于 Flask 的 Web 应用，旨在提供一个高效�
 ### 环境要求
 
 - Python 3.10+
-- 推荐使用 Anaconda 进行环境管理
 
 ### 安装步骤
 
 1.  **创建并激活虚拟环境**:
     ```bash
-    conda create -n search python=3.10
-    conda activate search
+    # Windows
+    python -m venv .venv
+    .venv\Scripts\activate
+
+    # 或使用提供的脚本
+    activate.bat
+
+    # Linux/macOS
+    python3 -m venv .venv
+    source .venv/bin/activate
     ```
 
 2.  **安装依赖**:
     ```bash
+    # 生产依赖
     pip install -r requirements.txt
+
+    # 开发依赖（包含代码检查工具）
+    pip install -r requirements-dev.txt
     ```
 
 3.  **运行应用**:
     ```bash
     python wsgi.py
     ```
+
+### 开发工具
+
+项目使用 [Ruff](https://docs.astral.sh/ruff/) 进行代码检查和格式化：
+
+```bash
+# 检查代码质量
+ruff check .
+
+# 自动修复问题
+ruff check --fix .
+
+# 格式化代码
+ruff format .
+
+# 安装 pre-commit hooks（可选）
+pre-commit install
+```
 
 应用将在本地启动，您可以通过浏览器访问 `http://127.0.0.1:5000`。
 

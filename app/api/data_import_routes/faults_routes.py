@@ -1,13 +1,9 @@
-from flask import current_app, jsonify, request
-
 from app.services import FaultReportService
 
 from . import bp
 from .data_import_routes import BaseDataImportRoutes
 
-faults_routes = BaseDataImportRoutes(
-    "faults", FaultReportService, file_prefix="故障报告"
-)
+faults_routes = BaseDataImportRoutes("faults", FaultReportService, file_prefix="故障报告")
 
 
 @bp.route("/faults/import", methods=["POST"])

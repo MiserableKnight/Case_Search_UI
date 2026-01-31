@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from flask import current_app
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class SimilarityService:
     """相似度计算服务类，封装对TextSimilarityCalculator的调用"""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         """
         初始化相似度计算服务
 
@@ -26,9 +26,7 @@ class SimilarityService:
         # TextSimilarityCalculator使用静态方法，不需要实例化
         self.config = config
 
-    def calculate_similarity(
-        self, text1: str, text2: str, method: str = "tfidf"
-    ) -> float:
+    def calculate_similarity(self, text1: str, text2: str, method: str = "tfidf") -> float:
         """
         计算两段文本的相似度
 
@@ -51,8 +49,8 @@ class SimilarityService:
             raise ServiceError(f"计算相似度失败: {str(e)}")
 
     def calculate_batch_similarity(
-        self, query_text: str, text_list: List[Dict[str, Any]], columns: List[str]
-    ) -> List[Dict[str, Any]]:
+        self, query_text: str, text_list: list[dict[str, Any]], columns: list[str]
+    ) -> list[dict[str, Any]]:
         """
         批量计算一段文本与多段文本的相似度
 
@@ -76,14 +74,12 @@ class SimilarityService:
 
         try:
             # 直接使用 TextSimilarityCalculator 类方法
-            return TextSimilarityCalculator.calculate_similarity(
-                query_text, text_list, columns
-            )
+            return TextSimilarityCalculator.calculate_similarity(query_text, text_list, columns)
         except Exception as e:
             logger.error(f"批量计算相似度时出错: {str(e)}")
             raise ServiceError(f"批量计算相似度失败: {str(e)}")
 
-    def get_available_methods(self) -> List[str]:
+    def get_available_methods(self) -> list[str]:
         """
         获取可用的相似度计算方法
 
@@ -120,8 +116,8 @@ class SimilarityService:
             raise ServiceError(f"预处理文本失败: {str(e)}")
 
     def search_by_similarity(
-        self, search_text: str, data_source: str, columns: List[str], limit: int = 10
-    ) -> List[Dict[str, Any]]:
+        self, search_text: str, data_source: str, columns: list[str], limit: int = 10
+    ) -> list[dict[str, Any]]:
         """
         根据相似度搜索数据
 
@@ -152,9 +148,7 @@ class SimilarityService:
             results = df.to_dict("records")
 
             # 计算相似度
-            sorted_results = self.calculate_batch_similarity(
-                search_text, results, columns
-            )
+            sorted_results = self.calculate_batch_similarity(search_text, results, columns)
 
             # 限制结果数量
             if limit > 0 and len(sorted_results) > limit:

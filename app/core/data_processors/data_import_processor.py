@@ -4,9 +4,8 @@
 
 import logging
 import os
-from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type
-
 import re
+from typing import Any, ClassVar
 
 import pandas as pd
 from flask import current_app
@@ -20,19 +19,19 @@ class DataImportProcessor:
     """数据导入处理器基类，提供通用数据导入和处理功能"""
 
     # 数据源到数据类型的映射
-    DATA_SOURCE_TYPE_MAP: ClassVar[Dict[str, str]] = {
+    DATA_SOURCE_TYPE_MAP: ClassVar[dict[str, str]] = {
         "case": "服务请求",
         "faults": "故障报告",
         "r_and_i_record": "部件拆换记录",
     }
 
     # 基类中定义默认的必需列和最终列，子类可以覆盖
-    REQUIRED_COLUMNS: ClassVar[List[str]] = ["问题描述"]
-    FINAL_COLUMNS: ClassVar[List[str]] = ["问题描述", "数据类型"]
+    REQUIRED_COLUMNS: ClassVar[list[str]] = ["问题描述"]
+    FINAL_COLUMNS: ClassVar[list[str]] = ["问题描述", "数据类型"]
 
-    _instances: ClassVar[Dict[Type["DataImportProcessor"], "DataImportProcessor"]] = {}
+    _instances: ClassVar[dict[type["DataImportProcessor"], "DataImportProcessor"]] = {}
 
-    def __new__(cls, file_path: Optional[str] = None) -> "DataImportProcessor":
+    def __new__(cls, file_path: str | None = None) -> "DataImportProcessor":
         """单例模式创建实例。
 
         Args:
@@ -45,7 +44,7 @@ class DataImportProcessor:
             cls._instances[cls] = super().__new__(cls)
         return cls._instances[cls]
 
-    def __init__(self, file_path: Optional[str] = None) -> None:
+    def __init__(self, file_path: str | None = None) -> None:
         """初始化数据导入处理器。
 
         Args:
@@ -74,18 +73,12 @@ class DataImportProcessor:
                     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 )
                 data_dir = os.path.join(os.path.dirname(app_dir), "data")
-                self.data_path = os.path.join(
-                    data_dir, "raw", f"{self.data_source_key}.parquet"
-                )
+                self.data_path = os.path.join(data_dir, "raw", f"{self.data_source_key}.parquet")
         except Exception:
             # 如果不在Flask上下文中，使用默认路径
-            app_dir = os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            )
+            app_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             data_dir = os.path.join(os.path.dirname(app_dir), "data")
-            self.data_path = os.path.join(
-                data_dir, "raw", f"{self.data_source_key}.parquet"
-            )
+            self.data_path = os.path.join(data_dir, "raw", f"{self.data_source_key}.parquet")
 
         # 检查并创建数据目录
         os.makedirs(os.path.dirname(self.data_path), exist_ok=True)
@@ -112,9 +105,7 @@ class DataImportProcessor:
             raise ValueError(f"缺少必需的列: {missing_columns}")
         return True
 
-    def clean_operator_names(
-        self, df: pd.DataFrame, column: str = "运营人"
-    ) -> pd.DataFrame:
+    def clean_operator_names(self, df: pd.DataFrame, column: str = "运营人") -> pd.DataFrame:
         """清洗运营人名称的通用方法。
 
         Args:
@@ -193,9 +184,7 @@ class DataImportProcessor:
 
         return df_copy
 
-    def clean_aircraft_type(
-        self, df: pd.DataFrame, column: str = "机型"
-    ) -> pd.DataFrame:
+    def clean_aircraft_type(self, df: pd.DataFrame, column: str = "机型") -> pd.DataFrame:
         """清洗机型数据的通用方法。
 
         Args:
@@ -253,7 +242,7 @@ class DataImportProcessor:
             logger.error(f"无法解析的日期格式: {date_str}")
             return pd.NaT
 
-    def analyze_changes(self, enable_unicode_cleaning: bool = True) -> Tuple[bool, str]:
+    def analyze_changes(self, enable_unicode_cleaning: bool = True) -> tuple[bool, str]:
         """分析数据变化的通用方法。
 
         Args:
@@ -270,7 +259,7 @@ class DataImportProcessor:
             cleaned_columns = [self.unicode_cleaner.clean_text(col) for col in new_data.columns]
             new_data.columns = cleaned_columns
             logger.info(f"清洗后的列名: {new_data.columns.tolist()}")
-            
+
             # Unicode字符清洗（可选）
             if enable_unicode_cleaning:
                 logger.info("开始Unicode字符清洗...")
@@ -281,7 +270,7 @@ class DataImportProcessor:
                     logger.info("Unicode字符清洗完成")
                 else:
                     logger.info("未检测到Unicode字符污染，跳过清洗")
-            
+
             self.validate_headers(new_data)
             cleaned_new_data = self.clean_data(new_data)
 
@@ -318,19 +307,17 @@ class DataImportProcessor:
             # --- 在合并前，对新数据和现有数据进行统一的标准化，确保数据一致性 ---
             # 对新数据进行标准化处理
             for col in self.FINAL_COLUMNS:
-                if col in cleaned_new_data.columns and cleaned_new_data[col].dtype == 'object':
-                    cleaned_new_data[col] = cleaned_new_data[col].fillna('')
-            
+                if col in cleaned_new_data.columns and cleaned_new_data[col].dtype == "object":
+                    cleaned_new_data[col] = cleaned_new_data[col].fillna("")
+
             # 对现有数据进行同样的标准化处理
             if not existing_data.empty:
                 for col in self.FINAL_COLUMNS:
-                    if col in existing_data.columns and existing_data[col].dtype == 'object':
-                        existing_data[col] = existing_data[col].fillna('')
-            
+                    if col in existing_data.columns and existing_data[col].dtype == "object":
+                        existing_data[col] = existing_data[col].fillna("")
+
             # 合并数据
-            combined_data = pd.concat(
-                [cleaned_new_data, existing_data], ignore_index=True
-            )
+            combined_data = pd.concat([cleaned_new_data, existing_data], ignore_index=True)
             logger.info(f"合并后的数据量: {len(combined_data)} 条")
 
             # 按日期倒序排序并去重
@@ -369,9 +356,7 @@ class DataImportProcessor:
             logger.error(f"分析数据变化时出错: {str(e)}")
             return False, f"分析数据失败: {str(e)}"
 
-    def save_changes(
-        self, combined_data: pd.DataFrame, new_count: int
-    ) -> Tuple[bool, str]:
+    def save_changes(self, combined_data: pd.DataFrame, new_count: int) -> tuple[bool, str]:
         """保存数据变更的通用方法。
 
         Args:
@@ -397,7 +382,7 @@ class DataImportProcessor:
             return False, f"保存数据失败: {str(e)}"
 
     @staticmethod
-    def validate_columns(columns: List[str]) -> bool:
+    def validate_columns(columns: list[str]) -> bool:
         """验证列名是否合法。
 
         Args:
@@ -409,7 +394,7 @@ class DataImportProcessor:
         # TODO: 实现具体的列名验证逻辑
         return len(columns) > 0
 
-    def get_columns(self) -> List[str]:
+    def get_columns(self) -> list[str]:
         """获取数据源的列名列表。
 
         Returns:

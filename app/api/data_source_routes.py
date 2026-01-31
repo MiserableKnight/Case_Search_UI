@@ -52,9 +52,7 @@ def search_column(df, keywords, column_name, logic="and", negative_filtering=Fal
                         month = year_month_match.group(2).zfill(2)
                         # 匹配年月
                         date_pattern = f"{year}-{month}"
-                        col_mask &= col_values.str.contains(
-                            date_pattern, na=False, regex=False
-                        )
+                        col_mask &= col_values.str.contains(date_pattern, na=False, regex=False)
                     else:
                         # 普通关键字匹配
                         col_mask &= col_values.str.lower().str.contains(
@@ -86,9 +84,7 @@ def search_column(df, keywords, column_name, logic="and", negative_filtering=Fal
                         month = year_month_match.group(2).zfill(2)
                         # 匹配年月
                         date_pattern = f"{year}-{month}"
-                        final_mask |= col_values.str.contains(
-                            date_pattern, na=False, regex=False
-                        )
+                        final_mask |= col_values.str.contains(date_pattern, na=False, regex=False)
                     else:
                         # 普通关键字匹配
                         final_mask |= col_values.str.lower().str.contains(
@@ -97,9 +93,7 @@ def search_column(df, keywords, column_name, logic="and", negative_filtering=Fal
                 else:
                     # 非日期列正常处理
                     col_values = df[col].fillna("").astype(str).str.lower()
-                    final_mask |= col_values.str.contains(
-                        keyword, na=False, regex=False
-                    )
+                    final_mask |= col_values.str.contains(keyword, na=False, regex=False)
 
     # 根据negative_filtering参数决定是否反向过滤
     return df[~final_mask] if negative_filtering else df[final_mask]
@@ -230,7 +224,7 @@ def get_data_types(source):
                     jsonify(
                         {
                             "status": "error",
-                            "message": f'找不到故障报告数据源文件: {current_app.config["DATA_SOURCES"]["faults"]}',
+                            "message": f"找不到故障报告数据源文件: {current_app.config['DATA_SOURCES']['faults']}",
                         }
                     ),
                     404,
@@ -242,9 +236,7 @@ def get_data_types(source):
                 if ri_df is not None and "数据类型" in ri_df.columns:
                     # 合并两个数据源的数据类型
                     faults_types = (
-                        faults_df["数据类型"].unique()
-                        if "数据类型" in faults_df.columns
-                        else []
+                        faults_df["数据类型"].unique() if "数据类型" in faults_df.columns else []
                     )
                     ri_types = ri_df["数据类型"].unique()
                     all_types = sorted(list(set(list(faults_types) + list(ri_types))))
@@ -264,7 +256,7 @@ def get_data_types(source):
                     jsonify(
                         {
                             "status": "error",
-                            "message": f'找不到数据源文件: {current_app.config["DATA_SOURCES"][source]}',
+                            "message": f"找不到数据源文件: {current_app.config['DATA_SOURCES'][source]}",
                         }
                     ),
                     404,
@@ -310,7 +302,7 @@ def search():
                 jsonify(
                     {
                         "status": "error",
-                        "message": f'找不到数据源文件: {current_app.config["DATA_SOURCES"][data_source]}',
+                        "message": f"找不到数据源文件: {current_app.config['DATA_SOURCES'][data_source]}",
                     }
                 ),
                 404,
@@ -334,9 +326,7 @@ def search():
                 continue
 
             try:
-                result_df = search_column(
-                    result_df, keywords, column_name, logic, negative
-                )
+                result_df = search_column(result_df, keywords, column_name, logic, negative)
             except ValueError as e:
                 return jsonify({"status": "error", "message": str(e)}), 400
 

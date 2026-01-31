@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """数据自动备份管理模块。
 
@@ -14,7 +13,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Set, cast
+from typing import Any, cast
 
 
 def setup_console() -> None:
@@ -44,9 +43,7 @@ setup_console()
 class BackupManager:
     """备份管理器类，负责数据的备份、清理和记录管理。"""
 
-    def __init__(
-        self, source_dir: str = "data/raw", backup_root: str = "data/backup_data"
-    ):
+    def __init__(self, source_dir: str = "data/raw", backup_root: str = "data/backup_data"):
         """初始化备份管理器。
 
         Args:
@@ -152,9 +149,7 @@ class BackupManager:
 
             # 如果没有文件被备份，删除空目录并返回
             if backup_count == 0:
-                self.logger.warning(
-                    "没有文件被备份（可能所有文件都在 backup_data 目录中）"
-                )
+                self.logger.warning("没有文件被备份（可能所有文件都在 backup_data 目录中）")
                 shutil.rmtree(backup_dir)  # 删除空的备份目录
                 return False
 
@@ -246,7 +241,7 @@ class BackupManager:
         """
         total_size = 0
         try:
-            for item in directory.rglob('*'):
+            for item in directory.rglob("*"):
                 if item.is_file():
                     try:
                         # 只获取文件大小，不读取内容
@@ -257,7 +252,7 @@ class BackupManager:
                         continue
         except (PermissionError, OSError):
             self.logger.warning(f"无法访问目录: {directory}")
-        
+
         return total_size
 
     def get_current_data_size(self) -> int:
@@ -278,12 +273,12 @@ class BackupManager:
             records = self._load_backup_records()
             if not records:
                 return 0
-            
+
             # 查找最新的成功备份记录
             for record in reversed(records):
                 if record.get("status") == "success" and "data_size" in record:
                     return int(record["data_size"])
-            
+
             return 0
         except Exception as e:
             self.logger.error(f"获取上次备份大小失败: {str(e)}")
@@ -301,23 +296,23 @@ class BackupManager:
         try:
             # 获取当前数据大小
             current_size = self.get_current_data_size()
-            
+
             # 如果数据目录为空，不备份
             if current_size == 0:
                 self.logger.info("数据目录为空，跳过备份")
                 return False
-            
+
             # 获取上次备份大小
             last_backup_size = self.get_last_backup_size()
-            
+
             # 如果没有备份记录，执行备份
             if last_backup_size == 0:
                 self.logger.info("首次备份，开始执行")
                 return True
-            
+
             # 检查大小是否有变化
             size_changed = current_size != last_backup_size
-            
+
             # 检查备份间隔
             interval_reached = False
             records = self._load_backup_records()
@@ -327,29 +322,35 @@ class BackupManager:
                     if record.get("status") == "success":
                         last_backup_time = datetime.datetime.fromisoformat(record["timestamp"])
                         break
-                
+
                 if last_backup_time:
                     days_since_last = (datetime.datetime.now() - last_backup_time).days
                     if days_since_last >= min_interval_days:
                         interval_reached = True
                         self.logger.info(f"距离上次备份已{days_since_last}天，达到最小间隔要求")
-            
+
             # 使用OR逻辑：大小变化或间隔达到都触发备份
             if size_changed:
-                self.logger.info(f"数据大小有变化（上次: {last_backup_size:,}字节, 当前: {current_size:,}字节），需要备份")
+                self.logger.info(
+                    f"数据大小有变化（上次: {last_backup_size:,}字节, 当前: {current_size:,}字节），需要备份"
+                )
                 return True
             elif interval_reached:
-                self.logger.info(f"数据大小无变化但已达到最小备份间隔{min_interval_days}天，执行备份")
+                self.logger.info(
+                    f"数据大小无变化但已达到最小备份间隔{min_interval_days}天，执行备份"
+                )
                 return True
             else:
-                self.logger.info(f"数据大小无变化（{current_size:,}字节）且未达到最小备份间隔，跳过备份")
+                self.logger.info(
+                    f"数据大小无变化（{current_size:,}字节）且未达到最小备份间隔，跳过备份"
+                )
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"检查备份条件失败: {str(e)}")
             return False
 
-    def _load_backup_records(self) -> List[Dict[str, Any]]:
+    def _load_backup_records(self) -> list[dict[str, Any]]:
         """加载备份记录。
 
         Returns:
@@ -357,8 +358,8 @@ class BackupManager:
         """
         try:
             if self.backup_record_file.exists():
-                with open(self.backup_record_file, "r", encoding="utf-8") as f:
-                    return cast(List[Dict[str, Any]], json.load(f))
+                with open(self.backup_record_file, encoding="utf-8") as f:
+                    return cast(list[dict[str, Any]], json.load(f))
             return []
         except Exception as e:
             self.logger.error(f"加载备份记录时发生错误: {str(e)}")
@@ -376,18 +377,18 @@ def smart_backup_check(min_interval_days: int = 1) -> bool:
     """
     try:
         backup_manager = BackupManager()
-        
+
         # 检查是否需要备份
         if backup_manager.should_backup_based_on_size(min_interval_days):
             print("\n检测到数据变化，开始执行备份...")
-            
+
             if backup_manager.create_backup():
                 backup_manager.cleanup_old_backups()
-                
+
                 # 显示完成信息
                 current_time = datetime.datetime.now()
                 current_size = backup_manager.get_current_data_size()
-                print(f"\n备份完成！")
+                print("\n备份完成！")
                 print(f"完成时间：{current_time.strftime('%Y年%m月%d日 %H:%M:%S')}")
                 print(f"数据大小：{current_size:,} 字节")
                 print(f"备份目录：{backup_manager.backup_root.absolute()}")
@@ -398,7 +399,7 @@ def smart_backup_check(min_interval_days: int = 1) -> bool:
         else:
             print("\n数据无变化或间隔时间过短，跳过备份。")
             return False
-            
+
     except Exception as e:
         print(f"\n备份检查发生错误：{str(e)}")
         return False

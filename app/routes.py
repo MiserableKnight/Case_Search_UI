@@ -2,8 +2,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-import pandas as pd
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, render_template
 
 from app.api.data_source_routes import search_column
 

@@ -1,5 +1,3 @@
-from flask import current_app, jsonify, request
-
 from app.services import CaseService
 
 from . import bp

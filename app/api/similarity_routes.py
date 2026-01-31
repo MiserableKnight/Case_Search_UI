@@ -27,7 +27,7 @@ def calculate_text_similarity():
         if missing_fields:
             logger.error(f"相似度计算请求缺少必需的字段: {missing_fields}")
             raise ValidationError(
-                f'缺少必需的字段: {", ".join(missing_fields)}',
+                f"缺少必需的字段: {', '.join(missing_fields)}",
                 details={"missing_fields": missing_fields},
             )
 
@@ -49,13 +49,11 @@ def calculate_text_similarity():
 
         # 检查结果中是否包含相似度列
         if sorted_results and "相似度" in sorted_results[0]:
-            logger.info(
-                f"结果包含相似度列，第一条结果相似度: {sorted_results[0]['相似度']}"
-            )
+            logger.info(f"结果包含相似度列，第一条结果相似度: {sorted_results[0]['相似度']}")
 
         return ApiResponse.success(data=sorted_results, message="相似度计算成功")
 
-    except (BadRequestError, ValidationError) as e:
+    except (BadRequestError, ValidationError):
         # 这些错误会被全局错误处理器捕获
         raise
     except Exception as e:
@@ -75,7 +73,7 @@ def similarity_search():
         missing_fields = [field for field in required_fields if field not in data]
         if missing_fields:
             raise ValidationError(
-                f'缺少必需的字段: {", ".join(missing_fields)}',
+                f"缺少必需的字段: {', '.join(missing_fields)}",
                 details={"missing_fields": missing_fields},
             )
 
@@ -91,9 +89,7 @@ def similarity_search():
         )
 
         # 使用SimilarityService进行相似度搜索
-        results = similarity_service.search_by_similarity(
-            search_text, data_source, columns, limit
-        )
+        results = similarity_service.search_by_similarity(search_text, data_source, columns, limit)
 
         logger.info(f"相似度搜索完成，结果数量: {len(results)}")
 
@@ -107,7 +103,7 @@ def similarity_search():
             meta={"total": len(results), "data_source": data_source},
         )
 
-    except (BadRequestError, ValidationError) as e:
+    except (BadRequestError, ValidationError):
         # 这些错误会被全局错误处理器捕获
         raise
     except Exception as e:

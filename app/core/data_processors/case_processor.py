@@ -1,10 +1,7 @@
 import logging
-import os
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from flask import current_app
 
 from .data_import_processor import DataImportProcessor
 
@@ -108,12 +105,8 @@ class CaseProcessor(DataImportProcessor):
 
         # 清洗机号数据
         cleaned_df["机号/MSN"] = cleaned_df["飞机序列号/注册号"]  # 重命名列
-        cleaned_df["机号/MSN"] = cleaned_df["机号/MSN"].str.replace(
-            "all", "ALL", case=True
-        )
-        cleaned_df["机号/MSN"] = cleaned_df["机号/MSN"].str.replace(
-            "./ALL", "ALL/ALL", case=True
-        )
+        cleaned_df["机号/MSN"] = cleaned_df["机号/MSN"].str.replace("all", "ALL", case=True)
+        cleaned_df["机号/MSN"] = cleaned_df["机号/MSN"].str.replace("./ALL", "ALL/ALL", case=True)
 
         # 清洗ATA数据
         cleaned_df["ATA"] = cleaned_df["ATA"].astype(str)
@@ -121,9 +114,7 @@ class CaseProcessor(DataImportProcessor):
         # 处理数据类型字段
         if "数据类型" not in cleaned_df.columns:
             logger.info("导入数据中缺少'数据类型'列，将设置为默认值'服务请求'")
-            cleaned_df["数据类型"] = self.DATA_SOURCE_TYPE_MAP.get(
-                self.data_source_key, "服务请求"
-            )
+            cleaned_df["数据类型"] = self.DATA_SOURCE_TYPE_MAP.get(self.data_source_key, "服务请求")
 
         # 删除答复详情为"无"的记录
         cleaned_df = cleaned_df[cleaned_df["答复详情"] != "无"]

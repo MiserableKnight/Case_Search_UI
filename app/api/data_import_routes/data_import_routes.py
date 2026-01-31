@@ -7,17 +7,12 @@ import tempfile
 import uuid
 
 import pandas as pd
-from flask import current_app, jsonify, request
+from flask import jsonify, request
 
 from app.utils.file_handlers import (
     allowed_file,
-    cleanup_temp_files,
     parse_preview_message,
-    save_temp_file,
-    save_temp_info,
 )
-
-from . import bp
 
 logger = logging.getLogger(__name__)
 
@@ -282,9 +277,7 @@ class BaseDataImportRoutes:
             if not os.path.exists(temp_dir):
                 logger.error(f"临时目录 {temp_dir} 不存在")
                 return (
-                    jsonify(
-                        {"status": "error", "message": "无法找到临时数据，请重新预览"}
-                    ),
+                    jsonify({"status": "error", "message": "无法找到临时数据，请重新预览"}),
                     400,
                 )
 
@@ -305,7 +298,7 @@ class BaseDataImportRoutes:
                 )
 
             # 读取临时信息
-            with open(temp_info_path, "r", encoding="utf-8") as f:
+            with open(temp_info_path, encoding="utf-8") as f:
                 temp_info = json.load(f)
 
             excel_path = temp_info.get("file_path")
@@ -374,9 +367,7 @@ class BaseDataImportRoutes:
             if not data or "data" not in data or not isinstance(data["data"], list):
                 logger.error("数据格式错误或没有找到数据")
                 return (
-                    jsonify(
-                        {"status": "error", "message": "数据格式错误或没有找到数据"}
-                    ),
+                    jsonify({"status": "error", "message": "数据格式错误或没有找到数据"}),
                     400,
                 )
 

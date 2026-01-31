@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 import jieba
 import pandas as pd
@@ -20,8 +20,8 @@ class TextSimilarityCalculator:
 
     @classmethod
     def calculate_similarity(
-        cls, search_text: str, results: List[Dict[str, Any]], columns: List[str]
-    ) -> List[Dict[str, Any]]:
+        cls, search_text: str, results: list[dict[str, Any]], columns: list[str]
+    ) -> list[dict[str, Any]]:
         """
         计算文本相似度并排序结果
 
@@ -130,9 +130,7 @@ class TextSimilarityCalculator:
                         by=["相似度_排序", time_column], ascending=[False, True]
                     )
                     # 统一时间格式为 YYYY-MM-DD
-                    df_sorted[time_column] = df_sorted[time_column].dt.strftime(
-                        "%Y-%m-%d"
-                    )
+                    df_sorted[time_column] = df_sorted[time_column].dt.strftime("%Y-%m-%d")
                 else:
                     # 如果没有时间列，只按相似度排序
                     df_sorted = df.sort_values(by="相似度_排序", ascending=False)
@@ -147,9 +145,7 @@ class TextSimilarityCalculator:
             # 转换回字典列表时处理 NaN 值
             try:
                 result_dicts = (
-                    df_sorted.drop(
-                        columns=["合并文本", "搜索列分词_cut", "相似度_排序"]
-                    )
+                    df_sorted.drop(columns=["合并文本", "搜索列分词_cut", "相似度_排序"])
                     .replace({pd.NA: None, float("nan"): None})
                     .to_dict("records")
                 )
