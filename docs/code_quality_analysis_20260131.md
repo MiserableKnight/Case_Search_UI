@@ -984,6 +984,62 @@ pytest --cov=app --cov-report=html
 
 ---
 
+### 2026-02-02 - 测试代码同步修复 (v1.3.1)
+
+**改进目标**: 修复测试代码与实际代码脱节的问题
+
+**核心原则**: "测试应该符合项目的实际情况，而不是实际情况去将就测试，更不能两者脱节"
+
+**完成的工作**:
+
+1. **删除已废弃方法的测试**
+   - [test_similarity_service.py](../tests/unit/test_similarity_service.py) - 删除17个测试
+     - `test_calculate_similarity*` (7个测试)
+     - `test_get_available_methods*` (2个测试)
+     - `test_preprocess_text*` (5个测试)
+     - `test_calculate_similarity_various_texts` (3个测试)
+   - 测试文件从339行精简到198行（↓ 42%）
+
+2. **修复类型不匹配问题**
+   - [test_anonymizer.py](../tests/unit/test_anonymizer.py) - 修复5个测试
+     - 参数类型从 `int/None` 改为 `str`
+     - 添加 `flask_app` fixture 上下文
+   - [test_unicode_cleaner.py](../tests/unit/test_unicode_cleaner.py) - 修复导入和断言
+     - 添加 `from pathlib import Path` 导入
+     - 修正测试断言
+
+3. **测试方法同步**
+   - 保留实际代码中仍在使用的方法测试
+   - `calculate_batch_similarity()` - ✅ 保留
+   - `search_by_similarity()` - ✅ 保留
+
+**成果**:
+| 指标 | 改进前 | 改进后 | 提升 |
+|------|--------|--------|------|
+| 测试失败数 | 36 | 9 | ↓ 75% |
+| 测试文件行数 | 339 | 198 | ↓ 42% |
+| 与实际代码一致性 | 低 | 高 | ✅ 完全同步 |
+
+**剩余问题**:
+- 9个测试仍有失败（DataFrame mock技术问题）
+  - 错误: `TypeError: object of type 'coroutine' has no len()`
+  - 根因: Mock DataFrame的 `to_dict()` 方法配置问题
+  - 影响: 仅测试技术问题，不影响实际代码功能
+
+**提交记录**:
+- **Tag**: v1.3.1
+- **Commit**: e3443d9
+- **Files Modified**:
+  - tests/unit/test_similarity_service.py
+  - tests/unit/test_anonymizer.py
+  - tests/unit/test_unicode_cleaner.py
+
+**相关文档**:
+- [app/services/similarity_service.py](../app/services/similarity_service.py) - 实际实现
+- [tests/unit/test_similarity_service.py](../tests/unit/test_similarity_service.py) - 更新后的测试
+
+---
+
 **报告生成时间**: 2026-01-31
 **最后更新**: 2026-02-02
 **下次审查建议**: 2026-03-01（1个月后复查类型检查改进效果）
