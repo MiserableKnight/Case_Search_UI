@@ -6,6 +6,7 @@ SimilarityService单元测试
 
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pytest
 
 from app.core.error_handler import ServiceError, ValidationError
@@ -94,20 +95,20 @@ class TestSimilarityService:
 
     def test_search_by_similarity_normal(self, sample_similarity_data, flask_app):
         """测试正常相似度搜索"""
-        # Mock current_app.load_data_source
-        mock_df = MagicMock()
-        mock_df.to_dict = MagicMock(return_value=sample_similarity_data)
+        # 使用真实的DataFrame
+        import pandas as pd
+        mock_df = pd.DataFrame(sample_similarity_data)
+
+        # 直接替换Flask app的load_data_source方法
+        flask_app.load_data_source = lambda x: mock_df  # type: ignore[attr-defined]
 
         with flask_app.app_context():
-            with patch("app.services.similarity_service.current_app") as mock_current_app:
-                mock_current_app.load_data_source.return_value = mock_df
+            result = self.service.search_by_similarity(
+                "发动机", "test_source", ["标题", "问题描述"], limit=10
+            )
 
-                result = self.service.search_by_similarity(
-                    "发动机", "test_source", ["标题", "问题描述"], limit=10
-                )
-
-                assert isinstance(result, list)
-                assert len(result) <= 10
+            assert isinstance(result, list)
+            assert len(result) <= 10
 
     def test_search_by_similarity_empty_search_text(self, flask_app):
         """测试空搜索文本"""
@@ -123,75 +124,63 @@ class TestSimilarityService:
 
     def test_search_by_similarity_data_source_not_found(self, flask_app):
         """测试数据源不存在"""
-        with flask_app.app_context():
-            with patch("app.services.similarity_service.current_app") as mock_current_app:
-                mock_current_app.load_data_source.return_value = None
+        # 直接替换Flask app的load_data_source方法
+        flask_app.load_data_source = lambda x: None  # type: ignore[attr-defined]
 
-                with pytest.raises(ValidationError, match="找不到数据源"):
-                    self.service.search_by_similarity("查询", "nonexistent", ["标题"])
+        with flask_app.app_context():
+            with pytest.raises(ValidationError, match="找不到数据源"):
+                self.service.search_by_similarity("查询", "nonexistent", ["标题"])
 
     def test_search_by_similarity_with_limit(self, sample_similarity_data, flask_app):
         """测试限制结果数量"""
-        mock_df = MagicMock()
-        mock_df.to_dict = MagicMock(return_value=sample_similarity_data)
+        mock_df = pd.DataFrame(sample_similarity_data)
+        flask_app.load_data_source = lambda x: mock_df  # type: ignore[attr-defined]
 
         with flask_app.app_context():
-            with patch("app.services.similarity_service.current_app") as mock_current_app:
-                mock_current_app.load_data_source.return_value = mock_df
+            limit = 2
+            result = self.service.search_by_similarity(
+                "发动机", "test_source", ["标题"], limit=limit
+            )
 
-                limit = 2
-                result = self.service.search_by_similarity(
-                    "发动机", "test_source", ["标题"], limit=limit
-                )
-
-                assert len(result) <= limit
+            assert len(result) <= limit
 
     def test_search_by_similarity_no_limit(self, sample_similarity_data, flask_app):
         """测试不限制结果数量"""
-        mock_df = MagicMock()
-        mock_df.to_dict = MagicMock(return_value=sample_similarity_data)
+        mock_df = pd.DataFrame(sample_similarity_data)
+        flask_app.load_data_source = lambda x: mock_df  # type: ignore[attr-defined]
 
         with flask_app.app_context():
-            with patch("app.services.similarity_service.current_app") as mock_current_app:
-                mock_current_app.load_data_source.return_value = mock_df
+            result = self.service.search_by_similarity(
+                "发动机", "test_source", ["标题"], limit=0
+            )
 
-                result = self.service.search_by_similarity(
-                    "发动机", "test_source", ["标题"], limit=0
-                )
-
-                # 应该返回所有结果
-                assert len(result) == len(sample_similarity_data)
+            # 应该返回所有结果
+            assert len(result) == len(sample_similarity_data)
 
     def test_search_by_similarity_large_dataset(self, flask_app):
         """测试搜索大数据集"""
         large_data = [{"标题": f"测试{i}", "描述": f"描述{i}"} for i in range(100)]
-        mock_df = MagicMock()
-        mock_df.to_dict = MagicMock(return_value=large_data)
+        mock_df = pd.DataFrame(large_data)
+        flask_app.load_data_source = lambda x: mock_df  # type: ignore[attr-defined]
 
         with flask_app.app_context():
-            with patch("app.services.similarity_service.current_app") as mock_current_app:
-                mock_current_app.load_data_source.return_value = mock_df
+            result = self.service.search_by_similarity("测试", "source", ["标题"], limit=50)
 
-                result = self.service.search_by_similarity("测试", "source", ["标题"], limit=50)
-
-                assert len(result) <= 50
+            assert len(result) <= 50
 
 
 @pytest.mark.parametrize("limit", [1, 5, 10, 0])
 def test_search_by_similarity_various_limits(limit, sample_similarity_data, flask_app):
     """参数化测试不同的limit值"""
-    mock_df = MagicMock()
-    mock_df.to_dict.return_value = sample_similarity_data
+    mock_df = pd.DataFrame(sample_similarity_data)
 
     service = SimilarityService()
+    flask_app.load_data_source = lambda x: mock_df  # type: ignore[attr-defined]
 
     with flask_app.app_context():
-        with patch("app.services.similarity_service.current_app") as mock_current_app:
-            mock_current_app.load_data_source.return_value = mock_df
+        result = service.search_by_similarity("查询", "source", ["标题"], limit=limit)
 
-            result = service.search_by_similarity("查询", "source", ["标题"], limit=limit)
-
-            if limit > 0:
-                assert len(result) <= limit
-            else:
-                assert len(result) == len(sample_similarity_data)
+        if limit > 0:
+            assert len(result) <= limit
+        else:
+            assert len(result) == len(sample_similarity_data)
