@@ -120,3 +120,46 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+# MyPy 类型检查配置
+[tool.mypy]
+# 目标 Python 版本
+python_version = "3.10"
+
+# 启用严格模式（逐步增强）
+strict = false  # 先设为 false，后续可以逐步启用
+
+# 基础检查项（推荐启用）
+disallow_untyped_defs = false       # TODO: 逐步启用
+check_untyped_defs = true           # 检查未类型标注的函数
+disallow_any_generics = false       # TODO: 逐步启用
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+
+# 显示错误代码
+show_error_codes = true
+
+# 排除目录
+exclude = [
+    "venv",
+    "env",
+    "build",
+    "dist",
+    ".eggs",
+    ".*\\.egg-info",
+]
+
+# 每文件忽略规则
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+# 第三方库类型标注存根
+[[tool.mypy.overrides]]
+module = [
+    "flask.*",
+    "werkzeug.*",
+]
+ignore_missing_imports = true

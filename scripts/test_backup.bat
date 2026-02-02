@@ -57,41 +57,41 @@ echo.
 
 :: 显示配置信息
 echo 当前配置信息:
-python -c "import configparser; import os; config = configparser.ConfigParser(); config_file = 'scripts/backup_config.ini'; 
-if os.path.exists(config_file): 
-    config.read(config_file); 
-    if 'BackupConfig' in config: 
-        print('  备份间隔:', config.get('BackupConfig', 'backup_interval_days', fallback='10'), '天'); 
-        print('  强制备份:', config.get('BackupConfig', 'force_backup', fallback='False')); 
-        print('  详细输出:', config.get('BackupConfig', 'verbose_output', fallback='False')); 
-        print('  备份保留数量:', config.get('BackupConfig', 'keep_backups_count', fallback='5'), '个'); 
-    else: 
-        print('  使用默认配置'); 
-else: 
+python -c "import configparser; import os; config = configparser.ConfigParser(); config_file = 'scripts/backup_config.ini';
+if os.path.exists(config_file):
+    config.read(config_file);
+    if 'BackupConfig' in config:
+        print('  备份间隔:', config.get('BackupConfig', 'backup_interval_days', fallback='10'), '天');
+        print('  强制备份:', config.get('BackupConfig', 'force_backup', fallback='False'));
+        print('  详细输出:', config.get('BackupConfig', 'verbose_output', fallback='False'));
+        print('  备份保留数量:', config.get('BackupConfig', 'keep_backups_count', fallback='5'), '个');
+    else:
+        print('  使用默认配置');
+else:
     print('  配置文件不存在，使用默认配置')"
 echo.
 
 :: 运行智能备份检查（模拟模式）
 echo 运行智能备份检查（测试模式）...
 echo ========================================
-python -c "from scripts.backup_manager import BackupManager; 
-import datetime; 
-try: 
-    backup_manager = BackupManager(); 
-    current_size = backup_manager.get_current_data_size(); 
-    last_backup_size = backup_manager.get_last_backup_size(); 
-    print('数据目录:', backup_manager.source_dir.absolute()); 
-    print('当前数据大小:', f'{current_size:,}', '字节'); 
-    print('上次备份大小:', f'{last_backup_size:,}', '字节'); 
-    should_backup = backup_manager.should_backup_based_on_size(10); 
-    print('是否需要备份:', '是' if should_backup else '否'); 
-    if should_backup: 
-        print('建议执行备份操作'); 
-    else: 
-        print('数据无变化或未达到备份间隔，跳过备份'); 
-    print('备份目录:', backup_manager.backup_root.absolute()); 
-    print('日志文件:', backup_manager.log_file.absolute()); 
-except Exception as e: 
+python -c "from scripts.backup_manager import BackupManager;
+import datetime;
+try:
+    backup_manager = BackupManager();
+    current_size = backup_manager.get_current_data_size();
+    last_backup_size = backup_manager.get_last_backup_size();
+    print('数据目录:', backup_manager.source_dir.absolute());
+    print('当前数据大小:', f'{current_size:,}', '字节');
+    print('上次备份大小:', f'{last_backup_size:,}', '字节');
+    should_backup = backup_manager.should_backup_based_on_size(10);
+    print('是否需要备份:', '是' if should_backup else '否');
+    if should_backup:
+        print('建议执行备份操作');
+    else:
+        print('数据无变化或未达到备份间隔，跳过备份');
+    print('备份目录:', backup_manager.backup_root.absolute());
+    print('日志文件:', backup_manager.log_file.absolute());
+except Exception as e:
     print('测试过程中发生错误:', str(e))"
 echo ========================================
 echo.

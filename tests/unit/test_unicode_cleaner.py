@@ -4,8 +4,9 @@ UnicodeCleaner单元测试
 测试Unicode字符清洗器的各种功能
 """
 
-import pytest
 import pandas as pd
+import pytest
+
 from app.utils.unicode_cleaner import UnicodeCleaner
 
 
@@ -123,11 +124,13 @@ class TestUnicodeCleaner:
 
     def test_clean_dataframe_non_object_columns(self):
         """测试只处理object类型的列"""
-        df = pd.DataFrame({
-            "文本列": ["值1", "值2"],
-            "数字列": [1, 2],
-            "日期列": pd.to_datetime(["2023-01-01", "2023-01-02"]),
-        })
+        df = pd.DataFrame(
+            {
+                "文本列": ["值1", "值2"],
+                "数字列": [1, 2],
+                "日期列": pd.to_datetime(["2023-01-01", "2023-01-02"]),
+            }
+        )
         result = self.cleaner.clean_dataframe(df)
         # 确保所有列都被处理
         assert len(result.columns) == len(df.columns)
@@ -262,12 +265,15 @@ class TestUnicodeCleaner:
         assert len(result) > 0
 
 
-@pytest.mark.parametrize("text,expected", [
-    ("Normal text", "Normal text"),
-    ("\u200eText\u200f", "Text"),
-    ("\x00Text\x7f", "Text"),
-    ("\u200bText\u200c", "Text"),
-])
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("Normal text", "Normal text"),
+        ("\u200eText\u200f", "Text"),
+        ("\x00Text\x7f", "Text"),
+        ("\u200bText\u200c", "Text"),
+    ],
+)
 def test_clean_text_parametrized(text, expected):
     """参数化测试clean_text方法"""
     cleaner = UnicodeCleaner()

@@ -4,11 +4,12 @@ SimilarityService单元测试
 测试相似度计算服务层的各种功能
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from app.core.error_handler import ServiceError, ValidationError
 from app.services.similarity_service import SimilarityService
-from app.core.error_handler import ValidationError, ServiceError
 
 
 class TestSimilarityService:
@@ -83,7 +84,9 @@ class TestSimilarityService:
         query_text = "发动机故障"
         columns = ["标题", "问题描述"]
 
-        result = self.service.calculate_batch_similarity(query_text, sample_similarity_data, columns)
+        result = self.service.calculate_batch_similarity(
+            query_text, sample_similarity_data, columns
+        )
 
         assert isinstance(result, list)
         assert len(result) == len(sample_similarity_data)
@@ -299,11 +302,14 @@ class TestSimilarityService:
                 assert len(result) <= 50
 
 
-@pytest.mark.parametrize("text1,text2,expected_min_similarity", [
-    ("相同文本", "相同文本", 0.8),
-    ("发动机故障", "发动机问题", 0.3),
-    ("完全不同", "毫无关系", 0.0),
-])
+@pytest.mark.parametrize(
+    "text1,text2,expected_min_similarity",
+    [
+        ("相同文本", "相同文本", 0.8),
+        ("发动机故障", "发动机问题", 0.3),
+        ("完全不同", "毫无关系", 0.0),
+    ],
+)
 def test_calculate_similarity_various_texts(text1, text2, expected_min_similarity):
     """参数化测试各种文本的相似度计算"""
     service = SimilarityService()

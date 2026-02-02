@@ -3,6 +3,8 @@ API响应服务
 提供统一的API响应格式化功能
 """
 
+from typing import Any
+
 from flask import jsonify
 
 
@@ -10,7 +12,7 @@ class ApiResponse:
     """API响应格式化工具类"""
 
     @staticmethod
-    def success(data=None, message="操作成功", meta=None):
+    def success(data: Any = None, message: str = "操作成功", meta: Any = None):
         """
         成功响应
 
@@ -33,7 +35,7 @@ class ApiResponse:
         return jsonify(response)
 
     @staticmethod
-    def error(message="操作失败", code=400, details=None):
+    def error(message: str = "操作失败", code: int = 400, details: Any = None):
         """
         错误响应
 
@@ -45,10 +47,12 @@ class ApiResponse:
         Returns:
             tuple: (Response, status_code)
         """
-        response = {"status": "error", "error": {"code": code, "message": message}}
+        error_dict: dict[str, Any] = {"code": code, "message": message}
 
         if details is not None:
-            response["error"]["details"] = details
+            error_dict["details"] = details
+
+        response: dict[str, Any] = {"status": "error", "error": error_dict}
 
         return jsonify(response), code
 

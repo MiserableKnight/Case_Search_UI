@@ -14,3 +14,12 @@ repos:
     -   id: ruff
         args: [--fix]
     -   id: ruff-format
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.0
+    hooks:
+    -   id: mypy
+        additional_dependencies:
+          - types-flask
+          - types-requests
+          - types-PyYAML

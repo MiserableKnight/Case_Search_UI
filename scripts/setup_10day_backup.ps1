@@ -63,7 +63,7 @@ try {
     $NextRunTime = [DateTime]::Parse($NextRun)
     Write-Host "  $NextRunTime"
     Write-Host ""
-    
+
     # 询问是否立即测试
     $TestTask = Read-Host "是否立即测试备份任务? (Y/N) [默认: N]"
     if ($TestTask -eq "Y" -or $TestTask -eq "y") {
@@ -71,7 +71,7 @@ try {
         Start-ScheduledTask -TaskName $TaskName
         Write-Host "任务已启动，请查看输出结果" -ForegroundColor Green
     }
-    
+
     Write-Host ""
     Write-Host "你可以通过以下方式管理任务:" -ForegroundColor Cyan
     Write-Host "  1. Windows任务计划程序 -> 任务计划程序库"
@@ -80,7 +80,7 @@ try {
     Write-Host ""
     Write-Host "如需删除任务，请运行:" -ForegroundColor Red
     Write-Host "  Unregister-ScheduledTask -TaskName `"$TaskName`" -Confirm:`$false"
-    
+
 } catch {
     Write-Host "[错误] 任务创建失败: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "请检查是否有管理员权限" -ForegroundColor Yellow

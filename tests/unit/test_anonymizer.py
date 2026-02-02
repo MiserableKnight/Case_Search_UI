@@ -6,7 +6,7 @@ TextAnonymizer单元测试
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -320,11 +320,14 @@ class TestTextAnonymizer:
         assert result != text
 
 
-@pytest.mark.parametrize("word", [
-    "敏感词1",
-    "测试航空公司",
-    "长敏感词测试",
-])
+@pytest.mark.parametrize(
+    "word",
+    [
+        "敏感词1",
+        "测试航空公司",
+        "长敏感词测试",
+    ],
+)
 def test_add_various_sensitive_words(word):
     """参数化测试添加各种敏感词"""
     anonymizer = TextAnonymizer(sensitive_words_path=None)
@@ -333,15 +336,19 @@ def test_add_various_sensitive_words(word):
     assert word in anonymizer.get_sensitive_words()
 
 
-@pytest.mark.parametrize("pattern,text,should_match", [
-    (r"\d{4}", "AB1234CD", True),
-    (r"\d{4}", "ABCDEFGH", False),
-    (r"[A-Z]{3}", "ABC123", True),
-    (r"[A-Z]{3}", "A1B2C3", False),
-])
+@pytest.mark.parametrize(
+    "pattern,text,should_match",
+    [
+        (r"\d{4}", "AB1234CD", True),
+        (r"\d{4}", "ABCDEFGH", False),
+        (r"[A-Z]{3}", "ABC123", True),
+        (r"[A-Z]{3}", "A1B2C3", False),
+    ],
+)
 def test_pattern_matching(pattern, text, should_match):
     """参数化测试模式匹配"""
     import re
+
     if should_match:
         assert re.search(pattern, text) is not None
     else:

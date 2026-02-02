@@ -1,11 +1,15 @@
 import logging
 import re
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from flask import current_app, jsonify, request
 
 from app.api import bp
 from app.core.data_processors.r_and_i_record_processor import load_r_and_i_data
+
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +181,7 @@ def get_data_source_columns():
         for source in current_app.config["DATA_SOURCES"]:
             try:
                 # 首先尝试从实际数据中获取列
-                df = current_app.load_data_source(source)
+                df = current_app.load_data_source(source)  # type: ignore[attr-defined]
                 if df is not None:
                     columns[source] = df.columns.tolist()
                 else:
@@ -218,7 +222,7 @@ def get_data_types(source):
         # 如果数据源是faults，则同时加载faults和r_and_i_record数据源
         if source == "faults":
             # 加载故障报告数据
-            faults_df = current_app.load_data_source("faults")
+            faults_df = current_app.load_data_source("faults")  # type: ignore[attr-defined]
             if faults_df is None:
                 return (
                     jsonify(
@@ -232,7 +236,7 @@ def get_data_types(source):
 
             # 尝试加载部件拆换记录数据
             try:
-                ri_df = current_app.load_data_source("r_and_i_record")
+                ri_df = current_app.load_data_source("r_and_i_record")  # type: ignore[attr-defined]
                 if ri_df is not None and "数据类型" in ri_df.columns:
                     # 合并两个数据源的数据类型
                     faults_types = (
@@ -296,7 +300,7 @@ def search():
         aircraft_types = data.get("aircraft_types", [])
 
         # 加载选定的数据源
-        df = current_app.load_data_source(data_source)
+        df = current_app.load_data_source(data_source)  # type: ignore[attr-defined]
         if df is None:
             return (
                 jsonify(
@@ -356,11 +360,11 @@ def get_data_columns():
     try:
         # 记录服务映射信息
         service_map = {
-            "case": current_app.case_service,
-            "engineering": current_app.engineering_service,
-            "manual": current_app.manual_service,
-            "faults": current_app.fault_report_service,
-            "r_and_i_record": current_app.r_and_i_record_service,
+            "case": current_app.case_service,  # type: ignore[attr-defined]
+            "engineering": current_app.engineering_service,  # type: ignore[attr-defined]
+            "manual": current_app.manual_service,  # type: ignore[attr-defined]
+            "faults": current_app.fault_report_service,  # type: ignore[attr-defined]
+            "r_and_i_record": current_app.r_and_i_record_service,  # type: ignore[attr-defined]
         }
 
         logger.info(f"尝试使用 {source} 数据服务获取列信息")

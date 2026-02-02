@@ -3,12 +3,15 @@
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from flask import current_app
 
 from app.core.calculator import TextSimilarityCalculator
 from app.core.error_handler import ServiceError, ValidationError
+
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -23,30 +26,8 @@ class SimilarityService:
         Args:
             config: 配置信息，默认为None，不使用
         """
-        # TextSimilarityCalculator使用静态方法，不需要实例化
+        # TextSimilarityCalculator使用类方法，不需要实例化
         self.config = config
-
-    def calculate_similarity(self, text1: str, text2: str, method: str = "tfidf") -> float:
-        """
-        计算两段文本的相似度
-
-        Args:
-            text1: 第一段文本
-            text2: 第二段文本
-            method: 计算方法，默认为'tfidf'
-
-        Returns:
-            相似度得分
-        """
-        if not text1 or not text2:
-            raise ValidationError("文本不能为空")
-
-        try:
-            # 调用静态方法
-            return TextSimilarityCalculator.calculate_similarity(text1, text2, method)
-        except Exception as e:
-            logger.error(f"计算相似度时出错: {str(e)}")
-            raise ServiceError(f"计算相似度失败: {str(e)}")
 
     def calculate_batch_similarity(
         self, query_text: str, text_list: list[dict[str, Any]], columns: list[str]
@@ -79,42 +60,6 @@ class SimilarityService:
             logger.error(f"批量计算相似度时出错: {str(e)}")
             raise ServiceError(f"批量计算相似度失败: {str(e)}")
 
-    def get_available_methods(self) -> list[str]:
-        """
-        获取可用的相似度计算方法
-
-        Returns:
-            可用方法列表
-        """
-        try:
-            # 直接使用 TextSimilarityCalculator 实例方法
-            calculator = TextSimilarityCalculator()
-            return calculator.get_available_methods()
-        except Exception as e:
-            logger.error(f"获取可用方法时出错: {str(e)}")
-            raise ServiceError(f"获取可用方法失败: {str(e)}")
-
-    def preprocess_text(self, text: str) -> str:
-        """
-        预处理文本
-
-        Args:
-            text: 要预处理的文本
-
-        Returns:
-            预处理后的文本
-        """
-        if not text:
-            return ""
-
-        try:
-            # 直接使用 TextSimilarityCalculator 实例方法
-            calculator = TextSimilarityCalculator()
-            return calculator.preprocess_text(text)
-        except Exception as e:
-            logger.error(f"预处理文本时出错: {str(e)}")
-            raise ServiceError(f"预处理文本失败: {str(e)}")
-
     def search_by_similarity(
         self, search_text: str, data_source: str, columns: list[str], limit: int = 10
     ) -> list[dict[str, Any]]:
@@ -138,7 +83,7 @@ class SimilarityService:
 
         try:
             # 加载数据源
-            df = current_app.load_data_source(data_source)
+            df = current_app.load_data_source(data_source)  # type: ignore[attr-defined]
             if df is None:
                 raise ValidationError(f"找不到数据源: {data_source}")
 

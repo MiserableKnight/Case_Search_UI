@@ -5,8 +5,10 @@ API响应服务单元测试
 """
 
 import json
+
 import pytest
 from flask import Flask
+
 from app.services.api_response import ApiResponse
 
 
@@ -66,11 +68,7 @@ class TestApiResponse:
         meta = {"total": 2}
 
         with self.app.test_request_context():
-            response = ApiResponse.success(
-                data=test_data,
-                message="获取成功",
-                meta=meta
-            )
+            response = ApiResponse.success(data=test_data, message="获取成功", meta=meta)
             data = json.loads(response.data)
 
             assert data["status"] == "success"
@@ -133,9 +131,7 @@ class TestApiResponse:
 
         with self.app.test_request_context():
             response, status_code = ApiResponse.error(
-                message="缺少必需字段",
-                code=400,
-                details=details
+                message="缺少必需字段", code=400, details=details
             )
             data = json.loads(response.data)
 
@@ -146,20 +142,14 @@ class TestApiResponse:
     def test_error_404(self):
         """测试404错误"""
         with self.app.test_request_context():
-            response, status_code = ApiResponse.error(
-                message="资源不存在",
-                code=404
-            )
+            response, status_code = ApiResponse.error(message="资源不存在", code=404)
 
             assert status_code == 404
 
     def test_error_500(self):
         """测试500错误"""
         with self.app.test_request_context():
-            response, status_code = ApiResponse.error(
-                message="服务器内部错误",
-                code=500
-            )
+            response, status_code = ApiResponse.error(message="服务器内部错误", code=500)
 
             assert status_code == 500
 
@@ -183,12 +173,7 @@ class TestApiResponse:
         data = [{"id": i} for i in range(1, 6)]
 
         with self.app.test_request_context():
-            response = ApiResponse.paginated(
-                data=data,
-                page=1,
-                per_page=5,
-                total=20
-            )
+            response = ApiResponse.paginated(data=data, page=1, per_page=5, total=20)
             response_data = json.loads(response.data)
 
             pagination = response_data["meta"]["pagination"]
@@ -204,12 +189,7 @@ class TestApiResponse:
         data = [{"id": 1}]
 
         with self.app.test_request_context():
-            response = ApiResponse.paginated(
-                data=data,
-                page=2,
-                per_page=10,
-                total=11
-            )
+            response = ApiResponse.paginated(data=data, page=2, per_page=10, total=11)
             response_data = json.loads(response.data)
 
             pagination = response_data["meta"]["pagination"]
@@ -222,11 +202,7 @@ class TestApiResponse:
 
         with self.app.test_request_context():
             response = ApiResponse.paginated(
-                data=data,
-                page=1,
-                per_page=10,
-                total=1,
-                message="查询成功"
+                data=data, page=1, per_page=10, total=1, message="查询成功"
             )
             response_data = json.loads(response.data)
 
@@ -237,12 +213,7 @@ class TestApiResponse:
         data = [{"id": 1}]
 
         with self.app.test_request_context():
-            response = ApiResponse.paginated(
-                data=data,
-                page=1,
-                per_page=0,
-                total=1
-            )
+            response = ApiResponse.paginated(data=data, page=1, per_page=0, total=1)
             response_data = json.loads(response.data)
 
             assert response_data["meta"]["pagination"]["total_pages"] == 0
@@ -250,12 +221,7 @@ class TestApiResponse:
     def test_paginated_empty_data(self):
         """测试空数据分页"""
         with self.app.test_request_context():
-            response = ApiResponse.paginated(
-                data=[],
-                page=1,
-                per_page=10,
-                total=0
-            )
+            response = ApiResponse.paginated(data=[], page=1, per_page=10, total=0)
             response_data = json.loads(response.data)
 
             assert response_data["data"] == []
@@ -332,14 +298,17 @@ class TestApiResponse:
             assert response_data["error"]["details"] == complex_details
 
 
-@pytest.mark.parametrize("code,expected_status", [
-    (200, 200),
-    (400, 400),
-    (401, 401),
-    (403, 403),
-    (404, 404),
-    (500, 500),
-])
+@pytest.mark.parametrize(
+    "code,expected_status",
+    [
+        (200, 200),
+        (400, 400),
+        (401, 401),
+        (403, 403),
+        (404, 404),
+        (500, 500),
+    ],
+)
 def test_error_status_codes(code, expected_status):
     """参数化测试错误状态码"""
     app = Flask(__name__)
@@ -348,13 +317,16 @@ def test_error_status_codes(code, expected_status):
         assert status_code == expected_status
 
 
-@pytest.mark.parametrize("page,per_page,total,expected_total_pages", [
-    (1, 10, 100, 10),
-    (1, 20, 100, 5),
-    (1, 15, 100, 7),
-    (1, 10, 95, 10),
-    (1, 10, 0, 0),
-])
+@pytest.mark.parametrize(
+    "page,per_page,total,expected_total_pages",
+    [
+        (1, 10, 100, 10),
+        (1, 20, 100, 5),
+        (1, 15, 100, 7),
+        (1, 10, 95, 10),
+        (1, 10, 0, 0),
+    ],
+)
 def test_paginated_total_pages_calculation(page, per_page, total, expected_total_pages):
     """参数化测试总页数计算"""
     app = Flask(__name__)

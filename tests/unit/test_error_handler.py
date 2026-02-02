@@ -5,18 +5,19 @@
 """
 
 import pytest
+
 from app.core.error_handler import (
-    AppError,
-    BadRequestError,
-    ValidationError,
-    AuthorizationError,
-    ForbiddenError,
-    NotFoundError,
-    InternalError,
-    DatabaseError,
-    ServiceError,
-    FileOperationError,
     ERROR_CODES,
+    AppError,
+    AuthorizationError,
+    BadRequestError,
+    DatabaseError,
+    FileOperationError,
+    ForbiddenError,
+    InternalError,
+    NotFoundError,
+    ServiceError,
+    ValidationError,
 )
 
 
@@ -100,7 +101,7 @@ class TestValidationError:
         """测试带详情的验证错误"""
         details = {
             "field": "password",
-            "constraints": ["min_length: 8", "must_contain_special_char"]
+            "constraints": ["min_length: 8", "must_contain_special_char"],
         }
         error = ValidationError("密码不符合要求", details=details)
         assert error.code == 400
@@ -307,38 +308,44 @@ class TestErrorHandlingPatterns:
         details = {
             "errors": [
                 {"field": "email", "message": "Invalid email"},
-                {"field": "password", "message": "Too short"}
+                {"field": "password", "message": "Too short"},
             ],
             "timestamp": "2023-01-01T00:00:00",
-            "request_id": "abc-123"
+            "request_id": "abc-123",
         }
         error = BadRequestError("多个验证错误", details=details)
         assert len(error.details["errors"]) == 2
 
 
-@pytest.mark.parametrize("error_class,expected_code", [
-    (BadRequestError, 400),
-    (ValidationError, 400),
-    (AuthorizationError, 401),
-    (ForbiddenError, 403),
-    (NotFoundError, 404),
-    (InternalError, 500),
-    (DatabaseError, 500),
-    (ServiceError, 500),
-    (FileOperationError, 500),
-])
+@pytest.mark.parametrize(
+    "error_class,expected_code",
+    [
+        (BadRequestError, 400),
+        (ValidationError, 400),
+        (AuthorizationError, 401),
+        (ForbiddenError, 403),
+        (NotFoundError, 404),
+        (InternalError, 500),
+        (DatabaseError, 500),
+        (ServiceError, 500),
+        (FileOperationError, 500),
+    ],
+)
 def test_error_status_codes(error_class, expected_code):
     """参数化测试错误状态码"""
     error = error_class()
     assert error.code == expected_code
 
 
-@pytest.mark.parametrize("error_class,message", [
-    (BadRequestError, "Bad request"),
-    (ValidationError, "Validation failed"),
-    (NotFoundError, "Not found"),
-    (InternalError, "Internal error"),
-])
+@pytest.mark.parametrize(
+    "error_class,message",
+    [
+        (BadRequestError, "Bad request"),
+        (ValidationError, "Validation failed"),
+        (NotFoundError, "Not found"),
+        (InternalError, "Internal error"),
+    ],
+)
 def test_error_messages(error_class, message):
     """参数化测试错误消息"""
     error = error_class(message)

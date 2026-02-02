@@ -4,15 +4,10 @@
 测试数据导入处理器基类的各种功能
 """
 
-import os
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
 import pandas as pd
 import pytest
+
 from app.core.data_processors.data_import_processor import DataImportProcessor
-from app.core.error_handler import ValidationError
 
 
 # 创建一个测试用的处理器子类
@@ -87,11 +82,13 @@ class TestDataImportProcessor:
     def test_validate_headers_valid(self):
         """测试验证有效的表头"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "标题": ["测试1"],
-            "描述": ["描述1"],
-            "日期": ["2023-01-01"],
-        })
+        df = pd.DataFrame(
+            {
+                "标题": ["测试1"],
+                "描述": ["描述1"],
+                "日期": ["2023-01-01"],
+            }
+        )
 
         result = processor.validate_headers(df)
         assert result is True
@@ -99,10 +96,12 @@ class TestDataImportProcessor:
     def test_validate_headers_missing_columns(self):
         """测试缺少必需列"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "标题": ["测试1"],
-            # 缺少"描述"列
-        })
+        df = pd.DataFrame(
+            {
+                "标题": ["测试1"],
+                # 缺少"描述"列
+            }
+        )
 
         with pytest.raises(ValueError, match="缺少必需的列"):
             processor.validate_headers(df)
@@ -120,9 +119,11 @@ class TestDataImportProcessor:
     def test_clean_operator_names_default(self):
         """测试清洗运营人名称（默认列）"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "运营人": ["天骄航空", "东航技术", "江西航空有限公司", "南航", "国航"],
-        })
+        df = pd.DataFrame(
+            {
+                "运营人": ["天骄航空", "东航技术", "江西航空有限公司", "南航", "国航"],
+            }
+        )
 
         result = processor.clean_operator_names(df)
 
@@ -132,9 +133,11 @@ class TestDataImportProcessor:
     def test_clean_operator_names_custom_column(self):
         """测试清洗自定义列名"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "航空公司": ["天骄航空", "东航"],
-        })
+        df = pd.DataFrame(
+            {
+                "航空公司": ["天骄航空", "东航"],
+            }
+        )
 
         result = processor.clean_operator_names(df, column="航空公司")
 
@@ -143,9 +146,11 @@ class TestDataImportProcessor:
     def test_clean_operator_names_fillna(self):
         """测试运营人名称填充空值"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "运营人": ["天骄航空", None, ""],
-        })
+        df = pd.DataFrame(
+            {
+                "运营人": ["天骄航空", None, ""],
+            }
+        )
 
         result = processor.clean_operator_names(df)
 
@@ -157,9 +162,11 @@ class TestDataImportProcessor:
     def test_clean_aircraft_type_default(self):
         """测试清洗机型数据（默认列）"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "机型": ["ARJ21-700", "C919大型客机", "737"],
-        })
+        df = pd.DataFrame(
+            {
+                "机型": ["ARJ21-700", "C919大型客机", "737"],
+            }
+        )
 
         result = processor.clean_aircraft_type(df)
 
@@ -169,9 +176,11 @@ class TestDataImportProcessor:
     def test_clean_aircraft_type_custom_column(self):
         """测试清洗自定义列名"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "飞机型号": ["ARJ21-700", "C919"],
-        })
+        df = pd.DataFrame(
+            {
+                "飞机型号": ["ARJ21-700", "C919"],
+            }
+        )
 
         result = processor.clean_aircraft_type(df, column="飞机型号")
 
@@ -180,9 +189,11 @@ class TestDataImportProcessor:
     def test_clean_aircraft_type_fillna(self):
         """测试机型填充空值"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "机型": ["ARJ21", None, ""],
-        })
+        df = pd.DataFrame(
+            {
+                "机型": ["ARJ21", None, ""],
+            }
+        )
 
         result = processor.clean_aircraft_type(df)
 
@@ -282,12 +293,14 @@ class TestDataImportProcessor:
     def test_clean_data_basic(self):
         """测试基本数据清洗"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "标题": ["测试1", "测试2"],
-            "描述": ["描述1", "描述2"],
-            "日期": ["2023-01-01", "2023-01-02"],
-            "额外列": ["额外1", "额外2"],
-        })
+        df = pd.DataFrame(
+            {
+                "标题": ["测试1", "测试2"],
+                "描述": ["描述1", "描述2"],
+                "日期": ["2023-01-01", "2023-01-02"],
+                "额外列": ["额外1", "额外2"],
+            }
+        )
 
         result = processor.clean_data(df)
 
@@ -320,11 +333,13 @@ class TestDataImportProcessor:
         processor = TestDataProcessor()
 
         # 创建大数据集
-        large_df = pd.DataFrame({
-            "标题": [f"测试{i}" for i in range(1000)],
-            "描述": [f"描述{i}" for i in range(1000)],
-            "日期": ["2023-01-01"] * 1000,
-        })
+        large_df = pd.DataFrame(
+            {
+                "标题": [f"测试{i}" for i in range(1000)],
+                "描述": [f"描述{i}" for i in range(1000)],
+                "日期": ["2023-01-01"] * 1000,
+            }
+        )
 
         result = processor.clean_data(large_df)
 
@@ -333,11 +348,13 @@ class TestDataImportProcessor:
     def test_unicode_in_columns(self):
         """测试列名包含Unicode字符"""
         processor = TestDataProcessor()
-        df = pd.DataFrame({
-            "\u200e标题\u200f": ["测试1"],
-            "描述": ["描述1"],
-            "日期": ["2023-01-01"],
-        })
+        df = pd.DataFrame(
+            {
+                "\u200e标题\u200f": ["测试1"],
+                "描述": ["描述1"],
+                "日期": ["2023-01-01"],
+            }
+        )
 
         # 清洗列名
         cleaned_columns = [processor.unicode_cleaner.clean_text(col) for col in df.columns]
@@ -346,15 +363,18 @@ class TestDataImportProcessor:
         assert "\u200e" not in cleaned_columns[0]
 
 
-@pytest.mark.parametrize("date_str,expected_valid", [
-    ("2023-01-01", True),
-    ("2023/01/01", True),
-    ("2023/01/01 12:30:00", True),
-    ("2023-01-01 12:30", True),
-    ("invalid", False),
-    (None, False),
-    ("", False),
-])
+@pytest.mark.parametrize(
+    "date_str,expected_valid",
+    [
+        ("2023-01-01", True),
+        ("2023/01/01", True),
+        ("2023/01/01 12:30:00", True),
+        ("2023-01-01 12:30", True),
+        ("invalid", False),
+        (None, False),
+        ("", False),
+    ],
+)
 def test_convert_date_various_formats(date_str, expected_valid):
     """参数化测试各种日期格式"""
     processor = TestDataProcessor()
@@ -366,13 +386,16 @@ def test_convert_date_various_formats(date_str, expected_valid):
         assert pd.isna(result)
 
 
-@pytest.mark.parametrize("operator,expected_contains", [
-    ("天骄航空", "天骄"),
-    ("东航技术", "东航"),
-    ("江西航空有限公司", "江西航"),
-    ("南航", "南航"),
-    ("国航", "国航"),
-])
+@pytest.mark.parametrize(
+    "operator,expected_contains",
+    [
+        ("天骄航空", "天骄"),
+        ("东航技术", "东航"),
+        ("江西航空有限公司", "江西航"),
+        ("南航", "南航"),
+        ("国航", "国航"),
+    ],
+)
 def test_clean_operator_names_various(operator, expected_contains):
     """参数化测试各种运营人名称"""
     processor = TestDataProcessor()
@@ -380,14 +403,20 @@ def test_clean_operator_names_various(operator, expected_contains):
 
     result = processor.clean_operator_names(df)
 
-    assert expected_contains in result["运营人"].iloc[0] or result["运营人"].iloc[0] == expected_contains
+    assert (
+        expected_contains in result["运营人"].iloc[0]
+        or result["运营人"].iloc[0] == expected_contains
+    )
 
 
-@pytest.mark.parametrize("aircraft_type,expected_contains", [
-    ("ARJ21-700", "ARJ21"),
-    ("C919大型客机", "C919"),
-    ("737-800", "737"),
-])
+@pytest.mark.parametrize(
+    "aircraft_type,expected_contains",
+    [
+        ("ARJ21-700", "ARJ21"),
+        ("C919大型客机", "C919"),
+        ("737-800", "737"),
+    ],
+)
 def test_clean_aircraft_type_various(aircraft_type, expected_contains):
     """参数化测试各种机型"""
     processor = TestDataProcessor()

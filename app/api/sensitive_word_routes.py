@@ -1,8 +1,12 @@
 import logging
+from typing import TYPE_CHECKING
 
 from flask import current_app, jsonify, request
 
 from app.api import bp
+
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +15,7 @@ logger = logging.getLogger(__name__)
 def get_sensitive_words():
     """获取敏感词列表"""
     try:
-        word_service = current_app.word_manager
+        word_service = current_app.word_manager  # type: ignore[attr-defined]
         words = word_service.get_all_words()
         return jsonify({"status": "success", "words": words})
     except Exception as e:
@@ -33,7 +37,7 @@ def add_sensitive_word():
         word = data["word"]
         category = data["category"]
 
-        word_service = current_app.word_manager
+        word_service = current_app.word_manager  # type: ignore[attr-defined]
         success, message = word_service.add_word(word, category)
 
         if success:
@@ -57,7 +61,7 @@ def remove_sensitive_word():
         word = data["word"]
         category = data["category"]
 
-        word_service = current_app.word_manager
+        word_service = current_app.word_manager  # type: ignore[attr-defined]
         success, message = word_service.remove_word(word, category)
 
         if success:

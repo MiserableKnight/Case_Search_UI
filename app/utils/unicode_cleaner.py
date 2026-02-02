@@ -53,7 +53,7 @@ class UnicodeCleaner:
         # 移除首尾空格
         return cleaned.strip()
 
-    def clean_dataframe(self, df, columns: list = None) -> "pd.DataFrame":
+    def clean_dataframe(self, df: pd.DataFrame, columns: list[Any] | None = None) -> pd.DataFrame:
         """
         清洗DataFrame中的文本数据
 
@@ -89,7 +89,7 @@ class UnicodeCleaner:
 
         return df_copy
 
-    def clean_excel_file(self, input_path: str, output_path: str = None) -> str:
+    def clean_excel_file(self, input_path: str, output_path: str | None = None) -> str:
         """
         清洗Excel文件中的Unicode字符
 

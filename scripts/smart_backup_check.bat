@@ -77,10 +77,10 @@ if not exist "scripts\backup_manager.py" (
 )
 
 :: 构建Python命令
-set PYTHON_CMD=from scripts.backup_manager import smart_backup_check; 
+set PYTHON_CMD=from scripts.backup_manager import smart_backup_check;
 if "%FORCE_BACKUP%"=="true" (
-    set PYTHON_CMD=!PYTHON_CMD! backup_manager = __import__('scripts.backup_manager', fromlist=['BackupManager']).BackupManager(); 
-    set PYTHON_CMD=!PYTHON_CMD! result = backup_manager.create_backup(); 
+    set PYTHON_CMD=!PYTHON_CMD! backup_manager = __import__('scripts.backup_manager', fromlist=['BackupManager']).BackupManager();
+    set PYTHON_CMD=!PYTHON_CMD! result = backup_manager.create_backup();
     set PYTHON_CMD=!PYTHON_CMD! if result: backup_manager.cleanup_old_backups()
 ) else (
     set PYTHON_CMD=!PYTHON_CMD! smart_backup_check(%INTERVAL_DAYS%)

@@ -8,4 +8,4 @@ echo Please check the log information above for details
 echo Backup files location: data\backup_data
 echo Backup log location: data\backup.log
 echo Backup records location: data\backup_records.json
-pause 
+pause

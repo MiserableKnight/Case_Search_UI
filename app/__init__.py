@@ -18,12 +18,13 @@ from app.core.error_handler import AppError, InternalError
 from app.services import WordService
 from app.services.error_service import ErrorService
 from app.services.temp_file_manager import TempFileManager
+from app.types import CaseFlask
 
 # 数据缓存
 data_frames = {}
 
 
-def create_app(config_name="development"):
+def create_app(config_name: str = "development") -> CaseFlask:
     """
     应用工厂函数
 
@@ -37,7 +38,7 @@ def create_app(config_name="development"):
     load_dotenv()
 
     # 初始化 Flask 应用
-    app = Flask(
+    app: CaseFlask = Flask(  # type: ignore[assignment]
         __name__,
         static_folder="static",  # 指定静态文件夹路径
         static_url_path="/static",
@@ -136,7 +137,6 @@ def create_app(config_name="development"):
 
             results = data["results"]
             fields = data["fields"]
-            data_source = data.get("dataSource", "case")
 
             # 初始化脱敏器
             from app.services import AnonymizationService

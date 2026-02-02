@@ -5,7 +5,7 @@ TextSimilarityCalculator单元测试
 """
 
 import pytest
-import pandas as pd
+
 from app.core.calculator import TextSimilarityCalculator
 
 
@@ -96,7 +96,9 @@ class TestTextSimilarityCalculator:
     def test_calculate_similarity_missing_column(self, sample_similarity_data):
         """测试不存在的列"""
         with pytest.raises(ValueError, match="以下列在数据中不存在"):
-            TextSimilarityCalculator.calculate_similarity("测试", sample_similarity_data, ["不存在的列"])
+            TextSimilarityCalculator.calculate_similarity(
+                "测试", sample_similarity_data, ["不存在的列"]
+            )
 
     def test_calculate_similarity_with_nan_values(self):
         """测试包含NaN值的数据"""
@@ -259,11 +261,14 @@ class TestTextSimilarityCalculator:
         assert "相似度_排序" not in result[0]
 
 
-@pytest.mark.parametrize("text,expected_parts", [
-    ("简单文本", ["简单", "文本"]),
-    ("发动机故障", ["发动机", "故障"]),
-    ("", []),
-])
+@pytest.mark.parametrize(
+    "text,expected_parts",
+    [
+        ("简单文本", ["简单", "文本"]),
+        ("发动机故障", ["发动机", "故障"]),
+        ("", []),
+    ],
+)
 def test_chinese_word_cut_parametrized(text, expected_parts):
     """参数化测试分词功能"""
     result = TextSimilarityCalculator.chinese_word_cut(text)
@@ -278,11 +283,14 @@ def test_chinese_word_cut_parametrized(text, expected_parts):
         assert result == ""
 
 
-@pytest.mark.parametrize("search_text,columns", [
-    ("发动机", ["标题"]),
-    ("液压系统", ["标题", "问题描述"]),
-    ("导航", ["标题", "问题描述", "答复详情"]),
-])
+@pytest.mark.parametrize(
+    "search_text,columns",
+    [
+        ("发动机", ["标题"]),
+        ("液压系统", ["标题", "问题描述"]),
+        ("导航", ["标题", "问题描述", "答复详情"]),
+    ],
+)
 def test_calculate_similarity_various_configs(sample_similarity_data, search_text, columns):
     """参数化测试不同的配置"""
     result = TextSimilarityCalculator.calculate_similarity(

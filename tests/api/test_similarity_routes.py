@@ -5,7 +5,7 @@
 """
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -385,11 +385,14 @@ class TestSimilarityRoutes:
             assert response.status_code == 200
 
 
-@pytest.mark.parametrize("missing_field", [
-    "text",
-    "columns",
-    "results",
-])
+@pytest.mark.parametrize(
+    "missing_field",
+    [
+        "text",
+        "columns",
+        "results",
+    ],
+)
 def test_calculate_similarity_missing_fields(client, missing_field, sample_similarity_data):
     """参数化测试缺少字段"""
     payload = {
@@ -408,12 +411,15 @@ def test_calculate_similarity_missing_fields(client, missing_field, sample_simil
     assert response.status_code == 400
 
 
-@pytest.mark.parametrize("missing_field", [
-    "text",
-    "dataSource",
-    "columns",
-    "limit",
-])
+@pytest.mark.parametrize(
+    "missing_field",
+    [
+        "text",
+        "dataSource",
+        "columns",
+        "limit",
+    ],
+)
 def test_similarity_search_missing_fields(client, missing_field):
     """参数化测试缺少字段"""
     payload = {
