@@ -30,12 +30,19 @@ class DefaultConfig:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max-limit
     SENSITIVE_WORDS_FILE = os.path.join(DATA_CONFIG["raw_dir"], "sensitive_words.json")
 
+    # 文件配置字典（用于兼容）
+    FILE_CONFIG = {
+        "UPLOAD_FOLDER": UPLOAD_FOLDER,
+        "SENSITIVE_WORDS_FILE": SENSITIVE_WORDS_FILE,
+    }
+
     # 数据源配置
     DATA_SOURCES = {
         "case": os.path.join("raw", "case.parquet"),
         "engineering": os.path.join("raw", "engineering.parquet"),
         "manual": os.path.join("raw", "manual.parquet"),
         "faults": os.path.join("raw", "faults.parquet"),
+        "r_and_i_record": os.path.join("raw", "r_and_i_record.parquet"),
     }
 
     # 允许的文件类型

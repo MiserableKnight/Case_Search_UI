@@ -19,29 +19,6 @@ from app.services import WordService
 from app.services.error_service import ErrorService
 from app.services.temp_file_manager import TempFileManager
 
-# 配置数据目录
-DATA_CONFIG = {
-    "data_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
-    "temp_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "temp"),
-    "processed_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "processed"),
-    "raw_dir": os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "raw"),
-}
-
-# 文件配置
-FILE_CONFIG = {
-    "UPLOAD_FOLDER": DATA_CONFIG["temp_dir"],
-    "SENSITIVE_WORDS_FILE": os.path.join(DATA_CONFIG["raw_dir"], "sensitive_words.json"),
-}
-
-# 数据源配置
-DATA_SOURCES = {
-    "case": os.path.join("raw", "case.parquet"),
-    "engineering": os.path.join("raw", "engineering.parquet"),
-    "manual": os.path.join("raw", "manual.parquet"),
-    "faults": os.path.join("raw", "faults.parquet"),
-    "r_and_i_record": os.path.join("raw", "r_and_i_record.parquet"),
-}
-
 # 数据缓存
 data_frames = {}
 
@@ -73,10 +50,6 @@ def create_app(config_name="development"):
 
     # 设置上传文件大小限制为128MB
     app.config["MAX_CONTENT_LENGTH"] = 128 * 1024 * 1024
-
-    # 添加FILE_CONFIG和DATA_SOURCES到应用配置中
-    app.config["FILE_CONFIG"] = FILE_CONFIG
-    app.config["DATA_SOURCES"] = DATA_SOURCES
 
     # 启用CORS
     CORS(app)
