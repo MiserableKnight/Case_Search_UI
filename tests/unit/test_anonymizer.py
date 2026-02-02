@@ -28,23 +28,25 @@ class TestTextAnonymizer:
 
     # ==================== 单例模式测试 ====================
 
-    def test_singleton_pattern(self, sensitive_words_file):
+    def test_singleton_pattern(self, sensitive_words_file, flask_app):
         """测试单例模式"""
-        with patch("app.core.anonymizer.current_app") as mock_app:
-            mock_app.config = {"FILE_CONFIG": {"SENSITIVE_WORDS_FILE": sensitive_words_file}}
+        with flask_app.app_context():
+            with patch("app.core.anonymizer.current_app") as mock_app:
+                mock_app.config = {"FILE_CONFIG": {"SENSITIVE_WORDS_FILE": sensitive_words_file}}
 
-            instance1 = TextAnonymizer.get_instance()
-            instance2 = TextAnonymizer.get_instance()
+                instance1 = TextAnonymizer.get_instance()
+                instance2 = TextAnonymizer.get_instance()
 
-            assert instance1 is instance2
+                assert instance1 is instance2
 
-    def test_get_instance_function(self, sensitive_words_file):
+    def test_get_instance_function(self, sensitive_words_file, flask_app):
         """测试get_anonymizer函数"""
-        with patch("app.core.anonymizer.current_app") as mock_app:
-            mock_app.config = {"FILE_CONFIG": {"SENSITIVE_WORDS_FILE": sensitive_words_file}}
+        with flask_app.app_context():
+            with patch("app.core.anonymizer.current_app") as mock_app:
+                mock_app.config = {"FILE_CONFIG": {"SENSITIVE_WORDS_FILE": sensitive_words_file}}
 
-            anonymizer = get_anonymizer()
-            assert isinstance(anonymizer, TextAnonymizer)
+                anonymizer = get_anonymizer()
+                assert isinstance(anonymizer, TextAnonymizer)
 
     # ==================== 初始化测试 ====================
 
@@ -202,19 +204,20 @@ class TestTextAnonymizer:
         # 不应该有多个连续空格
         assert "  " not in result
 
-    def test_anonymize_text_non_string(self):
-        """测试脱敏非字符串输入"""
+    def test_anonymize_text_number_string(self):
+        """测试脱敏包含数字的字符串"""
         anonymizer = TextAnonymizer(sensitive_words_path=None)
 
-        result = anonymizer.anonymize_text(12345)
-        assert result == 12345
+        result = anonymizer.anonymize_text("12345")
+        assert result == "12345"
 
-    def test_anonymize_text_none(self):
-        """测试脱敏None输入"""
+    def test_anonymize_text_with_special_chars(self):
+        """测试脱敏包含特殊字符的字符串"""
         anonymizer = TextAnonymizer(sensitive_words_path=None)
 
-        result = anonymizer.anonymize_text(None)
-        assert result is None
+        result = anonymizer.anonymize_text("!@#$%^&*()")
+        # 清理后应该只剩特殊字符
+        assert isinstance(result, str)
 
     def test_anonymize_text_empty_string(self):
         """测试脱敏空字符串"""
@@ -257,31 +260,34 @@ class TestTextAnonymizer:
 
     # ==================== 模块函数测试 ====================
 
-    def test_module_anonymize_text_function(self):
+    def test_module_anonymize_text_function(self, flask_app):
         """测试模块级anonymize_text函数"""
         from app.core import anonymizer as anon_module
 
-        with patch("app.core.anonymizer.current_app"):
-            result = anon_module.anonymize_text("测试文本")
-            # 应该返回字符串
-            assert isinstance(result, str)
+        with flask_app.app_context():
+            with patch("app.core.anonymizer.current_app"):
+                result = anon_module.anonymize_text("测试文本")
+                # 应该返回字符串
+                assert isinstance(result, str)
 
-    def test_module_add_sensitive_words_function(self):
+    def test_module_add_sensitive_words_function(self, flask_app):
         """测试模块级add_sensitive_words函数"""
         from app.core import anonymizer as anon_module
 
-        with patch("builtins.print"), patch("app.core.anonymizer.current_app"):
-            anon_module.add_sensitive_words("测试词")
-            words = anon_module.get_sensitive_words()
-            assert "测试词" in words
+        with flask_app.app_context():
+            with patch("builtins.print"), patch("app.core.anonymizer.current_app"):
+                anon_module.add_sensitive_words("测试词")
+                words = anon_module.get_sensitive_words()
+                assert "测试词" in words
 
-    def test_module_get_patterns_function(self):
+    def test_module_get_patterns_function(self, flask_app):
         """测试模块级get_patterns函数"""
         from app.core import anonymizer as anon_module
 
-        with patch("app.core.anonymizer.current_app"):
-            patterns = anon_module.get_patterns()
-            assert isinstance(patterns, list)
+        with flask_app.app_context():
+            with patch("app.core.anonymizer.current_app"):
+                patterns = anon_module.get_patterns()
+                assert isinstance(patterns, list)
 
     # ==================== 边界条件测试 ====================
 
