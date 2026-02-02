@@ -4,7 +4,7 @@ SimilarityService单元测试
 测试相似度计算服务层的各种功能
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -97,6 +97,7 @@ class TestSimilarityService:
         """测试正常相似度搜索"""
         # 使用真实的DataFrame
         import pandas as pd
+
         mock_df = pd.DataFrame(sample_similarity_data)
 
         # 直接替换Flask app的load_data_source方法
@@ -127,9 +128,8 @@ class TestSimilarityService:
         # 直接替换Flask app的load_data_source方法
         flask_app.load_data_source = lambda x: None  # type: ignore[attr-defined]
 
-        with flask_app.app_context():
-            with pytest.raises(ValidationError, match="找不到数据源"):
-                self.service.search_by_similarity("查询", "nonexistent", ["标题"])
+        with flask_app.app_context(), pytest.raises(ValidationError, match="找不到数据源"):
+            self.service.search_by_similarity("查询", "nonexistent", ["标题"])
 
     def test_search_by_similarity_with_limit(self, sample_similarity_data, flask_app):
         """测试限制结果数量"""
@@ -150,9 +150,7 @@ class TestSimilarityService:
         flask_app.load_data_source = lambda x: mock_df  # type: ignore[attr-defined]
 
         with flask_app.app_context():
-            result = self.service.search_by_similarity(
-                "发动机", "test_source", ["标题"], limit=0
-            )
+            result = self.service.search_by_similarity("发动机", "test_source", ["标题"], limit=0)
 
             # 应该返回所有结果
             assert len(result) == len(sample_similarity_data)

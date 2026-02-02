@@ -1,10 +1,8 @@
 """DataImportService单元测试"""
 
-import os
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
-import pytest
 
 from app.services.data_services.data_import_service import DataImportService
 
@@ -59,7 +57,9 @@ class TestDataImportService:
         # Mock文件读取
         with patch("os.path.exists", return_value=False):
             with patch("pandas.read_excel") as mock_read_excel:
-                mock_df = pd.DataFrame({"col1": [1, 2], "col2": [3, 4], "date": ["2023-01-01", "2023-01-02"]})
+                mock_df = pd.DataFrame(
+                    {"col1": [1, 2], "col2": [3, 4], "date": ["2023-01-01", "2023-01-02"]}
+                )
                 mock_read_excel.return_value = mock_df
 
                 # 执行分析
@@ -92,7 +92,9 @@ class TestDataImportService:
         with patch("os.path.exists", return_value=True):
             with patch("pandas.read_excel") as mock_read_excel:
                 with patch("pandas.read_parquet") as mock_read_parquet:
-                    new_df = pd.DataFrame({"col1": [1, 2], "col2": [3, 4], "date": ["2023-01-01", "2023-01-02"]})
+                    new_df = pd.DataFrame(
+                        {"col1": [1, 2], "col2": [3, 4], "date": ["2023-01-01", "2023-01-02"]}
+                    )
                     existing_df = pd.DataFrame({"col1": [3], "col2": [5], "date": ["2023-01-03"]})
                     mock_read_excel.return_value = new_df
                     mock_read_parquet.return_value = existing_df

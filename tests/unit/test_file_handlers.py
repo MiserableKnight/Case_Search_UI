@@ -3,10 +3,7 @@
 import json
 import os
 import tempfile
-from pathlib import Path
 from unittest.mock import Mock
-
-import pytest
 
 from app.utils import file_handlers
 
@@ -76,6 +73,7 @@ class TestSaveTempFile:
                 # Mock save方法
                 def mock_save(path):
                     import shutil
+
                     shutil.copy(temp_file_path, path)
                     os.unlink(temp_file_path)
 
@@ -188,7 +186,9 @@ class TestParsePreviewMessage:
 
     def test_parse_preview_message_complete(self):
         """测试解析完整的预览消息"""
-        message = "原有数据：100条, 上传数据：50条, 重复数据：20条, 实际新增：30条, 变更后数据：130条"
+        message = (
+            "原有数据：100条, 上传数据：50条, 重复数据：20条, 实际新增：30条, 变更后数据：130条"
+        )
 
         result = file_handlers.parse_preview_message(message)
 
