@@ -394,6 +394,13 @@ def test_convert_date_various_formats(date_str, expected_valid):
         ("江西航空有限公司", "江西航"),
         ("南航", "南航"),
         ("国航", "国航"),
+        # 新增航空公司规则测试
+        ("中国东方航空股份有限公司", "东航"),
+        ("乌鲁木齐航空有限责任公司", "乌航"),
+        ("中国飞龙通航有限公司", "飞龙"),
+        ("老挝航空公司", "老航"),
+        ("上海飞机客户服务有限公司", "商飞快线"),
+        ("中原龙浩航空有限公司", "中原龙浩"),
     ],
 )
 def test_clean_operator_names_various(operator, expected_contains):

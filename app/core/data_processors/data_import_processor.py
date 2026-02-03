@@ -10,6 +10,7 @@ from typing import Any, ClassVar
 import pandas as pd
 from flask import current_app
 
+from app.config.data_cleaning_config import AIRCRAFT_TYPE_PATTERNS, AIRLINE_REPLACE_RULES
 from app.utils.unicode_cleaner import UnicodeCleaner
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,12 @@ class DataImportProcessor:
         "faults": "故障报告",
         "r_and_i_record": "部件拆换记录",
     }
+
+    # 航空公司名称标准化规则（从配置文件导入）
+    AIRLINE_REPLACE_RULES: ClassVar = AIRLINE_REPLACE_RULES
+
+    # 机型标准化规则（从配置文件导入）
+    AIRCRAFT_TYPE_PATTERNS: ClassVar = AIRCRAFT_TYPE_PATTERNS
 
     # 基类中定义默认的必需列和最终列，子类可以覆盖
     REQUIRED_COLUMNS: ClassVar[list[str]] = ["问题描述"]
@@ -115,70 +122,9 @@ class DataImportProcessor:
         Returns:
             清洗后的数据框
         """
-        replace_rules = [
-            (["天骄", "天骄航空", "天骄航空有限公司"], "天骄"),
-            (
-                [
-                    "东航",
-                    "东方航空",
-                    "一二三航空",
-                    "一二三航空有限公司（东方航空）",
-                    "东航技术",
-                    "中国东方航空有限公司",
-                    "一二三航空有限公司（东航）",
-                    "一二三航空有限公司",
-                    "中国东方航空集团有限公司",
-                ],
-                "东航",
-            ),
-            (["江西航", "江西航空有限公司", "江西航空"], "江西航"),
-            (
-                [
-                    "南航",
-                    "南方航空",
-                    "中国南方航空有限公司",
-                    "中国南方航空股份有限公司",
-                ],
-                "南航",
-            ),
-            (["国航", "中国国航", "中国国际航空股份有限公司"], "国航"),
-            (["成航", "成都航空", "成都航空有限公司"], "成航"),
-            (["乌航", "乌鲁木齐航空"], "乌航"),
-            (["华夏", "华夏航空", "华夏航空股份有限公司"], "华夏"),
-            (["金鹏", "金鹏航空"], "金鹏"),
-            (["圆通", "圆通货航", "圆通航空", "杭州圆通货运航空有限公司"], "圆通"),
-            (["中飞通", "中飞通航", "中飞通用航空有限责任公司"], "中飞通"),
-            (["中原龙浩", "中原龙浩航空"], "中原龙浩"),
-            (["上飞公司维修中心"], "上飞公司维修中心"),
-            (["GAMECO", "广州飞机维修工程有限公司（GAMECO）"], "GAMECO"),
-            (
-                [
-                    "翎亚",
-                    "翎亚航空 PT TransNusa Aviation Mandiri",
-                    "TRANSNUSA AVIATION MANDIRI",
-                    "TransNusa",
-                ],
-                "翎亚",
-            ),
-            (["中国商飞", "中国商用飞机有限责任公司"], "中国商飞"),
-            (["AMECO", "北京飞机维修工程有限公司"], "AMECO"),
-            (["山东太古", "山东太古飞机工程有限公司"], "山东太古"),
-            (
-                [
-                    "STARCO",
-                    "上海科技宇航有限公司 Shanghai Technologies Aerospace (STARCO)",
-                ],
-                "STARCO",
-            ),
-            (["中飞租", "中国飞机租赁集团控股有限公司"], "中飞租"),
-        ]
-
-        # 过滤掉只有单个元素的规则
-        filtered_replace_rules = [rule for rule in replace_rules if len(rule[0]) > 1]
-
-        # 进行替换操作
+        # 进行替换操作（所有规则至少有1个元素，无需过滤）
         df_copy = df.copy()
-        for replacements, target in filtered_replace_rules:
+        for replacements, target in self.AIRLINE_REPLACE_RULES:
             df_copy[column] = df_copy[column].replace(replacements, target)
         df_copy[column] = df_copy[column].fillna("无")
 
@@ -196,8 +142,9 @@ class DataImportProcessor:
         """
         df_copy = df.copy()
         df_copy[column] = df_copy[column].fillna("无")
-        df_copy[column] = df_copy[column].str.replace(r".*ARJ21.*", "ARJ21", regex=True)
-        df_copy[column] = df_copy[column].str.replace(r".*C919.*", "C919", regex=True)
+        # 使用配置文件中的机型标准化规则
+        for pattern, replacement in self.AIRCRAFT_TYPE_PATTERNS.items():
+            df_copy[column] = df_copy[column].str.replace(pattern, replacement, regex=True)
         return df_copy
 
     def convert_date(self, date_str: Any) -> pd.Timestamp:
