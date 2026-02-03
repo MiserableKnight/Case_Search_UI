@@ -157,6 +157,21 @@ class TestDataImportProcessor:
         # 空值应该被填充
         assert result["运营人"].isna().sum() == 0
 
+    def test_clean_operator_names_null_variants(self):
+        """测试各种空值变体的处理"""
+        processor = TestDataProcessor()
+        df = pd.DataFrame(
+            {
+                "运营人": ["", "nan", "None", "null", "NaN", "NULL", None, float("nan")],
+            }
+        )
+
+        result = processor.clean_operator_names(df)
+
+        # 所有空值变体都应该被转换为"无"
+        assert (result["运营人"] == "无").all()
+        assert result["运营人"].isna().sum() == 0
+
     # ==================== clean_aircraft_type测试 ====================
 
     def test_clean_aircraft_type_default(self):

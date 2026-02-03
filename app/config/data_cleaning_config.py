@@ -116,3 +116,14 @@ PART_NUMBER_COLUMNS: list[str] = [
     "拆卸部件序列号",
     "装上部件号",
 ]
+
+# 空值变体替换规则
+# 将各种形式的空值统一为"无"
+NULL_VALUE_REPLACEMENTS: list[str] = [
+    "",  # 空字符串
+    "nan",  # 字符串 'nan'
+    "None",  # 字符串 'None'
+    "null",  # 字符串 'null'
+    "NaN",  # 字符串 'NaN'
+    "NULL",  # 字符串 'NULL'
+]

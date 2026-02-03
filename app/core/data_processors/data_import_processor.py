@@ -14,6 +14,7 @@ from app.config.data_cleaning_config import (
     AIRCRAFT_REPLACE_RULES,
     AIRCRAFT_TYPE_PATTERNS,
     AIRLINE_REPLACE_RULES,
+    NULL_VALUE_REPLACEMENTS,
     PART_NUMBER_CLEAN_RULES,
     PART_NUMBER_COLUMNS,
 )
@@ -46,6 +47,9 @@ class DataImportProcessor:
 
     # 需要清洗部件号的列名（从配置文件导入）
     PART_NUMBER_COLUMNS: ClassVar = PART_NUMBER_COLUMNS
+
+    # 空值变体替换规则（从配置文件导入）
+    NULL_VALUE_REPLACEMENTS: ClassVar = NULL_VALUE_REPLACEMENTS
 
     # 基类中定义默认的必需列和最终列，子类可以覆盖
     REQUIRED_COLUMNS: ClassVar[list[str]] = ["问题描述"]
@@ -130,6 +134,11 @@ class DataImportProcessor:
     def clean_operator_names(self, df: pd.DataFrame, column: str = "运营人") -> pd.DataFrame:
         """清洗运营人名称的通用方法。
 
+        处理流程：
+        1. 将各种空值变体统一为"无"
+        2. 应用航空公司名称标准化规则
+        3. 将剩余的 NaN 填充为"无"
+
         Args:
             df: 待处理的数据框
             column: 运营人列名，默认为"运营人"
@@ -139,8 +148,15 @@ class DataImportProcessor:
         """
         # 进行替换操作（所有规则至少有1个元素，无需过滤）
         df_copy = df.copy()
+
+        # 第一步：将各种空值变体替换为"无"
+        df_copy[column] = df_copy[column].replace(self.NULL_VALUE_REPLACEMENTS, "无")
+
+        # 第二步：应用航空公司名称标准化规则
         for replacements, target in self.AIRLINE_REPLACE_RULES:
             df_copy[column] = df_copy[column].replace(replacements, target)
+
+        # 第三步：将剩余的 NaN 填充为"无"
         df_copy[column] = df_copy[column].fillna("无")
 
         return df_copy
