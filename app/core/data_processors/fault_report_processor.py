@@ -132,7 +132,22 @@ class FaultReportProcessor(DataImportProcessor):
         # 清洗运营人数据
         cleaned_df = self.clean_operator_names(cleaned_df)
 
-        # 确保拆卸和装上部件列存在
+        # 标准化飞机序列号：统一为5位数字格式（添加前导零）
+        if "飞机序列号" in cleaned_df.columns:
+            # 先转换为字符串
+            cleaned_df["飞机序列号"] = cleaned_df["飞机序列号"].astype(str)
+            # 移除非数字字符
+            cleaned_df["飞机序列号"] = cleaned_df["飞机序列号"].str.replace(r"\D", "", regex=True)
+            # 填充为5位数字
+            cleaned_df["飞机序列号"] = cleaned_df["飞机序列号"].str.zfill(5)
+            logger.info("飞机序列号已标准化为5位数字格式")
+
+        # 标准化维修ATA：确保为字符串类型
+        if "维修ATA" in cleaned_df.columns:
+            cleaned_df["维修ATA"] = cleaned_df["维修ATA"].astype(str)
+            logger.info("维修ATA已转换为字符串类型")
+
+        # 确保拆卸和装上部件列存在（在清洗空值之前添加，确保它们也能被清洗）
         part_columns = [
             "拆卸部件件号",
             "拆卸部件序列号",
@@ -142,6 +157,10 @@ class FaultReportProcessor(DataImportProcessor):
         for col in part_columns:
             if col not in cleaned_df.columns:
                 cleaned_df[col] = None
+
+        # 清洗所有文本列中的空值变体（包括 null/, /null, nan, None 等）
+        # 注意：必须在添加部件号列之后调用，这样才能将 None 转换为 "无"
+        cleaned_df = self.clean_null_values(cleaned_df)
 
         # 只保留需要的列
         try:

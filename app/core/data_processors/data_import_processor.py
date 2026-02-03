@@ -182,9 +182,7 @@ class DataImportProcessor:
 
         return df_copy
 
-    def clean_null_values(
-        self, df: pd.DataFrame, columns: list[str] | None = None
-    ) -> pd.DataFrame:
+    def clean_null_values(self, df: pd.DataFrame, columns: list[str] | None = None) -> pd.DataFrame:
         """清洗数据框中所有列的空值。
 
         处理流程：
@@ -343,16 +341,29 @@ class DataImportProcessor:
             logger.info(f"上传文件包含数据: {uploaded_count} 条")
 
             # --- 在合并前，对新数据和现有数据进行统一的标准化，确保数据一致性 ---
+            # 定义需要确保为字符串类型的列（这些列在Excel中可能是数值类型，但在parquet中是字符串）
+            string_columns = ["维修ATA", "飞机序列号"]
+
             # 对新数据进行标准化处理
             for col in self.FINAL_COLUMNS:
-                if col in cleaned_new_data.columns and cleaned_new_data[col].dtype == "object":
-                    cleaned_new_data[col] = cleaned_new_data[col].fillna("")
+                if col in cleaned_new_data.columns:
+                    # 强制将指定的列转换为字符串类型（无论当前类型是什么）
+                    if col in string_columns:
+                        cleaned_new_data[col] = cleaned_new_data[col].astype(str)
+                    # 对其他object类型的列进行空值填充
+                    elif cleaned_new_data[col].dtype == "object":
+                        cleaned_new_data[col] = cleaned_new_data[col].fillna("")
 
             # 对现有数据进行同样的标准化处理
             if not existing_data.empty:
                 for col in self.FINAL_COLUMNS:
-                    if col in existing_data.columns and existing_data[col].dtype == "object":
-                        existing_data[col] = existing_data[col].fillna("")
+                    if col in existing_data.columns:
+                        # 强制将指定的列转换为字符串类型（无论当前类型是什么）
+                        if col in string_columns:
+                            existing_data[col] = existing_data[col].astype(str)
+                        # 对其他object类型的列进行空值填充
+                        elif existing_data[col].dtype == "object":
+                            existing_data[col] = existing_data[col].fillna("")
 
             # 合并数据
             combined_data = pd.concat([cleaned_new_data, existing_data], ignore_index=True)
