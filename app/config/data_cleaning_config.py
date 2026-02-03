@@ -83,11 +83,21 @@ AIRLINE_REPLACE_RULES: list[tuple[list[str], str]] = [
     (["上海飞机客户服务有限公司"], "商飞快线"),
 ]
 
-# 机型标准化规则
+# 机型标准化规则（使用正则表达式）
 AIRCRAFT_TYPE_PATTERNS: dict[str, str] = {
     r".*ARJ21.*": "ARJ21",
     r".*C919.*": "C919",
 }
+
+# 机型直接替换规则（明确列表，用于精确匹配）
+# 优先级高于正则表达式规则
+AIRCRAFT_REPLACE_RULES: list[tuple[list[str], str]] = [
+    # ARJ21 系列机型
+    (["ARJ21-700", "ARJ21-701", "ARJ-700", "ARJ21-700ER"], "ARJ21"),
+    # C919 系列机型
+    (["C919-STD", "C919-ER"], "C919"),
+    # 可以继续添加其他机型的变体
+]
 
 # 部件号清洗规则
 # 用于清洗部件号和序列号中的异常字符串

@@ -465,18 +465,27 @@ def test_clean_operator_names_various(operator, expected_contains):
 
 
 @pytest.mark.parametrize(
-    "aircraft_type,expected_contains",
+    "aircraft_type,expected",
     [
+        # ARJ21 系列机型测试
         ("ARJ21-700", "ARJ21"),
+        ("ARJ21-701", "ARJ21"),
+        ("ARJ-700", "ARJ21"),
+        ("ARJ21-700ER", "ARJ21"),
+        # C919 系列机型测试
         ("C919大型客机", "C919"),
-        ("737-800", "737"),
+        ("C919-STD", "C919"),
+        ("C919-ER", "C919"),
+        # 其他机型保持原样
+        ("737-800", "737-800"),
+        ("A320", "A320"),
     ],
 )
-def test_clean_aircraft_type_various(aircraft_type, expected_contains):
+def test_clean_aircraft_type_various(aircraft_type, expected):
     """参数化测试各种机型"""
     processor = TestDataProcessor()
     df = pd.DataFrame({"机型": [aircraft_type]})
 
     result = processor.clean_aircraft_type(df)
 
-    assert expected_contains in result["机型"].iloc[0]
+    assert result["机型"].iloc[0] == expected

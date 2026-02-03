@@ -11,6 +11,7 @@ import pandas as pd
 from flask import current_app
 
 from app.config.data_cleaning_config import (
+    AIRCRAFT_REPLACE_RULES,
     AIRCRAFT_TYPE_PATTERNS,
     AIRLINE_REPLACE_RULES,
     PART_NUMBER_CLEAN_RULES,
@@ -36,6 +37,9 @@ class DataImportProcessor:
 
     # 机型标准化规则（从配置文件导入）
     AIRCRAFT_TYPE_PATTERNS: ClassVar = AIRCRAFT_TYPE_PATTERNS
+
+    # 机型直接替换规则（从配置文件导入）
+    AIRCRAFT_REPLACE_RULES: ClassVar = AIRCRAFT_REPLACE_RULES
 
     # 部件号清洗规则（从配置文件导入）
     PART_NUMBER_CLEAN_RULES: ClassVar = PART_NUMBER_CLEAN_RULES
@@ -144,6 +148,8 @@ class DataImportProcessor:
     def clean_aircraft_type(self, df: pd.DataFrame, column: str = "机型") -> pd.DataFrame:
         """清洗机型数据的通用方法。
 
+        优先使用明确的替换规则，然后使用正则表达式规则进行匹配。
+
         Args:
             df: 待处理的数据框
             column: 机型列名，默认为"机型"
@@ -153,9 +159,15 @@ class DataImportProcessor:
         """
         df_copy = df.copy()
         df_copy[column] = df_copy[column].fillna("无")
-        # 使用配置文件中的机型标准化规则
+
+        # 先使用明确的替换规则（精确匹配）
+        for replacements, target in self.AIRCRAFT_REPLACE_RULES:
+            df_copy[column] = df_copy[column].replace(replacements, target)
+
+        # 再使用正则表达式规则（模糊匹配）
         for pattern, replacement in self.AIRCRAFT_TYPE_PATTERNS.items():
             df_copy[column] = df_copy[column].str.replace(pattern, replacement, regex=True)
+
         return df_copy
 
     def clean_part_numbers(
