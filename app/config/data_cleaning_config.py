@@ -99,26 +99,9 @@ AIRCRAFT_REPLACE_RULES: list[tuple[list[str], str]] = [
     # 可以继续添加其他机型的变体
 ]
 
-# 部件号清洗规则
-# 用于清洗部件号和序列号中的异常字符串
-PART_NUMBER_CLEAN_RULES: dict[str, str] = {
-    "null/": "",
-    "/null": "",
-}
-
-# 需要清洗部件号的列名
-PART_NUMBER_COLUMNS: list[str] = [
-    "装上部件件号",
-    "装上部件序列号",
-    "拆下部件号",
-    "拆下部件序列号",
-    "拆卸部件件号",
-    "拆卸部件序列号",
-    "装上部件号",
-]
-
 # 空值变体替换规则
 # 将各种形式的空值统一为"无"
+# 包括：空字符串、字符串形式的 null/NaN/None、以及嵌入的 null/ 和 /null 等
 NULL_VALUE_REPLACEMENTS: list[str] = [
     "",  # 空字符串
     "nan",  # 字符串 'nan'
@@ -127,3 +110,11 @@ NULL_VALUE_REPLACEMENTS: list[str] = [
     "NaN",  # 字符串 'NaN'
     "NULL",  # 字符串 'NULL'
 ]
+
+# 空值嵌入模式清理规则
+# 用于处理嵌入在字符串中间的空值标记，如 "null/123" 或 "123/null"
+# 这些模式在清理后会导致空字符串，最终会被替换为"无"
+NULL_EMBEDDED_PATTERNS: dict[str, str] = {
+    "null/": "",  # 去除前缀 "null/"
+    "/null": "",  # 去除后缀 "/null"
+}

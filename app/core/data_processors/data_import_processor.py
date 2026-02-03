@@ -14,9 +14,8 @@ from app.config.data_cleaning_config import (
     AIRCRAFT_REPLACE_RULES,
     AIRCRAFT_TYPE_PATTERNS,
     AIRLINE_REPLACE_RULES,
+    NULL_EMBEDDED_PATTERNS,
     NULL_VALUE_REPLACEMENTS,
-    PART_NUMBER_CLEAN_RULES,
-    PART_NUMBER_COLUMNS,
 )
 from app.utils.unicode_cleaner import UnicodeCleaner
 
@@ -42,14 +41,11 @@ class DataImportProcessor:
     # 机型直接替换规则（从配置文件导入）
     AIRCRAFT_REPLACE_RULES: ClassVar = AIRCRAFT_REPLACE_RULES
 
-    # 部件号清洗规则（从配置文件导入）
-    PART_NUMBER_CLEAN_RULES: ClassVar = PART_NUMBER_CLEAN_RULES
-
-    # 需要清洗部件号的列名（从配置文件导入）
-    PART_NUMBER_COLUMNS: ClassVar = PART_NUMBER_COLUMNS
-
     # 空值变体替换规则（从配置文件导入）
     NULL_VALUE_REPLACEMENTS: ClassVar = NULL_VALUE_REPLACEMENTS
+
+    # 空值嵌入模式清理规则（从配置文件导入）
+    NULL_EMBEDDED_PATTERNS: ClassVar = NULL_EMBEDDED_PATTERNS
 
     # 基类中定义默认的必需列和最终列，子类可以覆盖
     REQUIRED_COLUMNS: ClassVar[list[str]] = ["问题描述"]
@@ -186,34 +182,61 @@ class DataImportProcessor:
 
         return df_copy
 
-    def clean_part_numbers(
+    def clean_null_values(
         self, df: pd.DataFrame, columns: list[str] | None = None
     ) -> pd.DataFrame:
-        """清洗部件号和序列号的通用方法。
+        """清洗数据框中所有列的空值。
 
-        清除部件号中的 "null/" 和 "/null" 等异常字符串。
+        处理流程：
+        1. 清除嵌入在字符串中的空值标记（如 "null/", "/null"）
+        2. 将各种空值变体替换为"无"
+        3. 将剩余的 NaN 填充为"无"
 
         Args:
             df: 待处理的数据框
-            columns: 需要清洗的列名列表，如果为None则使用配置文件中的默认列
+            columns: 需要清洗的列名列表，如果为None则处理所有文本列
 
         Returns:
             清洗后的数据框
         """
         df_copy = df.copy()
-        # 如果没有指定列，使用配置文件中的默认列
-        if columns is None:
-            columns = self.PART_NUMBER_COLUMNS
 
-        # 只处理存在于数据框中的列
-        existing_columns = [col for col in columns if col in df_copy.columns]
+        # 如果没有指定列，处理所有 object 类型的列
+        if columns is None:
+            columns = df_copy.select_dtypes(include=["object"]).columns.tolist()
 
         # 对每个列进行清洗
-        for col in existing_columns:
-            for pattern, replacement in self.PART_NUMBER_CLEAN_RULES.items():
-                df_copy[col] = df_copy[col].str.replace(pattern, replacement, regex=False)
+        for col in columns:
+            if col in df_copy.columns:
+                # 第一步：清除嵌入的空值标记（如 "null/123" → "123"）
+                for pattern, replacement in self.NULL_EMBEDDED_PATTERNS.items():
+                    df_copy[col] = df_copy[col].str.replace(pattern, replacement, regex=False)
+
+                # 第二步：将各种空值变体替换为"无"
+                df_copy[col] = df_copy[col].replace(self.NULL_VALUE_REPLACEMENTS, "无")
+
+                # 第三步：将剩余的 NaN 填充为"无"
+                df_copy[col] = df_copy[col].fillna("无")
 
         return df_copy
+
+    def clean_part_numbers(
+        self, df: pd.DataFrame, columns: list[str] | None = None
+    ) -> pd.DataFrame:
+        """清洗部件号和序列号的通用方法。
+
+        注意：此方法已废弃，请使用 clean_null_values 方法代替。
+        为了向后兼容，此方法保留并调用 clean_null_values。
+
+        Args:
+            df: 待处理的数据框
+            columns: 需要清洗的列名列表（已忽略，会处理所有文本列）
+
+        Returns:
+            清洗后的数据框
+        """
+        # 直接调用通用的空值清洗方法
+        return self.clean_null_values(df, columns)
 
     def convert_date(self, date_str: Any) -> pd.Timestamp:
         """

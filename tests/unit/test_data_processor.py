@@ -217,36 +217,54 @@ class TestDataImportProcessor:
     # ==================== clean_part_numbers测试 ====================
 
     def test_clean_part_numbers_default(self):
-        """测试清洗部件号（默认列）"""
+        """测试清洗部件号（处理所有文本列的空值）"""
         processor = TestDataProcessor()
         df = pd.DataFrame(
             {
-                "装上部件件号": ["null/12345", "67890/null", "12345"],
-                "拆卸部件序列号": ["null/ABC-123", "XYZ-789/null", ""],
+                "装上部件件号": ["null/12345", "67890/null", "12345", ""],
+                "拆卸部件序列号": ["null/ABC-123", "XYZ-789/null", "", "nan"],
+                "其他列": ["data", "", None, "null"],
             }
         )
 
         result = processor.clean_part_numbers(df)
 
+        # 验证部件号清洗：去除 null/ 和 /null
         assert result["装上部件件号"].iloc[0] == "12345"
         assert result["装上部件件号"].iloc[1] == "67890"
-        assert result["拆卸部件序列号"].iloc[0] == "ABC-123"
-        assert result["拆卸部件序列号"].iloc[1] == "XYZ-789"
+        # 验证空值填充为"无"
+        assert result["装上部件件号"].iloc[3] == "无"
+        assert result["拆卸部件序列号"].iloc[2] == "无"
+        assert result["拆卸部件序列号"].iloc[3] == "无"
+        # 验证其他列也被处理
+        assert result["其他列"].iloc[1] == "无"
+        assert result["其他列"].iloc[3] == "无"
 
     def test_clean_part_numbers_custom_columns(self):
         """测试清洗指定列"""
         processor = TestDataProcessor()
         df = pd.DataFrame(
             {
-                "部件号A": ["null/111", "222/null"],
-                "部件号B": ["333/null", "null/444"],
+                "部件号A": ["null/111", "222/null", "", "nan"],
+                "部件号B": ["333/null", "null/444", "None", "data"],
+                "不应该被处理": ["null/555", "666/null", "", "data"],  # 不在指定列中
             }
         )
 
         result = processor.clean_part_numbers(df, columns=["部件号A", "部件号B"])
 
+        # 验证指定列被清洗
         assert result["部件号A"].iloc[0] == "111"
         assert result["部件号A"].iloc[1] == "222"
+        assert result["部件号A"].iloc[2] == "无"
+        assert result["部件号A"].iloc[3] == "无"
+        assert result["部件号B"].iloc[0] == "333"
+        assert result["部件号B"].iloc[1] == "444"
+        assert result["部件号B"].iloc[2] == "无"
+
+        # 验证未指定的列不被处理（保留 null/ 和 /null）
+        assert result["不应该被处理"].iloc[0] == "null/555"
+        assert result["不应该被处理"].iloc[1] == "666/null"
 
     def test_clean_part_numbers_nonexistent_columns(self):
         """测试清洗不存在的列（应该安全跳过）"""
@@ -258,9 +276,35 @@ class TestDataImportProcessor:
         )
 
         # 不应该抛出异常
-        result = processor.clean_part_numbers(df)
+        result = processor.clean_part_numbers(df, columns=["不存在的列"])
 
-        assert "其他列" in result.columns
+        # 原始数据应该保持不变
+        assert result["其他列"].iloc[0] == "data1"
+        assert result["其他列"].iloc[1] == "data2"
+
+    def test_clean_null_values_all_text_columns(self):
+        """测试 clean_null_values 处理所有文本列"""
+        processor = TestDataProcessor()
+        df = pd.DataFrame(
+            {
+                "列1": ["null/123", "456", "", "nan"],
+                "列2": ["789/null", "None", "data", "null"],
+                "数值列": [1, 2, 3, 4],  # 数值列不应被处理
+            }
+        )
+
+        result = processor.clean_null_values(df)
+
+        # 验证文本列被清洗
+        assert result["列1"].iloc[0] == "123"
+        assert result["列1"].iloc[2] == "无"
+        assert result["列1"].iloc[3] == "无"
+        assert result["列2"].iloc[0] == "789"
+        assert result["列2"].iloc[1] == "无"
+        assert result["列2"].iloc[3] == "无"
+        # 验证数值列不受影响
+        assert result["数值列"].iloc[0] == 1
+        assert result["数值列"].iloc[3] == 4
 
     # ==================== convert_date测试 ====================
 
