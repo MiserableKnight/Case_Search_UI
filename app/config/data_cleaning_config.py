@@ -88,3 +88,21 @@ AIRCRAFT_TYPE_PATTERNS: dict[str, str] = {
     r".*ARJ21.*": "ARJ21",
     r".*C919.*": "C919",
 }
+
+# 部件号清洗规则
+# 用于清洗部件号和序列号中的异常字符串
+PART_NUMBER_CLEAN_RULES: dict[str, str] = {
+    "null/": "",
+    "/null": "",
+}
+
+# 需要清洗部件号的列名
+PART_NUMBER_COLUMNS: list[str] = [
+    "装上部件件号",
+    "装上部件序列号",
+    "拆下部件号",
+    "拆下部件序列号",
+    "拆卸部件件号",
+    "拆卸部件序列号",
+    "装上部件号",
+]

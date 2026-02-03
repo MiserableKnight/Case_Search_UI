@@ -83,6 +83,9 @@ class RAndIRecordProcessor(DataImportProcessor):
         # 清洗运营人数据
         cleaned_df = self.clean_operator_names(cleaned_df)
 
+        # 清洗部件号和序列号数据（去除 null/ 和 /null）
+        cleaned_df = self.clean_part_numbers(cleaned_df)
+
         # 设置数据类型为"部件拆换记录"
         cleaned_df["数据类型"] = "部件拆换记录"
         logger.info("设置数据类型为: 部件拆换记录")

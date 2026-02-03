@@ -10,7 +10,12 @@ from typing import Any, ClassVar
 import pandas as pd
 from flask import current_app
 
-from app.config.data_cleaning_config import AIRCRAFT_TYPE_PATTERNS, AIRLINE_REPLACE_RULES
+from app.config.data_cleaning_config import (
+    AIRCRAFT_TYPE_PATTERNS,
+    AIRLINE_REPLACE_RULES,
+    PART_NUMBER_CLEAN_RULES,
+    PART_NUMBER_COLUMNS,
+)
 from app.utils.unicode_cleaner import UnicodeCleaner
 
 logger = logging.getLogger(__name__)
@@ -31,6 +36,12 @@ class DataImportProcessor:
 
     # 机型标准化规则（从配置文件导入）
     AIRCRAFT_TYPE_PATTERNS: ClassVar = AIRCRAFT_TYPE_PATTERNS
+
+    # 部件号清洗规则（从配置文件导入）
+    PART_NUMBER_CLEAN_RULES: ClassVar = PART_NUMBER_CLEAN_RULES
+
+    # 需要清洗部件号的列名（从配置文件导入）
+    PART_NUMBER_COLUMNS: ClassVar = PART_NUMBER_COLUMNS
 
     # 基类中定义默认的必需列和最终列，子类可以覆盖
     REQUIRED_COLUMNS: ClassVar[list[str]] = ["问题描述"]
@@ -145,6 +156,35 @@ class DataImportProcessor:
         # 使用配置文件中的机型标准化规则
         for pattern, replacement in self.AIRCRAFT_TYPE_PATTERNS.items():
             df_copy[column] = df_copy[column].str.replace(pattern, replacement, regex=True)
+        return df_copy
+
+    def clean_part_numbers(
+        self, df: pd.DataFrame, columns: list[str] | None = None
+    ) -> pd.DataFrame:
+        """清洗部件号和序列号的通用方法。
+
+        清除部件号中的 "null/" 和 "/null" 等异常字符串。
+
+        Args:
+            df: 待处理的数据框
+            columns: 需要清洗的列名列表，如果为None则使用配置文件中的默认列
+
+        Returns:
+            清洗后的数据框
+        """
+        df_copy = df.copy()
+        # 如果没有指定列，使用配置文件中的默认列
+        if columns is None:
+            columns = self.PART_NUMBER_COLUMNS
+
+        # 只处理存在于数据框中的列
+        existing_columns = [col for col in columns if col in df_copy.columns]
+
+        # 对每个列进行清洗
+        for col in existing_columns:
+            for pattern, replacement in self.PART_NUMBER_CLEAN_RULES.items():
+                df_copy[col] = df_copy[col].str.replace(pattern, replacement, regex=False)
+
         return df_copy
 
     def convert_date(self, date_str: Any) -> pd.Timestamp:

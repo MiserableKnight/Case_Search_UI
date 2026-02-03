@@ -199,6 +199,54 @@ class TestDataImportProcessor:
 
         assert result["机型"].isna().sum() == 0
 
+    # ==================== clean_part_numbers测试 ====================
+
+    def test_clean_part_numbers_default(self):
+        """测试清洗部件号（默认列）"""
+        processor = TestDataProcessor()
+        df = pd.DataFrame(
+            {
+                "装上部件件号": ["null/12345", "67890/null", "12345"],
+                "拆卸部件序列号": ["null/ABC-123", "XYZ-789/null", ""],
+            }
+        )
+
+        result = processor.clean_part_numbers(df)
+
+        assert result["装上部件件号"].iloc[0] == "12345"
+        assert result["装上部件件号"].iloc[1] == "67890"
+        assert result["拆卸部件序列号"].iloc[0] == "ABC-123"
+        assert result["拆卸部件序列号"].iloc[1] == "XYZ-789"
+
+    def test_clean_part_numbers_custom_columns(self):
+        """测试清洗指定列"""
+        processor = TestDataProcessor()
+        df = pd.DataFrame(
+            {
+                "部件号A": ["null/111", "222/null"],
+                "部件号B": ["333/null", "null/444"],
+            }
+        )
+
+        result = processor.clean_part_numbers(df, columns=["部件号A", "部件号B"])
+
+        assert result["部件号A"].iloc[0] == "111"
+        assert result["部件号A"].iloc[1] == "222"
+
+    def test_clean_part_numbers_nonexistent_columns(self):
+        """测试清洗不存在的列（应该安全跳过）"""
+        processor = TestDataProcessor()
+        df = pd.DataFrame(
+            {
+                "其他列": ["data1", "data2"],
+            }
+        )
+
+        # 不应该抛出异常
+        result = processor.clean_part_numbers(df)
+
+        assert "其他列" in result.columns
+
     # ==================== convert_date测试 ====================
 
     def test_convert_date_standard_format(self):
