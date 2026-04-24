@@ -93,7 +93,10 @@ class RAndIRecordProcessor(DataImportProcessor):
         if "拆换原因" in cleaned_df.columns:
             cleaned_df["问题描述"] = cleaned_df["拆换原因"]
         if "拆卸部件处理措施" in cleaned_df.columns:
-            cleaned_df["排故措施"] = cleaned_df["拆卸部件处理措施"]
+            cleaned_df["排故措施"] = cleaned_df["拆卸部件处理措施"].astype(object)
+        else:
+            # 该列可能被 dropna(axis=1, how="all") 删除（全空值时）
+            cleaned_df["排故措施"] = None
 
         # 清洗机型数据
         cleaned_df = self.clean_aircraft_type(cleaned_df)

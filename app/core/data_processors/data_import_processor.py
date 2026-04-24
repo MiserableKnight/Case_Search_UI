@@ -145,6 +145,9 @@ class DataImportProcessor:
         # 进行替换操作（所有规则至少有1个元素，无需过滤）
         df_copy = df.copy()
 
+        # 第零步：去除前后空格（纯空格变为空字符串，后续会被替换为"无"）
+        df_copy[column] = df_copy[column].str.strip()
+
         # 第一步：将各种空值变体替换为"无"
         df_copy[column] = df_copy[column].replace(self.NULL_VALUE_REPLACEMENTS, "无")
 
