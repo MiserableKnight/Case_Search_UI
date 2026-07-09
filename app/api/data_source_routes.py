@@ -290,6 +290,45 @@ def get_data_types(source):
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+# 各数据源默认排序使用的日期列优先级（依次回退，越靠前优先级越高）
+# 例如 case：优先按「申请时间」，该列为空/无效时回退到「故障发生日期」
+SORT_DATE_PRIORITY: dict[str, list[str]] = {
+    "case": ["申请时间", "故障发生日期"],
+}
+
+
+def _apply_default_sort(df: pd.DataFrame, data_source: str) -> pd.DataFrame:
+    """对搜索结果应用默认排序（倒序，最新在上）。
+
+    按数据源配置的日期列优先级排序：优先用第一个日期列，该列无效时回退到
+    下一个日期列，依此类推。所有日期列都无效的记录排到最后（na_position='last'）。
+
+    Args:
+        df: 待排序的数据框
+        data_source: 数据源名称
+
+    Returns:
+        排序后的数据框（不含临时排序列）
+    """
+    priority = SORT_DATE_PRIORITY.get(data_source)
+    if not priority:
+        return df
+
+    cols = [c for c in priority if c in df.columns]
+    if not cols:
+        return df
+
+    # 逐列解析为 datetime，用 combine_first 实现「第一个有效值优先」的回退
+    merged: pd.Series | None = None
+    for col in cols:
+        parsed = pd.to_datetime(df[col], errors="coerce")
+        merged = parsed if merged is None else merged.combine_first(parsed)
+
+    sorted_df = df.assign(_sort_key=merged)
+    sorted_df = sorted_df.sort_values("_sort_key", ascending=False, na_position="last")
+    return sorted_df.drop(columns=["_sort_key"])
+
+
 @bp.route("/search", methods=["POST"])
 def search():
     """搜索数据"""
@@ -333,6 +372,9 @@ def search():
                 result_df = search_column(result_df, keywords, column_name, logic, negative)
             except ValueError as e:
                 return jsonify({"status": "error", "message": str(e)}), 400
+
+        # 应用默认排序（如 case：申请时间优先，回退故障发生日期，倒序）
+        result_df = _apply_default_sort(result_df, data_source)
 
         # 在返回结果之前，格式化C919的飞机序列号
         results = result_df.to_dict("records")

@@ -1,0 +1,16 @@
+/* 关键词高亮样式：多关键词多色，循环 8 种低饱和度配色，保证可读性 */
+.kw-hl {
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-style: normal;
+}
+
+.kw-hl-0 { background: #fff1a8; color: #6b5800; }
+.kw-hl-1 { background: #c9f2d6; color: #155724; }
+.kw-hl-2 { background: #cfe8ff; color: #0b3d91; }
+.kw-hl-3 { background: #ffd9c2; color: #8a3500; }
+.kw-hl-4 { background: #ead4ff; color: #5a1e9e; }
+.kw-hl-5 { background: #c2f0f4; color: #0a5b63; }
+.kw-hl-6 { background: #ffd6e8; color: #962a5e; }
+.kw-hl-7 { background: #e0e7ad; color: #4a5300; }

@@ -65,6 +65,9 @@
             :label="col"
             :min-width="getColumnMinWidth(col)"
             :sortable="defaultSearch.dataSource === 'faults' && col === '日期' ? 'custom' : false">
+            <template slot-scope="scope">
+                <span v-html="highlightCell(scope.row[col])"></span>
+            </template>
         </el-table-column>
     </el-table>
 

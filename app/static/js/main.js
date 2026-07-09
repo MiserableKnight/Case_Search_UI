@@ -36,6 +36,23 @@ new Vue({
                 return this.searchResults;
             }
             return this.searchResults.filter(item => item['数据类型'] === this.selectedType);
+        },
+        // 收集所有搜索层级的关键词（去重），用于单元格高亮。
+        // 每个 level.keywords 按中英文逗号拆分为多个关键词，与后端 search_column 一致。
+        activeSearchKeywords() {
+            const set = new Set();
+            if (Array.isArray(this.searchLevels)) {
+                for (const level of this.searchLevels) {
+                    const kw = (level && level.keywords ? level.keywords : '').trim();
+                    if (!kw) continue;
+                    const parts = kw.replace(/，/g, ',')
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(Boolean);
+                    parts.forEach(p => set.add(p));
+                }
+            }
+            return Array.from(set);
         }
     },
     created() {
@@ -60,6 +77,7 @@ new Vue({
     methods: {
         ...searchMethods,
         ...tableMethods,
+        ...highlightMethods,
         ...dialogMethods,
         ...importMethods,
         async initializeApplication() {
