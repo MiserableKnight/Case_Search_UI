@@ -2,8 +2,8 @@
 
 背景：正常通过 Web 导入的数据会经过 clean_operator_names 清洗，但有时数据是
 直接用 Jupyter Notebook 合并进 parquet 的，导致「运营人」列里残留未清洗的名称
-（如「中国东方航空」「中国国际航空」等）。本脚本按照
-app/config/data_cleaning_config.py 的 AIRLINE_REPLACE_RULES 对现有 parquet 数据
+（如「中国东方航空」「中国国际航空」等）。本脚本复用
+app/utils/operator_cleaner.py 的清洗逻辑（与导入流程同源），对现有 parquet 数据
 做一次回填式清洗。
 
 用法:
@@ -32,22 +32,11 @@ import pandas as pd
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from app.config.data_cleaning_config import AIRLINE_REPLACE_RULES, NULL_VALUE_REPLACEMENTS  # noqa: E402, I001
+from app.utils.operator_cleaner import clean_operator_series  # noqa: E402
 
 RAW_DIR = ROOT_DIR / "data" / "raw"
 BACKUP_DIR = ROOT_DIR / "data" / "backup_data"
 OPERATOR_COLUMN = "运营人"
-
-
-def clean_operator_series(series: pd.Series) -> pd.Series:
-    """对「运营人」Series 应用与 DataImportProcessor.clean_operator_names 一致的清洗逻辑。"""
-    cleaned = series.copy()
-    cleaned = cleaned.str.strip()
-    cleaned = cleaned.replace(NULL_VALUE_REPLACEMENTS, "无")
-    for replacements, target in AIRLINE_REPLACE_RULES:
-        cleaned = cleaned.replace(replacements, target)
-    cleaned = cleaned.fillna("无")
-    return cleaned
 
 
 def build_change_report(before: pd.Series, after: pd.Series) -> list[tuple[str, str, int]]:

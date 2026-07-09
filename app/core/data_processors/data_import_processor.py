@@ -13,10 +13,10 @@ from flask import current_app
 from app.config.data_cleaning_config import (
     AIRCRAFT_REPLACE_RULES,
     AIRCRAFT_TYPE_PATTERNS,
-    AIRLINE_REPLACE_RULES,
     NULL_EMBEDDED_PATTERNS,
     NULL_VALUE_REPLACEMENTS,
 )
+from app.utils.operator_cleaner import clean_operator_series
 from app.utils.unicode_cleaner import UnicodeCleaner
 
 logger = logging.getLogger(__name__)
@@ -31,9 +31,6 @@ class DataImportProcessor:
         "faults": "故障报告",
         "r_and_i_record": "部件拆换记录",
     }
-
-    # 航空公司名称标准化规则（从配置文件导入）
-    AIRLINE_REPLACE_RULES: ClassVar = AIRLINE_REPLACE_RULES
 
     # 机型标准化规则（从配置文件导入）
     AIRCRAFT_TYPE_PATTERNS: ClassVar = AIRCRAFT_TYPE_PATTERNS
@@ -130,34 +127,18 @@ class DataImportProcessor:
     def clean_operator_names(self, df: pd.DataFrame, column: str = "运营人") -> pd.DataFrame:
         """清洗运营人名称的通用方法。
 
-        处理流程：
-        1. 将各种空值变体统一为"无"
-        2. 应用航空公司名称标准化规则
-        3. 将剩余的 NaN 填充为"无"
+        实际清洗逻辑委托给 app.utils.operator_cleaner.clean_operator_series，
+        以保证导入流程与一次性历史数据清洗脚本共用同一份逻辑。
 
         Args:
             df: 待处理的数据框
             column: 运营人列名，默认为"运营人"
 
         Returns:
-            清洗后的数据框
+            清洗后的数据框（新对象，不修改输入）
         """
-        # 进行替换操作（所有规则至少有1个元素，无需过滤）
         df_copy = df.copy()
-
-        # 第零步：去除前后空格（纯空格变为空字符串，后续会被替换为"无"）
-        df_copy[column] = df_copy[column].str.strip()
-
-        # 第一步：将各种空值变体替换为"无"
-        df_copy[column] = df_copy[column].replace(self.NULL_VALUE_REPLACEMENTS, "无")
-
-        # 第二步：应用航空公司名称标准化规则
-        for replacements, target in self.AIRLINE_REPLACE_RULES:
-            df_copy[column] = df_copy[column].replace(replacements, target)
-
-        # 第三步：将剩余的 NaN 填充为"无"
-        df_copy[column] = df_copy[column].fillna("无")
-
+        df_copy[column] = clean_operator_series(df_copy[column])
         return df_copy
 
     def clean_aircraft_type(self, df: pd.DataFrame, column: str = "机型") -> pd.DataFrame:
