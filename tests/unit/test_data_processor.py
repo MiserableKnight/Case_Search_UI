@@ -214,6 +214,21 @@ class TestDataImportProcessor:
 
         assert result["机型"].isna().sum() == 0
 
+    def test_clean_aircraft_type_preserves_numeric_cells(self):
+        """机型列中的数值单元格不应被 .str 正则替换误杀为 NaN"""
+        processor = TestDataProcessor()
+        df = pd.DataFrame(
+            {
+                "机型": ["B737", 737, None],  # object 列，混入纯数字
+            }
+        )
+
+        result = processor.clean_aircraft_type(df)
+
+        assert result["机型"].iloc[0] == "B737"  # 未命中规则的字符串原样保留
+        assert result["机型"].iloc[1] == 737  # 数值原样保留
+        assert result["机型"].iloc[2] == "无"  # 空值仍填"无"
+
     # ==================== clean_part_numbers测试 ====================
 
     def test_clean_part_numbers_default(self):
@@ -305,6 +320,22 @@ class TestDataImportProcessor:
         # 验证数值列不受影响
         assert result["数值列"].iloc[0] == 1
         assert result["数值列"].iloc[3] == 4
+
+    def test_clean_null_values_preserves_numeric_cells_in_object_column(self):
+        """object列中混入的数值单元格不应被误填为"无"（.str 对数值静默返回 NaN 的坑）"""
+        processor = TestDataProcessor()
+        df = pd.DataFrame(
+            {
+                # object 列：大部分是字符串，混入纯数字（如部件序列号）
+                "序列号": ["ABC-1", 12345, None],
+            }
+        )
+
+        result = processor.clean_null_values(df)
+
+        assert result["序列号"].iloc[0] == "ABC-1"
+        assert result["序列号"].iloc[1] == 12345  # 数值原样保留
+        assert result["序列号"].iloc[2] == "无"  # 真正的空值仍填"无"
 
     # ==================== convert_date测试 ====================
 

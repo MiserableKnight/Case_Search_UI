@@ -45,7 +45,10 @@ def clean_operator_series(
 
     cleaned = series.copy()
     # 第零步：去除前后空格（纯空格变为空字符串，后续会被替换为「无」）
-    cleaned = cleaned.str.strip()
+    # 只对字符串单元格 strip：.str 访问器会把数值单元格静默变成 NaN，
+    # 进而在第三步被 fillna 误填为「无」
+    str_mask = cleaned.apply(lambda x: isinstance(x, str))
+    cleaned.loc[str_mask] = cleaned.loc[str_mask].str.strip()
     # 第一步：将各种空值变体替换为「无」
     cleaned = cleaned.replace(null_replacements, "无")
     # 第二步：应用航空公司名称标准化规则

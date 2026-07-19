@@ -2,6 +2,7 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pandas as pd
 from flask import current_app, jsonify, request
 
@@ -243,7 +244,7 @@ def get_data_types(source):
                         faults_df["数据类型"].unique() if "数据类型" in faults_df.columns else []
                     )
                     ri_types = ri_df["数据类型"].unique()
-                    all_types = sorted(list(set(list(faults_types) + list(ri_types))))
+                    all_types = sorted(set(list(faults_types) + list(ri_types)))
                     logger.info(f"合并后的数据类型: {all_types}")
 
                     return jsonify({"status": "success", "types": all_types})
@@ -254,7 +255,7 @@ def get_data_types(source):
                 df = faults_df
         else:
             # 加载选定的数据源
-            df = current_app.load_data_source(source)
+            df = current_app.load_data_source(source)  # type: ignore[attr-defined]
             if df is None:
                 return (
                     jsonify(
@@ -376,6 +377,10 @@ def search():
         # 应用默认排序（如 case：申请时间优先，回退故障发生日期，倒序）
         result_df = _apply_default_sort(result_df, data_source)
 
+        # 将 NaN 统一替换为 None：jsonify 会把 NaN 序列化为非法 JSON 字面量，
+        # 前端 JSON.parse 会直接抛异常
+        result_df = result_df.replace({np.nan: None})
+
         # 在返回结果之前，格式化C919的飞机序列号
         results = result_df.to_dict("records")
 
@@ -424,7 +429,7 @@ def get_data_columns():
 
         # 其他数据源的处理
         logger.info(f"尝试从数据框加载数据源 {source}")
-        df = current_app.load_data_source(source)
+        df = current_app.load_data_source(source)  # type: ignore[attr-defined]
         if df is not None:
             columns = df.columns.tolist()
             logger.info(f"从数据框获取的列: {columns}")

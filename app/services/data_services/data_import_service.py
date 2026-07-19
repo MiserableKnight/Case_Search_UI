@@ -90,7 +90,7 @@ class DataImportService:
         Returns:
             (success, message): 保存结果
         """
-        return self.processor.save_changes(combined_data)
+        return cast("tuple[bool, str]", self.processor.save_changes(combined_data))
 
     def get_columns(self) -> list[str]:
         """
@@ -127,7 +127,7 @@ class DataImportService:
             new_count = int(new_count_match.group(1)) if new_count_match else 0
 
             # 保存变化
-            return self.processor.save_changes(combined_data, new_count)
+            return cast("tuple[bool, str]", self.processor.save_changes(combined_data, new_count))
 
         except Exception as e:
             return False, f"导入失败: {str(e)}"

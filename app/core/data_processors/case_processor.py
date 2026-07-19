@@ -105,8 +105,12 @@ class CaseProcessor(DataImportProcessor):
 
         # 清洗机号数据
         cleaned_df["机号/MSN"] = cleaned_df["飞机序列号/注册号"]  # 重命名列
-        cleaned_df["机号/MSN"] = cleaned_df["机号/MSN"].str.replace("all", "ALL", case=True)
-        cleaned_df["机号/MSN"] = cleaned_df["机号/MSN"].str.replace("./ALL", "ALL/ALL", case=True)
+        # 只对字符串单元格操作：.str 访问器对数值单元格会静默返回 NaN
+        msn_mask = cleaned_df["机号/MSN"].apply(lambda x: isinstance(x, str))
+        msn = cleaned_df.loc[msn_mask, "机号/MSN"]
+        msn = msn.str.replace("all", "ALL", case=True)
+        msn = msn.str.replace("./ALL", "ALL/ALL", case=True)
+        cleaned_df.loc[msn_mask, "机号/MSN"] = msn
 
         # 清洗ATA数据
         cleaned_df["ATA"] = cleaned_df["ATA"].astype(str)

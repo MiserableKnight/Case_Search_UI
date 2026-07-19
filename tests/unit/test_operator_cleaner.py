@@ -72,3 +72,13 @@ class TestCleanOperatorSeries:
         result = clean_operator_series(pd.Series([], dtype=object))
 
         assert len(result) == 0
+
+    def test_preserves_numeric_cells(self):
+        # object 列混入数值时，数值不应被 strip 误杀为 NaN 再被填成「无」
+        series = pd.Series(["东航", 12345, None], dtype=object)
+
+        result = clean_operator_series(series)
+
+        assert result.iloc[0] == "东航"
+        assert result.iloc[1] == 12345
+        assert result.iloc[2] == "无"

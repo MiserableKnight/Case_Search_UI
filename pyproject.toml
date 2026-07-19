@@ -161,5 +161,8 @@ disallow_untyped_defs = false
 module = [
     "flask.*",
     "werkzeug.*",
+    "apscheduler.*",
+    "jieba.*",
+    "sklearn.*",
 ]
 ignore_missing_imports = true

@@ -50,7 +50,7 @@ class WordService:
             self.sorted_words = self._create_sorted_list()
         else:
             # 如果文件创建失败，使用默认空数据
-            self.words = {
+            self.words: dict[str, list[dict[str, str]]] = {
                 "organizations": [],
                 "aircraft": [],
                 "locations": [],

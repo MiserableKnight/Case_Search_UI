@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast
 
 import jieba
 import pandas as pd
@@ -150,7 +150,7 @@ class TextSimilarityCalculator:
                     .to_dict("records")
                 )
                 logger.info(f"转换为字典列表完成，结果数量: {len(result_dicts)}")
-                return result_dicts
+                return cast("list[dict[str, Any]]", result_dicts)
             except Exception as e:
                 logger.error(f"转换为字典列表时出错: {str(e)}", exc_info=True)
                 raise ValueError(f"结果转换失败: {str(e)}")

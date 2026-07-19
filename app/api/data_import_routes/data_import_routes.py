@@ -5,7 +5,9 @@ import re
 import shutil
 import tempfile
 import uuid
+from typing import Any, cast
 
+import numpy as np
 import pandas as pd
 from flask import jsonify, request
 
@@ -15,6 +17,14 @@ from app.utils.file_handlers import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _to_json_safe_records(df: pd.DataFrame) -> list[dict[str, Any]]:
+    """将 DataFrame 转为 records，并把 NaN/NaT 统一转为 None。
+
+    jsonify 会把 NaN 序列化为非法 JSON 字面量，导致前端 JSON.parse 抛异常。
+    """
+    return cast("list[dict[str, Any]]", df.replace({np.nan: None}).to_dict("records"))
 
 
 class BaseDataImportRoutes:
@@ -104,7 +114,7 @@ class BaseDataImportRoutes:
                     )
 
                 # 获取预览数据
-                preview_rows = df.head(10).to_dict("records")  # 获取前10行数据
+                preview_rows = _to_json_safe_records(df.head(10))  # 前10行，NaN 转 None
                 columns = df.columns.tolist()  # 获取列名列表
 
                 # 合并统计信息和预览数据
@@ -155,15 +165,21 @@ class BaseDataImportRoutes:
                 )
 
             file = request.files["file"]
-            if file.filename == "":
+            if not file.filename:
                 logger.error("未选择文件")
                 return jsonify({"status": "error", "message": "未选择文件"}), 400
 
             if not allowed_file(file.filename):
                 return jsonify({"status": "error", "message": "不支持的文件类型"}), 400
 
-            # 处理文件名
-            filename = file.filename
+            # 处理文件名：剥离任何目录成分，只保留文件名本身，防止路径穿越攻击。
+            # 不能用 werkzeug 的 secure_filename——它会丢弃中文字符，
+            # 而业务文件名（如"服务请求报表.xls"）通常是中文
+            raw_filename = file.filename or ""
+            filename = os.path.basename(raw_filename.replace("\\", "/"))
+            if filename in ("", ".", ".."):
+                return jsonify({"status": "error", "message": "无效的文件名"}), 400
+
             if self.file_prefix and re.match(r"^\d{8}.*\.xlsx$", filename):
                 filename = f"{self.file_prefix}_{filename}"
                 logger.info(f"已为文件添加前缀: {filename}")
@@ -174,6 +190,11 @@ class BaseDataImportRoutes:
                 # 使用安全的临时目录创建方法
                 temp_dir = self._ensure_temp_dir(temp_id)
                 excel_path = os.path.join(temp_dir, filename)
+
+                # 纵深防御：确认落盘路径确实位于本次请求的临时目录内
+                if os.path.dirname(os.path.abspath(excel_path)) != os.path.abspath(temp_dir):
+                    logger.error(f"文件路径越出临时目录，拒绝保存: {excel_path}")
+                    return jsonify({"status": "error", "message": "无效的文件名"}), 400
 
                 # 保存上传文件
                 file.save(excel_path)
@@ -215,7 +236,7 @@ class BaseDataImportRoutes:
                 # 读取上传的Excel文件获取预览数据
                 try:
                     df = pd.read_excel(excel_path)
-                    preview_rows = df.head(10).to_dict("records")  # 获取前10行数据
+                    preview_rows = _to_json_safe_records(df.head(10))  # 前10行，NaN 转 None
                     columns = df.columns.tolist()  # 获取列名列表
                 except Exception as e:
                     logger.error(f"读取预览数据时出错: {str(e)}")
@@ -267,6 +288,13 @@ class BaseDataImportRoutes:
             if not temp_id:
                 logger.error("缺少临时文件ID")
                 return jsonify({"status": "error", "message": "缺少临时文件ID"}), 400
+
+            # 校验 temp_id 必须为本系统生成的 UUID 格式，防止路径穿越攻击
+            try:
+                uuid.UUID(str(temp_id))
+            except (ValueError, TypeError, AttributeError):
+                logger.error(f"无效的临时文件ID: {temp_id}")
+                return jsonify({"status": "error", "message": "无效的临时文件ID"}), 400
 
             # 处理临时目录路径
             temp_base_dir = tempfile.gettempdir()
@@ -332,17 +360,15 @@ class BaseDataImportRoutes:
                 if self.data_type in data_frames:
                     del data_frames[self.data_type]
 
+                # 从成功消息中提取新增数量（取不到时按 0 处理）
+                new_count_match = re.search(r"成功导入\s*(\d+)\s*条", message)
+                new_count = new_count_match.group(1) if new_count_match else 0
+
                 return jsonify(
                     {
                         "status": "success",
                         "message": "数据导入成功",
-                        "data": {
-                            "new_count": (
-                                re.search(r"成功导入\s*(\d+)\s*条", message).group(1)
-                                if re.search(r"成功导入\s*(\d+)\s*条", message)
-                                else 0
-                            )
-                        },
+                        "data": {"new_count": new_count},
                     }
                 )
             else:
@@ -433,7 +459,7 @@ class BaseDataImportRoutes:
                     )
 
                 # 获取预览数据
-                preview_rows = df.head(10).to_dict("records")  # 获取前10行数据
+                preview_rows = _to_json_safe_records(df.head(10))  # 前10行，NaN 转 None
                 columns = df.columns.tolist()  # 获取列名列表
 
                 # 合并统计信息和预览数据

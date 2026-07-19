@@ -52,8 +52,19 @@ def create_app(config_name: str = "development") -> CaseFlask:
     # 设置上传文件大小限制为128MB
     app.config["MAX_CONTENT_LENGTH"] = 128 * 1024 * 1024
 
-    # 启用CORS
-    CORS(app)
+    # 启用CORS：仅允许本机来源。页面由 Flask 同源提供本不需要 CORS，
+    # 这里只为兼容本机 Vite 开发服务器（5173）；放开为 * 会让任意恶意网页
+    # 跨域读写本机 API，造成数据外泄和远程驱动导入
+    port = int(os.environ.get("PORT", 5000))
+    CORS(
+        app,
+        origins=[
+            f"http://127.0.0.1:{port}",
+            f"http://localhost:{port}",
+            "http://127.0.0.1:5173",
+            "http://localhost:5173",
+        ],
+    )
 
     # 确保数据目录存在
     for path in app.config["DATA_CONFIG"].values():

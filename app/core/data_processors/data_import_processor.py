@@ -5,7 +5,7 @@
 import logging
 import os
 import re
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import pandas as pd
 from flask import current_app
@@ -161,8 +161,12 @@ class DataImportProcessor:
             df_copy[column] = df_copy[column].replace(replacements, target)
 
         # 再使用正则表达式规则（模糊匹配）
+        # 只对字符串单元格操作：.str 访问器对数值单元格会静默返回 NaN
+        str_mask = df_copy[column].apply(lambda x: isinstance(x, str))
         for pattern, replacement in self.AIRCRAFT_TYPE_PATTERNS.items():
-            df_copy[column] = df_copy[column].str.replace(pattern, replacement, regex=True)
+            df_copy.loc[str_mask, column] = df_copy.loc[str_mask, column].str.replace(
+                pattern, replacement, regex=True
+            )
 
         return df_copy
 
@@ -191,8 +195,13 @@ class DataImportProcessor:
         for col in columns:
             if col in df_copy.columns:
                 # 第一步：清除嵌入的空值标记（如 "null/123" → "123"）
+                # 只对字符串单元格操作：.str 访问器对数值等非字符串单元格会
+                # 静默返回 NaN，随后在第三步被 fillna 误填为"无"，造成数据损毁
+                str_mask = df_copy[col].apply(lambda x: isinstance(x, str))
                 for pattern, replacement in self.NULL_EMBEDDED_PATTERNS.items():
-                    df_copy[col] = df_copy[col].str.replace(pattern, replacement, regex=False)
+                    df_copy.loc[str_mask, col] = df_copy.loc[str_mask, col].str.replace(
+                        pattern, replacement, regex=False
+                    )
 
                 # 第二步：将各种空值变体替换为"无"
                 df_copy[col] = df_copy[col].replace(self.NULL_VALUE_REPLACEMENTS, "无")
@@ -226,7 +235,7 @@ class DataImportProcessor:
         增强了对特定格式和脏数据的处理能力。
         """
         if pd.isna(date_str):
-            return pd.NaT
+            return cast(pd.Timestamp, pd.NaT)
 
         # 确保输入是字符串并进行初步清理
         cleaned_str = self.unicode_cleaner.clean_text(str(date_str))
@@ -260,7 +269,7 @@ class DataImportProcessor:
             return pd.to_datetime(cleaned_str)
         except ValueError:
             logger.error(f"无法解析的日期格式: {date_str}")
-            return pd.NaT
+            return cast(pd.Timestamp, pd.NaT)
 
     def analyze_changes(self, enable_unicode_cleaning: bool = True) -> tuple[bool, str]:
         """分析数据变化的通用方法。
@@ -272,6 +281,9 @@ class DataImportProcessor:
             (成功标志, 预览消息)
         """
         try:
+            if not self.file_path:
+                return False, "数据文件路径未设置"
+
             # 读取并清洗新数据
             new_data = pd.read_excel(self.file_path)
 

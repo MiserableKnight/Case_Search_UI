@@ -15,11 +15,13 @@ repos:
         args: [--fix]
     -   id: ruff-format
 
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.0
+# mypy 改用项目虚拟环境运行（language: system），使钩子和 pyproject.toml 中的
+# mypy 配置共用同一份依赖与类型存根。此前 mirrors-mypy 的隔离环境缺少 pandas/
+# werkzeug 等依赖，报错口径与项目配置互相矛盾（如 type: ignore 一边判多余、一边必需）。
+-   repo: local
     hooks:
     -   id: mypy
-        additional_dependencies:
-          - types-flask
-          - types-requests
-          - types-PyYAML
+        name: mypy
+        entry: .venv/Scripts/python.exe -m mypy
+        language: system
+        types: [python]
