@@ -34,8 +34,14 @@ bp = Blueprint("main", __name__)
 @bp.route("/")
 @bp.route("/index")
 def index():
-    """渲染主页"""
-    return render_template("index.html", importSettings={"dataSource": "case"})
+    """渲染主页（Vue3 单页应用壳）"""
+    return render_template("index.html")
+
+
+@bp.route("/legacy")
+def legacy():
+    """旧版主页（Vue2 回退页面，迁移完成后可移除）"""
+    return render_template("index_legacy.html", importSettings={"dataSource": "case"})
 
 
 @bp.route("/test")

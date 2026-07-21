@@ -1,0 +1,169 @@
+/* Notion 风格全局主题：Element Plus 变量覆盖 + 自定义组件样式 */
+
+:root {
+    /* Element Plus 主色映射到 Notion 蓝 */
+    --el-color-primary: var(--nt-accent);
+    --el-color-primary-light-3: #5ba2ea;
+    --el-color-primary-light-5: #8cbff1;
+    --el-color-primary-light-7: #bdd9f7;
+    --el-color-primary-light-8: #d6e6fa;
+    --el-color-primary-light-9: #eaf2fc;
+    --el-color-primary-dark-2: var(--nt-accent-hover);
+
+    /* 文字与边框 */
+    --el-text-color-primary: var(--nt-text);
+    --el-text-color-regular: var(--nt-text);
+    --el-text-color-secondary: var(--nt-text-secondary);
+    --el-text-color-placeholder: var(--nt-text-tertiary);
+    --el-border-color: var(--nt-border);
+    --el-border-color-light: var(--nt-border-light);
+    --el-border-color-lighter: var(--nt-border-light);
+    --el-border-color-extra-light: var(--nt-border-light);
+
+    /* 圆角与填充 */
+    --el-border-radius-base: var(--nt-radius-sm);
+    --el-border-radius-small: 4px;
+    --el-fill-color: var(--nt-bg-secondary);
+    --el-fill-color-light: var(--nt-bg-secondary);
+    --el-fill-color-lighter: var(--nt-bg-secondary);
+    --el-fill-color-blank: var(--nt-bg);
+    --el-bg-color-page: var(--nt-bg-secondary);
+
+    --el-font-family: var(--nt-font);
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--nt-font);
+    font-size: 14px;
+    color: var(--nt-text);
+    background: var(--nt-bg-secondary);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 表格：Notion database 风 ---------- */
+.el-table {
+    --el-table-border-color: transparent;
+    --el-table-header-bg-color: var(--nt-bg);
+    --el-table-row-hover-bg-color: var(--nt-bg-hover);
+    --el-table-text-color: var(--nt-text);
+    --el-table-header-text-color: var(--nt-text-secondary);
+    font-size: 13px;
+}
+.el-table th.el-table__cell {
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--nt-text-secondary);
+    border-bottom: 1px solid var(--nt-border);
+}
+.el-table .el-table__cell {
+    border-bottom: 1px solid var(--nt-border-light);
+}
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background: var(--nt-bg-secondary);
+}
+.el-table__row.selected-row td.el-table__cell {
+    background: var(--nt-accent-light);
+}
+.el-table::before,
+.el-table::after,
+.el-table__inner-wrapper::before {
+    display: none; /* 去掉表格外框线 */
+}
+
+/* 关键词高亮：柔和 pastel 底 */
+.kw-hl {
+    padding: 0 1px;
+    border-radius: 3px;
+    background: var(--nt-mark-bg);
+}
+.kw-hl-0 { background: #fdecc8; }
+.kw-hl-1 { background: #d3e5ef; }
+.kw-hl-2 { background: #dbeddb; }
+.kw-hl-3 { background: #f5e0e9; }
+.kw-hl-4 { background: #eae4f2; }
+.kw-hl-5 { background: #fbe4d5; }
+
+/* ---------- 输入框：Notion 浅灰底 ---------- */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+    background: var(--nt-bg-secondary);
+    box-shadow: 0 0 0 1px var(--nt-border-light) inset;
+    transition: box-shadow var(--nt-transition), background var(--nt-transition);
+}
+.el-input__wrapper:hover,
+.el-textarea__inner:hover,
+.el-select__wrapper:hover {
+    background: var(--nt-bg-hover);
+}
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus,
+.el-select__wrapper.is-focused {
+    background: var(--nt-bg);
+    box-shadow: 0 0 0 1px var(--nt-accent) inset !important;
+}
+
+/* ---------- 按钮 ---------- */
+.el-button {
+    font-weight: 500;
+    transition: all var(--nt-transition);
+}
+.el-button--primary {
+    --el-button-hover-bg-color: var(--nt-accent-hover);
+}
+
+/* ---------- 对话框 ---------- */
+.el-dialog {
+    border-radius: var(--nt-radius-md);
+    box-shadow: var(--nt-shadow-md);
+}
+.el-dialog__title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--nt-text);
+}
+
+/* ---------- 分页 ---------- */
+.el-pagination {
+    --el-pagination-button-bg-color: var(--nt-bg);
+    --el-pagination-hover-color: var(--nt-accent);
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+/* ---------- Notion 式区块标题 ---------- */
+.nt-block-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nt-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+}
+
+/* ---------- Notion 式 pastel 标签（chip） ---------- */
+.nt-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: filter var(--nt-transition), opacity var(--nt-transition);
+}
+.nt-chip:hover {
+    filter: brightness(0.96);
+}
+.nt-chip--blue { background: var(--nt-chip-blue-bg); color: var(--nt-chip-blue-text); }
+.nt-chip--green { background: var(--nt-chip-green-bg); color: var(--nt-chip-green-text); }
+.nt-chip--orange { background: var(--nt-chip-orange-bg); color: var(--nt-chip-orange-text); }
+.nt-chip--purple { background: var(--nt-chip-purple-bg); color: var(--nt-chip-purple-text); }
+.nt-chip--gray { background: var(--nt-chip-gray-bg); color: var(--nt-chip-gray-text); }
+/* 未选中的统计 chip 淡化 */
+.nt-chip--dim {
+    opacity: 0.45;
+}

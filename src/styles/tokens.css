@@ -1,0 +1,55 @@
+/* Notion 风格设计变量（design tokens）
+ * 原则：暖灰文字、极浅边框、单一强调色、柔和 pastel 点缀
+ */
+:root {
+    /* 背景 */
+    --nt-bg: #ffffff;
+    --nt-bg-secondary: #f7f7f5;
+    --nt-bg-hover: #f1f1ef;
+    --nt-bg-active: #eaeae8;
+
+    /* 文字 */
+    --nt-text: #37352f;
+    --nt-text-secondary: #787774;
+    --nt-text-tertiary: #9b9a97;
+
+    /* 边框 */
+    --nt-border: rgba(0, 0, 0, 0.09);
+    --nt-border-light: rgba(0, 0, 0, 0.06);
+
+    /* 强调色（全站唯一） */
+    --nt-accent: #2383e2;
+    --nt-accent-hover: #1a73d1;
+    --nt-accent-light: rgba(35, 131, 226, 0.1);
+
+    /* pastel 标签色（浅底深字） */
+    --nt-chip-blue-bg: #e7f0fb;
+    --nt-chip-blue-text: #2f6fb2;
+    --nt-chip-green-bg: #e8f4ec;
+    --nt-chip-green-text: #2e7d4f;
+    --nt-chip-orange-bg: #fbeee0;
+    --nt-chip-orange-text: #b0762a;
+    --nt-chip-purple-bg: #f1ebf8;
+    --nt-chip-purple-text: #7c5ba7;
+    --nt-chip-gray-bg: #f1f1ef;
+    --nt-chip-gray-text: #787774;
+
+    /* 关键词高亮（柔和） */
+    --nt-mark-bg: #fdecc8;
+
+    /* 圆角 */
+    --nt-radius-sm: 6px;
+    --nt-radius-md: 10px;
+    --nt-radius-lg: 14px;
+
+    /* 阴影（若有若无） */
+    --nt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --nt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* 字体 */
+    --nt-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+        'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+
+    /* 动效 */
+    --nt-transition: 0.15s ease;
+}
